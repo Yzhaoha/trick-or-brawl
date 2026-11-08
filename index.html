@@ -240,10 +240,13 @@ body.touch #teams { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; 
 body.touch #teams .team { padding: 6px 7px; gap: 3px; border-radius: 10px; }
 body.touch #teams .team b { font-size: 11px; line-height: 1.2; }
 body.touch #teams .team small { display: none; }
-body.touch #startSkills { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-body.touch #startSkills::-webkit-scrollbar { display: none; }
-body.touch .sbtn { flex: none; font-size: 12px; padding: 5px 10px; }
-body.touch #sectSkill { order: 4; } body.touch .go.playbtn { order: 5; font-size: 24px; padding: 11px 54px; }
+body.touch #startSkills { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
+body.touch .sbtn { aspect-ratio: 1; padding: 0; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 35%, #1c1232); border: 2px solid color-mix(in srgb, var(--c) 70%, transparent); color: #fff; -webkit-tap-highlight-color: transparent; }
+body.touch .sbtn svg { width: 62%; height: 62%; }
+body.touch .sbtn[aria-pressed="true"] { background: var(--c); border-color: #fff; box-shadow: 0 0 0 2px var(--c), 0 0 12px var(--c); color: #fff; }
+body.touch #skillDesc b { color: var(--ink); }
+@media (max-height: 500px) and (orientation: landscape) { body.touch #startSkills { grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 4px; } }
+body.touch #sectSkill { order: 4; } body.touch .go.playbtn { order: 5; font-size: 24px; padding: 11px 54px; margin-top: 10px; }
 @media (max-height: 500px) {
   body.touch .logo { font-size: 22px; }
   body.touch #heroes .team img { max-width: 34px; }
@@ -3217,11 +3220,12 @@ function renderStart() {
   SK_IDS.forEach(id => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'sbtn';
     b.setAttribute('aria-pressed', String(id === startSkill));
-    b.textContent = skName(id);
+    if (isTouch) { b.innerHTML = svgIcon(id); b.style.setProperty('--c', TYPE_COL[SKILLS[id].type]); b.title = skName(id); b.setAttribute('aria-label', skName(id)); } // phones: compact colored icons, name shown below
+    else b.textContent = skName(id);
     b.addEventListener('click', () => { startSkill = id; renderStart(); });
     ss.appendChild(b);
   });
-  document.getElementById('skillDesc').textContent = `${T('t_' + SKILLS[startSkill].type)} · ${skDesc(startSkill)}`;
+  document.getElementById('skillDesc').innerHTML = (isTouch ? `<b>${esc(skName(startSkill))}</b> · ` : '') + esc(`${T('t_' + SKILLS[startSkill].type)} · ${skDesc(startSkill)}`);
   ss.scrollLeft = ssl;
   refreshControlsUI();
 }
