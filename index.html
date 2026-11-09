@@ -378,6 +378,17 @@ body.touch #tut .tc { padding: 6px 14px 8px; }
 body.touch #tut b { font-size: 20px; }
 body.touch #tutSkip { font-size: 13px; padding: 4px 10px; }
 @media (orientation: landscape) { body.touch #tut { top: calc(env(safe-area-inset-top, 0px) + 58px); flex-direction: row; } }
+
+.opt .nm { min-height: 2.4em; display: flex; align-items: flex-end; justify-content: center; text-align: center; line-height: 1.2; }
+#picker .title { font-size: 18px; color: var(--gold); }
+body.touch #picker { top: 50%; bottom: auto; transform: translate(-50%, -50%) scale(.92); transform-origin: center; width: min(440px, calc(100% - 20px)); background: rgba(27, 15, 48, .78); border: 3px solid var(--ol); border-radius: 20px; padding: 10px 6px 12px; box-shadow: 0 5px 0 var(--ol); }
+body.touch #cards { gap: 4px; flex-wrap: nowrap; }
+body.touch #picker .opt { flex: 1 1 0; width: auto; min-width: 0; }
+body.touch #picker .opt .nm { font-size: 13px; overflow-wrap: anywhere; }
+body.touch #picker .opt .ds { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-size: 10.5px; }
+@media (orientation: landscape) { body.touch #picker { transform: translate(-50%, -50%) scale(.8); width: min(520px, calc(100% - 40px)); } body.touch #picker .opt .ds { -webkit-line-clamp: 2; } }
+#banner { white-space: normal; width: max-content; max-width: 92vw; line-height: 1.1; }
+body.touch #banner { font-size: 26px; }
 </style>
 
 </head>
@@ -1648,7 +1659,7 @@ const cornGeo = (() => { // candy corn: yellow base, orange middle, white tip
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); return g;
 })();
 const popGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.08, 32); popGeo.rotateX(Math.PI / 2);
-const bodyMesh = new THREE.InstancedMesh(bonbonGeo, new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x2a1840 }), 1400);
+const bodyMesh = new THREE.InstancedMesh(bonbonGeo, new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x4a3050 }), 1400);
 const stripeMesh = new THREE.InstancedMesh(bonbonGeo.clone().scale(1.04, 1.04, 1.04), new THREE.MeshLambertMaterial({ color: 0xffffff, map: stripeTex, transparent: true, alphaTest: 0.4, emissive: 0x444455 }), 1400);
 const swirlA = new THREE.CircleGeometry(0.27, 32); swirlA.translate(0, 0, 0.042);
 const swirlB = new THREE.CircleGeometry(0.27, 32); swirlB.rotateY(Math.PI); swirlB.translate(0, 0, -0.042);
@@ -1663,6 +1674,14 @@ const stickMesh = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.03, 0.03,
 const blobGeo = new THREE.CircleGeometry(0.22, 14); blobGeo.rotateX(-Math.PI / 2);
 const blobMesh = new THREE.InstancedMesh(blobGeo, new THREE.MeshBasicMaterial({ color: 0x2a1a08, transparent: true, opacity: 0.45, depthWrite: false }), 2600);
 blobMesh.frustumCulled = false; blobMesh.count = 0; scene.add(blobMesh);
+const GLOW_TEX = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.35, 'rgba(255,255,255,.55)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); return t; })();
+const SPARK_TEX = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); const g = x.createRadialGradient(32, 32, 0, 32, 32, 12); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); x.fillStyle = '#fff'; x.beginPath(); x.moveTo(32, 2); x.quadraticCurveTo(35, 29, 62, 32); x.quadraticCurveTo(35, 35, 32, 62); x.quadraticCurveTo(29, 35, 2, 32); x.quadraticCurveTo(29, 29, 32, 2); x.fill(); return new THREE.CanvasTexture(c); })();
+const WHITE_C = new THREE.Color(0xffffff);
+const haloGeo = new THREE.PlaneGeometry(1, 1); haloGeo.rotateX(-Math.PI / 2);
+const haloMesh = new THREE.InstancedMesh(haloGeo, new THREE.MeshBasicMaterial({ map: GLOW_TEX, color: 0xffffff, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false }), 2600);
+const sparkMesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: SPARK_TEX, color: 0xfff6c8, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), 2600);
+[haloMesh, sparkMesh].forEach(m => { m.frustumCulled = false; m.count = 0; m.renderOrder = 2; scene.add(m); });
+for (let i = 0; i < 2600; i++) haloMesh.setColorAt(i, CANDY_COLS[0]);
 [bodyMesh, stripeMesh, endMesh, knotMesh, cornMesh, bigMesh, swirlMeshA, swirlMeshB, ribbonMesh, stickMesh].forEach(m => { m.frustumCulled = false; m.count = 0; m.castShadow = true; scene.add(m); });
 for (let i = 0; i < 2800; i++) knotMesh.setColorAt(i, CANDY_COLS[0]);
 for (let i = 0; i < 1400; i++) bodyMesh.setColorAt(i, CANDY_COLS[0]);
@@ -3162,8 +3181,16 @@ function syncVisuals(t) {
     V.arm.rotation.z = u.swingT > 0 ? (u.combo === 2 ? 0.9 - sw * 1.8 : 0) : 0;
     // walk
     const moving = Math.hypot(u.mx, u.mz) > 0.1 && u.stun <= 0 && u.hero !== 'ghost';
-    const ph = t * 12 + u.id;
-    V.legL.rotation.x = moving ? Math.sin(ph) * 0.6 : 0; V.legR.rotation.x = moving ? -Math.sin(ph) * 0.6 : 0;
+    const vdt = Math.min(0.1, Math.max(0, t - (u.visT === undefined ? t : u.visT))); u.visT = t;
+    if (moving) u.wph = (u.wph || u.id) + vdt * (8 + 6 * Math.min(1, Math.hypot(u.mx, u.mz)));
+    u.wamp = (u.wamp || 0) + ((moving ? 1 : 0) - (u.wamp || 0)) * Math.min(1, vdt * 10);
+    const ph = u.wph || 0, A = u.wamp, s1 = Math.sin(ph), c1 = Math.cos(ph);
+    if (V.legL.userData.y0 === undefined) { V.legL.userData.y0 = V.legL.position.y; V.legR.userData.y0 = V.legR.position.y; }
+    V.legL.rotation.x = s1 * 1.0 * A; V.legR.rotation.x = -s1 * 1.0 * A;
+    V.legL.position.z = -s1 * 0.13 * A; V.legR.position.z = s1 * 0.13 * A; // the stride also slides the hips so feet clear the round body when seen from the side // + = foot travels back (planted), - = swings forward
+    V.legL.position.y = V.legL.userData.y0 + Math.max(0, -c1) * 0.1 * A; V.legR.position.y = V.legR.userData.y0 + Math.max(0, c1) * 0.1 * A;
+    if (u.hero !== 'ghost') { V.body.position.y = Math.abs(c1) * 0.045 * A; V.body.rotation.z = s1 * 0.07 * A; }
+    if (!(u.swingT > 0) && !u.leap && !(u.kickT > 0)) V.arm.rotation.x += s1 * 0.45 * A;
     if (u.kickT > 0 || u.kickVis > 0) V.legR.rotation.x = -1.4;
     V.lid.visible = u.guardT > 0;
     u.tag.classList.toggle('hexed', u.hexT > 0);
@@ -3223,8 +3250,19 @@ function syncVisuals(t) {
     }
   }
   { let nk = 0; const bd = syncVisuals.bd || (syncVisuals.bd = new THREE.Object3D());
-    for (const p of pickups) { if (!p.alive || nk >= 2600) continue; const s = p.big ? 1.7 : 1; bd.position.set(p.x, 0.03, p.z); bd.rotation.set(0, 0, 0); bd.scale.set(s, s, s); bd.updateMatrix(); blobMesh.setMatrixAt(nk++, bd.matrix); }
-    blobMesh.count = nk; blobMesh.instanceMatrix.needsUpdate = true; }
+    const boost = TUT.on && TUT.step === 1 ? 1.35 : 1, hc = syncVisuals.hc || (syncVisuals.hc = new THREE.Color());
+    for (const p of pickups) {
+      if (!p.alive || nk >= 2600) continue; const s = p.big ? 1.7 : 1;
+      bd.position.set(p.x, 0.03, p.z); bd.quaternion.identity(); bd.scale.set(s, s, s); bd.updateMatrix(); blobMesh.setMatrixAt(nk, bd.matrix);
+      const pulse = (0.85 + 0.15 * Math.sin(t * 4 + p.ph * 3)) * boost * (p.big ? 1.9 : 1.05);
+      bd.position.y = 0.045; bd.scale.set(pulse, 1, pulse); bd.updateMatrix(); haloMesh.setMatrixAt(nk, bd.matrix);
+      hc.copy(p.col).lerp(WHITE_C, 0.35); haloMesh.setColorAt(nk, hc);
+      const tw = Math.max(0, Math.sin(t * 2.6 + p.ph * 7)), sp = tw * tw * tw * (p.big ? 0.9 : 0.55) * (boost > 1 ? 1.4 : 1);
+      bd.position.set(p.x + Math.cos(p.ph * 9) * 0.22, (p.big ? 0.95 : 0.42) + Math.sin(t * 3 + p.ph) * 0.06, p.z + Math.sin(p.ph * 9) * 0.22);
+      bd.quaternion.copy(camera.quaternion); bd.rotateZ(t * 1.5 + p.ph); bd.scale.set(sp + 0.001, sp + 0.001, 1); bd.updateMatrix(); sparkMesh.setMatrixAt(nk, bd.matrix);
+      nk++;
+    }
+    blobMesh.count = haloMesh.count = sparkMesh.count = nk; blobMesh.instanceMatrix.needsUpdate = haloMesh.instanceMatrix.needsUpdate = sparkMesh.instanceMatrix.needsUpdate = true; if (haloMesh.instanceColor) haloMesh.instanceColor.needsUpdate = true; }
   bodyMesh.count = ns; stripeMesh.count = ns; swirlMeshA.count = swirlMeshB.count = nb; endMesh.count = ns * 2; knotMesh.count = ns * 2; cornMesh.count = nc; bigMesh.count = nb; ribbonMesh.count = nb; stickMesh.count = nb;
   [bodyMesh, stripeMesh, endMesh, knotMesh, cornMesh, bigMesh, swirlMeshA, swirlMeshB, ribbonMesh, stickMesh].forEach(m => { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; });
   // floating numbers
