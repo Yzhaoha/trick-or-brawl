@@ -402,7 +402,100 @@ body.touch #respawn .rsb { transform: translateY(-27vh) scale(.75); }
 @media (orientation: landscape) { body.touch #respawn .rsb { transform: translate(-30vw, -4vh) scale(.7); } }
 #game canvas { transition: filter .35s; }
 #game.dead canvas { filter: grayscale(.75) brightness(.8); }
+
+/* ===== v27 rank ladder, shards, skins ===== */
+.rkb { display: block; flex: none; filter: drop-shadow(0 2px 0 rgba(0,0,0,.35)); }
+.shd { display: inline-block; width: 1em; height: 1em; vertical-align: -0.14em; margin-right: 3px; }
+.rkstars { display: inline-flex; align-items: center; gap: 2px; }
+.rkstars i { display: inline-grid; width: 18px; height: 18px; color: rgba(255,255,255,.18); }
+.rkstars i svg { width: 100%; height: 100%; }
+.rkstars i.on { color: var(--gold); filter: drop-shadow(0 0 4px rgba(255,194,61,.6)); }
+.rkstars i.new { animation: starPop .55s cubic-bezier(.2,1.6,.4,1) both; }
+.rkstars b { font: 400 16px var(--display); color: var(--gold); margin-left: 3px; }
+@keyframes starPop { 0% { transform: scale(2.6) rotate(-40deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+#rankCard { display: flex; min-width: 0; }
+.rkcard { position: relative; display: inline-flex; align-items: center; gap: 10px; padding: 5px 16px 5px 8px; border-radius: 20px; border: 3px solid var(--ol); background: linear-gradient(180deg, #4b3584, #2b1c50); box-shadow: 0 4px 0 var(--ol); color: #fff; cursor: pointer; font: 400 19px var(--display); max-width: 100%; }
+.rkcard:hover { transform: translateY(-2px); }
+.rkcard .rkn, .rkres .rkn, #rkHead .rkn { text-shadow: 0 2px 0 var(--ol), 2px 0 0 var(--ol), -2px 0 0 var(--ol), 0 -2px 0 var(--ol); white-space: nowrap; }
+.rksh { color: #9be7ff; font: 400 17px var(--display); white-space: nowrap; }
+.rkgo { font-size: 15px; color: var(--gold); white-space: nowrap; }
+.rkcard.ping::after { content: '!'; position: absolute; right: -8px; top: -8px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: #ff3355; border: 2px solid var(--ol); font: 400 14px var(--display); animation: bossPulse .9s ease-in-out infinite; }
+body.touch .rkcard { font-size: 15px; gap: 7px; padding: 3px 10px 3px 5px; }
+body.touch .rkcard .rkb { width: 30px; height: 30px; }
+body.touch .rkcard .rkstars i { width: 13px; height: 13px; }
+body.touch .rkcard .rkgo { font-size: 0; } body.touch .rkcard .rkgo::after { content: '›'; font-size: 20px; }
+
+/* results */
+#endRank:empty { display: none; }
+.rkres { display: flex; flex-direction: column; gap: 10px; align-items: center; background: linear-gradient(180deg, #4b3584, #2b1c50); border: 3px solid var(--ol); border-radius: 18px; box-shadow: 0 4px 0 var(--ol); padding: 12px 14px; position: relative; }
+.rkres.up { box-shadow: 0 4px 0 var(--ol), 0 0 0 3px var(--gold), 0 0 30px rgba(255,194,61,.45); }
+.rkup { font: 400 clamp(26px, 5vw, 38px) var(--display); color: var(--gold); text-shadow: 0 3px 0 var(--ol), 3px 0 0 var(--ol), -3px 0 0 var(--ol), 0 -3px 0 var(--ol); animation: tutPop .5s ease-out; }
+.rkline { display: flex; align-items: center; gap: 12px; font: 400 26px var(--display); color: #fff; }
+.rkline > div { display: flex; flex-direction: column; gap: 4px; }
+.rkline .rkstars i { width: 24px; height: 24px; }
+.rkwhy { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.rkwhy span { font-weight: 900; font-size: 13px; padding: 3px 10px; border-radius: 10px; background: rgba(0,0,0,.3); border: 2px solid var(--ol); }
+.rkwhy .up { color: var(--gold); } .rkwhy .down { color: #ff7a8a; } .rkwhy .safe { color: #9be7ff; }
+.rkbars { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: center; }
+.rkbrave { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 13px; }
+.rkbrave .bar { width: 120px; height: 10px; border-radius: 6px; background: rgba(0,0,0,.45); border: 2px solid var(--ol); overflow: hidden; }
+.rkbrave .bar i { display: block; height: 100%; background: linear-gradient(90deg, #ff8b2c, var(--gold)); transition: width .8s; }
+.rkbrave small { color: var(--muted); font-weight: 800; }
+.rkrews { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.rkrew { display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 14px; background: rgba(255,194,61,.14); border: 2px solid var(--gold); animation: tutPop .5s ease-out .4s both; }
+.rkrew img { width: 44px; height: 44px; }
+.rkrew .ic { width: 40px; height: 40px; display: grid; place-items: center; color: #ffe066; } .rkrew .ic svg { width: 30px; height: 30px; }
+.rkrew small { display: block; color: var(--gold); font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.rkrew b { font: 400 17px var(--display); color: #fff; }
+/* rank screen */
+#rankScreen { z-index: 12; background: radial-gradient(ellipse at 50% 20%, #3a2468, #120a24 75%); }
+#rankScreen .panel { gap: 12px; width: min(720px, 100%); }
+#rkHead { display: flex; align-items: center; gap: 12px; font: 400 26px var(--display); color: #fff; background: linear-gradient(180deg, #4b3584, #2b1c50); border: 3px solid var(--ol); border-radius: 18px; box-shadow: 0 4px 0 var(--ol); padding: 8px 14px; }
+#rkHead > div.rkhi { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+#rkHead .rksh { font-size: 26px; }
+.rktabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.rktab { font: 400 17px var(--display); color: #fff; background: #2b1c50; border: 3px solid var(--ol); border-radius: 14px; padding: 8px 4px; cursor: pointer; box-shadow: 0 3px 0 var(--ol); }
+.rktab[aria-pressed="true"] { background: var(--candy); }
+#rkBody { display: flex; flex-direction: column; gap: 8px; }
+.rkhint { margin: 0; color: var(--muted); font-weight: 800; font-size: 13px; }
+.rkrow { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px 10px; border-radius: 14px; background: rgba(0,0,0,.25); border: 2px solid var(--line); }
+.rkrow.cur { border-color: var(--gold); background: rgba(255,194,61,.12); }
+.rkrow.lock { opacity: .62; }
+.rkrow b { font: 400 18px var(--display); color: #fff; } .rkrow small { display: block; color: var(--muted); font-weight: 800; font-size: 12px; }
+.rkrw { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; align-items: center; font-weight: 900; font-size: 12px; }
+.rkrw span { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9px; background: rgba(0,0,0,.3); }
+.rkrw .sw { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--ol); }
+.rkrw svg { width: 16px; height: 16px; color: #ffe066; }
+.rkrow em { font: 400 12px var(--display); font-style: normal; color: var(--ol); background: var(--gold); border-radius: 6px; padding: 1px 6px; }
+.rkS { display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 14px; background: rgba(0,0,0,.25); border: 2px solid var(--line); }
+.rkS.strong { border-color: #c79bff; background: rgba(160,100,255,.12); }
+.rkS.own { border-color: #7cf07a; }
+.rkS .slot { width: 50px; height: 50px; }
+.rkS .slot svg { width: 28px; height: 28px; }
+.rkS b { font: 400 17px var(--display); color: #fff; }
+.rkS em { margin-left: 6px; font: 400 11px var(--display); font-style: normal; color: #fff; background: #8a4cff; border-radius: 6px; padding: 1px 6px; vertical-align: 2px; }
+.rkS small { display: block; color: #ddd3f5; font-size: 12px; line-height: 1.3; }
+.rkS .prog { height: 6px; border-radius: 4px; background: rgba(0,0,0,.4); margin-top: 5px; overflow: hidden; } .rkS .prog i { display: block; height: 100%; background: #9be7ff; }
+.rkcost { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.rkcost .go { font-size: 17px; padding: 6px 12px; border-radius: 12px; align-self: auto; white-space: nowrap; }
+.rkcost small { font-weight: 900; color: var(--muted); font-size: 11px; white-space: nowrap; }
+.rkcost .ok { font: 400 26px var(--display); color: #7cf07a; }
+.rkskins { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.rkskin { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px; border-radius: 16px; background: rgba(0,0,0,.25); border: 3px solid var(--ol); color: #fff; cursor: pointer; }
+.rkskin img { width: 96px; height: 96px; }
+.rkskin b { font: 400 16px var(--display); }
+.rkskin small { color: var(--muted); font-weight: 800; font-size: 11px; text-align: center; }
+.rkskin.on { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold), 0 0 16px rgba(255,194,61,.5); }
+.rkskin.on small { color: var(--gold); }
+.rkskin:disabled { cursor: default; } .rkskin:disabled img { filter: brightness(.32) saturate(0); }
+.rkitems { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.rkit { display: flex; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 14px; background: rgba(0,0,0,.25); border: 2px solid var(--line); }
+.rkit .ic { width: 34px; height: 34px; color: #ffe066; flex: none; } .rkit .ic svg { width: 100%; height: 100%; }
+.rkit b { font: 400 15px var(--display); color: #fff; } .rkit small { display: block; font-size: 11px; color: var(--muted); font-weight: 800; }
+.rkit.lock { opacity: .55; }
+@media (max-width: 560px) { .rkrow { grid-template-columns: 36px minmax(0, 1fr); } .rkrw { grid-column: 1 / -1; justify-content: flex-start; } .rkS { grid-template-columns: 46px minmax(0, 1fr); } .rkcost { grid-column: 1 / -1; flex-direction: row; justify-content: flex-end; } }
 </style>
+
 
 </head>
 <body>
@@ -449,7 +542,7 @@ body.touch #respawn .rsb { transform: translateY(-27vh) scale(.75); }
 
 <div class="overlay" id="startScreen">
   <div class="panel">
-    <div class="toprow"><span class="proto" id="protoTag">Prototype · you vs 8 bots</span><select id="lang" aria-label="Language"></select></div>
+    <div class="toprow"><span class="proto" id="protoTag" hidden>Prototype · you vs 8 bots</span><div id="rankCard"></div><select id="lang" aria-label="Language"></select></div>
     <h1 class="logo">Trick or <span>Brawl</span></h1>
     <p class="sub" id="pitch">Three monster families, one night of candy. Eat candy to grow, pick a new power every level, and be the Monster King when the sun comes up.</p>
     <div class="sect"><h2 id="hHero">PICK YOUR MONSTER</h2><div id="heroes"></div><p id="heroDesc"></p></div>
@@ -475,9 +568,19 @@ body.touch #respawn .rsb { transform: translateY(-27vh) scale(.75); }
   <div class="panel">
     <h1 id="endTitle"></h1>
     <p class="sub" id="endSub"></p>
-    <div id="endList"></div>
+    <div id="endRank"></div>
     <p class="sub" id="endNet" hidden></p>
     <div class="btnrow"><button class="go" id="again" type="button">PLAY AGAIN</button><button class="ghost" id="endLeave" type="button" hidden>Leave</button></div>
+    <div id="endList"></div>
+  </div>
+</div>
+
+<div class="overlay" id="rankScreen" hidden>
+  <div class="panel">
+    <div id="rkHead"></div>
+    <div class="rktabs" id="rkTabs"></div>
+    <div id="rkBody"></div>
+    <button class="go" id="rkBack" type="button">Back</button>
   </div>
 </div>
 
@@ -585,6 +688,8 @@ const CG = (() => {
     get muted() { return adPlaying || platMute; },
     locale() { let l = null; call(S => { l = S.user.systemInfo.locale; }); return l; },
     deviceType() { let d = null; call(S => { d = S.user.systemInfo.device.type; }); return d; },
+    dataGet(k) { let v = null; call(S => { if (S.data && S.data.getItem) v = S.data.getItem(k); }); return v; },
+    dataSet(k, v) { call(S => { if (S.data && S.data.setItem) S.data.setItem(k, v); }); },
     loadingStop() { call(S => S.game.loadingStop()); },
     setPlaying(on) { if (on === playing) return; playing = on; call(S => on ? S.game.gameplayStart() : S.game.gameplayStop()); },
     happy() { call(S => S.game.happytime()); },
@@ -634,6 +739,16 @@ const SKILLS = {
   shriek: { type: 'toss', fam: 'toss', max: 3, w: 4, en: ['Toss Shriek Jar', 'Your throw hurts and interrupts enemies around the teammate, triggers your red powers on them, heals and speeds the teammate a little, then bounces once to the next teammate.'], zh: ['扔尖叫瓶', '伤害并打断队友身边的敌人，对它们触发你的红色攻击效果，给队友少量回血加速，再弹给下一个队友一次。'] },
 };
 { const tr = {"fr":{"sniffer":["Flair à bonbons","Attire les bonbons de plus loin."],"snag":["Toile collante","Tes coups ramènent la cible devant toi."],"spin":["Toupie hantée","Un coup lance une toupie de 3 coups autour de toi (recharge 4 s)."],"bats":["Nuée de chauves-souris","Chaque coup lance aussi une chauve-souris."],"hex":["Marque maudite","Tes coups marquent la cible : ses prochains dégâts subis sont doublés."],"rush":["Rush sucré","Tes coups te donnent un petit boost de vitesse."],"drain":["Vol de vie","Tes coups te soignent, toi et tes coéquipiers proches."],"echo":["Écho d'âme","Tes coups rechargent l'endurance, la tienne et celle des coéquipiers proches."],"wisps":["Feux follets","Des feux follets tournent autour de toi et repoussent les ennemis qui les touchent."],"bones":["Piste d'os","Laisse derrière toi des pics en os qui blessent tes poursuivants."],"moon":["Endurance pleine lune","+1 endurance max."],"guard":["Garde cercueil","Bloque les coups pendant 1 s et repousse les attaquants. Coups de pied, bulles et bombes la brisent. Se combine avec d'autres pouvoirs jaunes."],"kick":["Coup de crâne","Coup de pied sauté qui brise toute garde et déclenche tes pouvoirs rouges. Une attaque simple peut l’interrompre."],"pounce":["Bond lunaire","Bondis en avant et frappe une large zone, renversant les ennemis. Un coup en l'air l'annule."],"shove":["Poussée zombie","Deux poussées rapides vers l’avant. Peu de dégâts, pas de chute ; idéal pour percer ou fuir."],"head":["Coup de citrouille","Courte charge presque sans temps mort ; rappuie dans la seconde pour une 2e charge dans une autre direction."],"choco":["Lancer de chocolat","Lance au coéquipier le plus proche : soigne 2/5 de ses PV."],"pop":["Lancer de glace fusée","Ton lancer rend le coéquipier plus rapide un moment."],"charm":["Lancer de porte-bonheur","Ton lancer rend le coéquipier invulnérable 2 s."],"shriek":["Lancer de bocal hurlant","Blesse et interrompt les ennemis autour du coéquipier, y déclenche tes pouvoirs rouges, soigne et accélère un peu le coéquipier, puis rebondit une fois vers le suivant."]},"de":{"sniffer":["Süßigkeiten-Spürnase","Zieht Süßes aus größerer Entfernung an."],"snag":["Spinnennetz","Treffer ziehen das Ziel vor dich zurück."],"spin":["Spukwirbel","Ein Treffer startet einen Wirbel mit 3 Treffern um dich (4 s Abklingzeit)."],"bats":["Fledermausschwarm","Jeder Schlag schickt auch eine Fledermaus los."],"hex":["Fluchmal","Treffer markieren das Ziel. Sein nächster erlittener Schaden wird verdoppelt."],"rush":["Zuckerrausch","Treffer geben dir einen kurzen Temposchub."],"drain":["Lebensraub","Treffer heilen dich und Teamkollegen in der Nähe."],"echo":["Seelenecho","Treffer füllen Ausdauer für dich und Teamkollegen in der Nähe auf."],"wisps":["Irrlichter","Irrlichter kreisen um dich und stoßen Gegner weg, die sie berühren."],"bones":["Knochenspur","Hinterlässt Knochenstacheln, die Verfolger verletzen."],"moon":["Vollmond-Ausdauer","+1 maximale Ausdauer."],"guard":["Sargschild","Blockt 1 s lang Treffer und stößt Angreifer zurück. Tritte, Blasen und Bomben brechen ihn. Kombinierbar mit anderen gelben Kräften."],"kick":["Schädeltritt","Sprungtritt, der jede Deckung bricht und deine roten Kräfte auslöst. Ein normaler Angriff kann ihn unterbrechen."],"pounce":["Mondsprung","Spring nach vorn und schlag auf eine große Fläche – Gegner fallen um. Ein Treffer in der Luft bricht ihn ab."],"shove":["Zombie-Stoß","Zwei schnelle Stöße nach vorn. Wenig Schaden, kein Umwerfen; gut zum Durchbrechen oder Fliehen."],"head":["Kürbis-Kopfstoß","Kurzer Ansturm fast ohne Erholung; innerhalb 1 s nochmal drücken für einen zweiten in neue Richtung."],"choco":["Schoko werfen","Wirf zum nächsten Teamkollegen: heilt 2/5 seiner LP."],"pop":["Raketeneis werfen","Dein Wurf macht den Teamkollegen eine Weile schneller."],"charm":["Glücksbringer werfen","Dein Wurf macht den Teamkollegen 2 s unverwundbar."],"shriek":["Kreischglas werfen","Verletzt und unterbricht Gegner um den Teamkollegen, löst dort deine roten Kräfte aus, heilt und beschleunigt ihn etwas und springt dann einmal zum nächsten Teamkollegen."]},"es":{"sniffer":["Olfato dulce","Atrae caramelos desde más lejos."],"snag":["Telaraña","Tus golpes arrastran al objetivo delante de ti."],"spin":["Giro fantasmal","Un golpe inicia un giro de 3 golpes a tu alrededor (4 s de recarga)."],"bats":["Enjambre de murciélagos","Cada golpe también lanza un murciélago."],"hex":["Marca maldita","Tus golpes marcan al objetivo: el próximo daño que reciba se duplica."],"rush":["Subidón de azúcar","Tus golpes te dan un breve impulso de velocidad."],"drain":["Robo de vida","Tus golpes te curan a ti y a los compañeros cercanos."],"echo":["Eco del alma","Tus golpes recargan energía para ti y los compañeros cercanos."],"wisps":["Fuegos fatuos","Fuegos fatuos giran a tu alrededor y empujan a los enemigos que los tocan."],"bones":["Rastro de huesos","Deja púas de hueso que hieren a quien te persigue."],"moon":["Energía de luna llena","+1 energía máxima."],"guard":["Escudo ataúd","Bloquea golpes 1 s y empuja a los atacantes. Patadas, burbujas y bombas lo rompen. Se combina con otros poderes amarillos."],"kick":["Patada calavera","Patada voladora que rompe cualquier guardia y activa tus poderes rojos. Un ataque básico puede interrumpirla."],"pounce":["Salto lunar","Salta hacia delante y golpea una zona amplia, derribando enemigos. Un golpe en el aire lo cancela."],"shove":["Empujón zombi","Dos empujones rápidos hacia delante. Poco daño, no derriba; útil para abrirse paso o huir."],"head":["Cabezazo calabaza","Carga corta casi sin recuperación; pulsa otra vez en 1 s para una segunda carga en otra dirección."],"choco":["Lanzar chocolate","Lanza al compañero más cercano: cura 2/5 de su vida."],"pop":["Lanzar polo cohete","Tu lanzamiento hace más rápido al compañero un rato."],"charm":["Lanzar amuleto","Tu lanzamiento hace invulnerable al compañero 2 s."],"shriek":["Lanzar frasco chillón","Hiere e interrumpe a los enemigos cerca del compañero, activa tus poderes rojos en ellos, cura y acelera un poco al compañero y rebota una vez al siguiente."]},"it":{"sniffer":["Fiuto dolce","Attira le caramelle da più lontano."],"snag":["Ragnatela","I colpi trascinano il bersaglio davanti a te."],"spin":["Trottola spettrale","Un colpo avvia una trottola di 3 colpi attorno a te (ricarica 4 s)."],"bats":["Sciame di pipistrelli","Ogni colpo lancia anche un pipistrello."],"hex":["Marchio maledetto","I colpi marcano il bersaglio: il prossimo danno che subisce raddoppia."],"rush":["Scarica di zucchero","I colpi ti danno un breve scatto di velocità."],"drain":["Risucchio vitale","I colpi curano te e i compagni vicini."],"echo":["Eco dell’anima","I colpi ricaricano la resistenza a te e ai compagni vicini."],"wisps":["Fuochi fatui","Fuochi fatui ti girano attorno e respingono i nemici che li toccano."],"bones":["Scia di ossa","Lasci spuntoni d’osso che feriscono chi ti insegue."],"moon":["Resistenza di luna piena","+1 resistenza massima."],"guard":["Scudo bara","Para i colpi per 1 s e respinge chi attacca. Calci, bolle e bombe lo rompono. Si combina con altri poteri gialli."],"kick":["Calcio teschio","Calcio volante che rompe ogni guardia e attiva i tuoi poteri rossi. Un attacco base può interromperlo."],"pounce":["Balzo lunare","Balza in avanti e colpisci un’ampia area, atterrando i nemici. Un colpo a mezz’aria lo annulla."],"shove":["Spinta zombi","Due spinte rapide in avanti. Pochi danni, nessun atterramento; utile per sfondare o fuggire."],"head":["Testata zucca","Breve carica quasi senza recupero; premi di nuovo entro 1 s per una seconda carica in un’altra direzione."],"choco":["Lancia cioccolato","Lancia al compagno più vicino: cura 2/5 dei suoi PV."],"pop":["Lancia ghiacciolo razzo","Il tuo lancio rende il compagno più veloce per un po’."],"charm":["Lancia amuleto","Il tuo lancio rende il compagno invulnerabile per 2 s."],"shriek":["Lancia barattolo urlante","Ferisce e interrompe i nemici attorno al compagno, attiva su di loro i tuoi poteri rossi, cura e velocizza un po’ il compagno, poi rimbalza una volta al successivo."]},"pt":{"sniffer":["Faro doce","Puxa doces de mais longe."],"snag":["Teia","Seus golpes puxam o alvo de volta à sua frente."],"spin":["Giro assombrado","Um acerto inicia um giro de 3 golpes ao seu redor (recarga 4 s)."],"bats":["Revoada de morcegos","Cada golpe também solta um morcego."],"hex":["Marca amaldiçoada","Seus golpes marcam o alvo: o próximo dano que ele sofrer dobra."],"rush":["Pico de açúcar","Seus golpes dão um curto impulso de velocidade."],"drain":["Dreno de vida","Seus golpes curam você e os aliados próximos."],"echo":["Eco da alma","Seus golpes recarregam energia para você e aliados próximos."],"wisps":["Fogos-fátuos","Fogos-fátuos giram ao seu redor e empurram inimigos que os tocam."],"bones":["Trilha de ossos","Deixa espinhos de osso que ferem quem te persegue."],"moon":["Energia de lua cheia","+1 energia máxima."],"guard":["Escudo caixão","Bloqueia golpes por 1 s e empurra os atacantes. Chutes, bolhas e bombas o quebram. Combina com outros poderes amarelos."],"kick":["Chute caveira","Chute voador que quebra qualquer guarda e ativa seus poderes vermelhos. Um ataque básico pode interrompê-lo."],"pounce":["Salto lunar","Salte para a frente e golpeie uma área grande, derrubando inimigos. Um acerto no ar o cancela."],"shove":["Empurrão zumbi","Dois empurrões rápidos para a frente. Pouco dano, não derruba; bom para furar ou fugir."],"head":["Cabeçada de abóbora","Investida curta quase sem recuperação; aperte de novo em 1 s para uma segunda investida em outra direção."],"choco":["Jogar chocolate","Joga para o aliado mais próximo: cura 2/5 da vida dele."],"pop":["Jogar picolé foguete","Seu arremesso deixa o aliado mais rápido por um tempo."],"charm":["Jogar amuleto","Seu arremesso deixa o aliado invulnerável por 2 s."],"shriek":["Jogar pote do grito","Fere e interrompe inimigos perto do aliado, ativa neles seus poderes vermelhos, cura e acelera um pouco o aliado e quica uma vez para o próximo."]},"tr":{"sniffer":["Şeker Burnu","Şekerleri daha uzaktan çeker."],"snag":["Ağ Tuzağı","Vuruşların hedefi önüne geri çeker."],"spin":["Hayalet Dönüşü","Bir vuruş etrafında 3 vuruşluk bir dönüş başlatır (4 sn bekleme)."],"bats":["Yarasa Sürüsü","Her savuruş bir yarasa da gönderir."],"hex":["Lanet İşareti","Vuruşlar hedefi işaretler; alacağı bir sonraki hasar iki katı olur."],"rush":["Şeker Coşkusu","Vuruşlar sana kısa bir hız patlaması verir."],"drain":["Can Emme","Vuruşlar seni ve yakındaki takım arkadaşlarını iyileştirir."],"echo":["Ruh Yankısı","Vuruşlar seninle yakındaki takım arkadaşlarının dayanıklılığını doldurur."],"wisps":["Cin Işıkları","Cin ışıkları etrafında döner ve dokunan düşmanları iter."],"bones":["Kemik İzi","Arkanda seni kovalayanlara zarar veren kemik dikenleri bırakır."],"moon":["Dolunay Dayanıklılığı","+1 maksimum dayanıklılık."],"guard":["Tabut Kalkanı","Vuruşları 1 sn engeller ve saldıranları iter. Tekme, baloncuk ve bombalar kırar. Diğer sarı güçlerle birleşir."],"kick":["Kafatası Tekmesi","Her savunmayı kıran ve kırmızı güçlerini tetikleyen uçan tekme. Normal saldırı onu kesebilir."],"pounce":["Ay Atlayışı","İleri atla ve geniş bir alana vurup düşmanları devir. Havada vurulursan iptal olur."],"shove":["Zombi İtişi","İleriye iki hızlı itiş. Az hasar, devirmez; yarıp geçmek ya da kaçmak için iyi."],"head":["Balkabağı Kafası","Neredeyse beklemesiz kısa hücum; 1 sn içinde tekrar bas, başka yöne ikinci hücum."],"choco":["Çikolata Fırlat","En yakın takım arkadaşına at: canının 2/5’ini iyileştirir."],"pop":["Roket Dondurma Fırlat","Fırlatman takım arkadaşını bir süre hızlandırır."],"charm":["Muska Fırlat","Fırlatman takım arkadaşını 2 sn ölümsüz yapar."],"shriek":["Çığlık Kavanozu Fırlat","Takım arkadaşının çevresindeki düşmanlara zarar verip keser, onlarda kırmızı güçlerini tetikler, arkadaşını biraz iyileştirip hızlandırır, sonra bir kez sonrakine seker."]},"ja":{"sniffer":["キャンディ嗅覚","もっと遠くのキャンディを吸い寄せる。"],"snag":["クモの糸","当てた敵を目の前に引き寄せる。"],"spin":["おばけスピン","当てるとその場で3回転攻撃（クールダウン4秒）。"],"bats":["コウモリの群れ","攻撃するたびにコウモリが1匹飛んでいく。"],"hex":["呪いの印","当てた敵に印をつけ、次に受けるダメージを2倍にする。"],"rush":["シュガーラッシュ","当てると少しの間スピードアップ。"],"drain":["ライフドレイン","当てると自分と近くの味方が回復。"],"echo":["たましいの響き","当てると自分と近くの味方のスタミナが回復。"],"wisps":["鬼火","鬼火がまわりを回り、触れた敵をはじき飛ばす。"],"bones":["骨のトゲ道","通った後に骨のトゲが生え、追ってくる敵を傷つける。"],"moon":["満月のスタミナ","スタミナ上限 +1。"],"guard":["棺桶ガード","1秒間攻撃を防ぎ、相手をはじき返す。キック・泡・爆弾で壊れる。ほかの黄色の力と合体できる。"],"kick":["ドクロキック","どんなガードも破る飛び蹴り。赤の力も発動する。通常攻撃で止められる。"],"pounce":["月下ダイブ","前に飛びかかって広い範囲をたたき、敵を倒す。空中で攻撃されると中断。"],"shove":["ゾンビ体当たり","前に2回すばやく体当たり。ダメージは低く倒さないが、突破や逃げに便利。"],"head":["カボチャ頭突き","すきの少ない短い突進。1秒以内にもう一度押すと別の方向にもう一回。"],"choco":["チョコを投げる","一番近い味方に投げて、HPを2/5回復。"],"pop":["ロケットアイスを投げる","投げると味方がしばらく速くなる。"],"charm":["お守りを投げる","投げると味方が2秒間無敵になる。"],"shriek":["悲鳴のビンを投げる","味方のまわりの敵にダメージを与えて止め、赤の力を発動。味方を少し回復・加速させ、次の味方へ1回はね返る。"]},"ko":{"sniffer":["사탕 냄새","더 멀리 있는 사탕을 끌어당겨요."],"snag":["거미줄","맞힌 적을 내 앞으로 끌어와요."],"spin":["유령 회전","적중하면 제자리에서 3번 회전 공격 (쿨타임 4초)."],"bats":["박쥐 떼","휘두를 때마다 박쥐가 한 마리씩 날아가요."],"hex":["저주 표식","맞힌 적에게 표식을 남겨 다음에 받는 피해를 두 배로."],"rush":["슈가 러시","적중하면 잠깐 빨라져요."],"drain":["생명 흡수","적중하면 나와 근처 팀원이 회복해요."],"echo":["영혼의 메아리","적중하면 나와 근처 팀원의 스태미나가 차요."],"wisps":["도깨비불","도깨비불이 주위를 돌며 닿은 적을 밀어내요."],"bones":["뼈 가시 길","지나간 자리에 뼈 가시가 솟아 쫓아오는 적에게 피해."],"moon":["보름달 스태미나","최대 스태미나 +1."],"guard":["관 방패","1초 동안 공격을 막고 공격자를 밀어내요. 발차기, 거품, 폭탄에 깨져요. 다른 노랑 능력과 합체 가능."],"kick":["해골 킥","모든 가드를 깨는 날아차기, 빨강 능력도 발동. 기본 공격에 끊길 수 있어요."],"pounce":["달빛 덮치기","앞으로 뛰어들어 넓은 범위를 내리쳐 적을 쓰러뜨려요. 공중에서 맞으면 취소."],"shove":["좀비 밀치기","앞으로 빠르게 두 번 밀치기. 피해는 적고 넘어뜨리지 않지만 돌파나 도망에 좋아요."],"head":["호박 박치기","후딜이 거의 없는 짧은 돌진. 1초 안에 다시 누르면 다른 방향으로 한 번 더."],"choco":["초콜릿 던지기","가장 가까운 팀원에게 던져 체력 2/5 회복."],"pop":["로켓 아이스 던지기","던지면 팀원이 한동안 빨라져요."],"charm":["부적 던지기","던지면 팀원이 2초 동안 무적."],"shriek":["비명 병 던지기","팀원 주변 적에게 피해를 주고 끊으며 빨강 능력도 발동, 팀원을 조금 회복·가속시키고 다음 팀원에게 한 번 튕겨요."]},"ru":{"sniffer":["Сладкий нюх","Притягивает конфеты издалека."],"snag":["Паутина","Удары подтягивают цель к тебе."],"spin":["Призрачный вихрь","Удар запускает вихрь из 3 ударов вокруг тебя (перезарядка 4 с)."],"bats":["Стая мышей","Каждый взмах выпускает летучую мышь."],"hex":["Метка проклятия","Удары помечают цель: следующий урон по ней удваивается."],"rush":["Сахарный рывок","Удары дают короткое ускорение."],"drain":["Похищение жизни","Удары лечат тебя и союзников рядом."],"echo":["Эхо души","Удары восполняют выносливость тебе и союзникам рядом."],"wisps":["Блуждающие огни","Огоньки кружат вокруг и отбрасывают врагов, которые их коснутся."],"bones":["Костяной след","Оставляет костяные шипы, ранящие преследователей."],"moon":["Выносливость полнолуния","+1 к макс. выносливости."],"guard":["Щит-гроб","Блокирует удары 1 с и отбрасывает нападающих. Пинки, пузыри и бомбы ломают его. Объединяется с другими жёлтыми силами."],"kick":["Пинок черепа","Удар ногой в прыжке, ломает любую защиту и запускает красные силы. Обычная атака может прервать."],"pounce":["Лунный прыжок","Прыгни вперёд и ударь по большой области, сбивая врагов. Удар в воздухе отменяет его."],"shove":["Толчок зомби","Два быстрых толчка вперёд. Мало урона, не сбивает; хорошо, чтобы прорваться или сбежать."],"head":["Тыквенный таран","Короткий рывок почти без задержки; нажми ещё раз в течение 1 с для второго в другую сторону."],"choco":["Бросок шоколада","Брось ближайшему союзнику: лечит 2/5 его здоровья."],"pop":["Бросок ракетного мороженого","Бросок на время ускоряет союзника."],"charm":["Бросок оберега","Бросок делает союзника неуязвимым на 2 с."],"shriek":["Бросок банки визга","Ранит и прерывает врагов вокруг союзника, запускает на них твои красные силы, немного лечит и ускоряет союзника и один раз отскакивает к следующему."]}}; for (const c in tr) for (const id in tr[c]) SKILLS[id][c] = tr[c][id]; }
+// v27: powers unlocked with shards (lock = shard cost); they only show up for players who unlocked them
+Object.assign(SKILLS, {
+  thorns: { type: 'passive', max: 3, w: 6, lock: 40 },
+  frost: { type: 'onhit', max: 3, w: 7, lock: 50 },
+  sweet: { type: 'passive', max: 3, w: 7, lock: 60 },
+  meteor: { type: 'onhit', max: 2, w: 4, rare: true, lock: 100 },
+  undying: { type: 'passive', max: 1, w: 3, rare: true, lock: 150 },
+  storm: { type: 'passive', max: 3, w: 4, rare: true, lock: 200 }
+});
+{ const tr = {"en": {"thorns": ["Pumpkin Thorns", "Enemies who hit you up close take damage back."], "frost": ["Frost Bite", "Hits slow the target for a moment."], "sweet": ["Sweet Tooth", "Every candy you eat is worth 15% more."], "meteor": ["Candy Meteor", "Every 4th hit calls down a meteor that blasts and launches nearby enemies."], "undying": ["Undying Soul", "When knocked out, get back up on the spot with 40% HP (once a minute)."], "storm": ["Hex Storm", "Lightning strikes the nearest enemy every few seconds."]}, "zh": {"thorns": ["南瓜荆棘", "近身打你的敌人会受到反伤。"], "frost": ["冰霜咬", "打中后让敌人短暂减速。"], "sweet": ["甜食控", "吃到的每颗糖多算 15%。"], "meteor": ["糖果陨石", "每打中 4 次召唤一颗陨石，砸飞周围的敌人。"], "undying": ["不灭之魂", "被打倒时原地复活，恢复 40% 生命（每分钟一次）。"], "storm": ["诅咒雷暴", "每隔几秒，闪电劈向最近的敌人。"]}, "fr": {"thorns": ["Épines de citrouille", "Les ennemis qui te frappent de près subissent des dégâts en retour."], "frost": ["Morsure de givre", "Tes coups ralentissent la cible un moment."], "sweet": ["Bec sucré", "Chaque bonbon vaut 15 % de plus."], "meteor": ["Météore sucré", "Tous les 4 coups, un météore s’écrase et projette les ennemis proches."], "undying": ["Âme immortelle", "Mis K.O., tu te relèves sur place avec 40 % de PV (une fois par minute)."], "storm": ["Tempête maudite", "La foudre frappe l’ennemi le plus proche toutes les quelques secondes."]}, "de": {"thorns": ["Kürbisdornen", "Gegner, die dich aus der Nähe treffen, nehmen Schaden zurück."], "frost": ["Frostbiss", "Treffer verlangsamen das Ziel kurz."], "sweet": ["Naschkatze", "Jede Süßigkeit zählt 15 % mehr."], "meteor": ["Bonbon-Meteor", "Jeder 4. Treffer ruft einen Meteor, der Gegner in der Nähe wegschleudert."], "undying": ["Unsterbliche Seele", "Wirst du ausgeknockt, stehst du mit 40 % LP wieder auf (einmal pro Minute)."], "storm": ["Fluchsturm", "Alle paar Sekunden schlägt ein Blitz in den nächsten Gegner."]}, "es": {"thorns": ["Espinas de calabaza", "Los enemigos que te golpean de cerca reciben daño de vuelta."], "frost": ["Mordisco helado", "Tus golpes ralentizan al objetivo un momento."], "sweet": ["Goloso", "Cada caramelo vale un 15 % más."], "meteor": ["Meteoro dulce", "Cada 4 golpes cae un meteoro que lanza por los aires a los enemigos cercanos."], "undying": ["Alma inmortal", "Si te noquean, te levantas ahí mismo con 40 % de vida (una vez por minuto)."], "storm": ["Tormenta maldita", "Un rayo cae sobre el enemigo más cercano cada pocos segundos."]}, "it": {"thorns": ["Spine di zucca", "I nemici che ti colpiscono da vicino subiscono danni di ritorno."], "frost": ["Morso di gelo", "I colpi rallentano il bersaglio per un attimo."], "sweet": ["Goloso", "Ogni caramella vale il 15% in più."], "meteor": ["Meteora dolce", "Ogni 4 colpi cade una meteora che lancia via i nemici vicini."], "undying": ["Anima immortale", "Se vai KO, ti rialzi sul posto con il 40% dei PV (una volta al minuto)."], "storm": ["Tempesta maledetta", "Un fulmine colpisce il nemico più vicino ogni pochi secondi."]}, "pt": {"thorns": ["Espinhos de abóbora", "Inimigos que te acertam de perto levam dano de volta."], "frost": ["Mordida gélida", "Seus golpes deixam o alvo lento por um instante."], "sweet": ["Formiguinha", "Cada doce vale 15% a mais."], "meteor": ["Meteoro doce", "A cada 4 acertos cai um meteoro que arremessa os inimigos próximos."], "undying": ["Alma imortal", "Ao ser nocauteado, levanta no lugar com 40% da vida (uma vez por minuto)."], "storm": ["Tempestade maldita", "Um raio atinge o inimigo mais próximo a cada poucos segundos."]}, "tr": {"thorns": ["Balkabağı Dikeni", "Sana yakından vuran düşmanlar hasarı geri alır."], "frost": ["Ayaz Isırığı", "Vuruşların hedefi kısa süre yavaşlatır."], "sweet": ["Tatlı Düşkünü", "Yediğin her şeker %15 daha değerli."], "meteor": ["Şeker Meteoru", "Her 4. vuruşta düşen bir meteor yakındaki düşmanları savurur."], "undying": ["Ölümsüz Ruh", "Nakavt olunca yerinde %40 canla kalkarsın (dakikada bir)."], "storm": ["Lanet Fırtınası", "Birkaç saniyede bir en yakın düşmana yıldırım düşer."]}, "ja": {"thorns": ["カボチャのトゲ", "近くで攻撃してきた敵にダメージを返す。"], "frost": ["フロストバイト", "当てた敵を少しの間おそくする。"], "sweet": ["あまいもの好き", "食べるキャンディが15%お得に。"], "meteor": ["キャンディ隕石", "4回当てるごとに隕石が落ちて、まわりの敵をふっとばす。"], "undying": ["不死のたましい", "倒されてもその場でHP40%で復活（1分に1回）。"], "storm": ["呪いの雷雨", "数秒ごとに一番近い敵へ雷が落ちる。"]}, "ko": {"thorns": ["호박 가시", "가까이서 날 때린 적이 피해를 돌려받아요."], "frost": ["서리 물기", "맞힌 적을 잠깐 느리게 해요."], "sweet": ["단것 사랑", "먹는 사탕이 15% 더 많이 쳐줘요."], "meteor": ["사탕 운석", "4번 맞힐 때마다 운석이 떨어져 주변 적을 날려요."], "undying": ["불멸의 영혼", "쓰러지면 그 자리에서 체력 40%로 부활 (1분에 한 번)."], "storm": ["저주 폭풍", "몇 초마다 가장 가까운 적에게 번개가 떨어져요."]}, "ru": {"thorns": ["Тыквенные шипы", "Враги, бьющие тебя вблизи, получают урон в ответ."], "frost": ["Ледяной укус", "Удары ненадолго замедляют цель."], "sweet": ["Сладкоежка", "Каждая конфета стоит на 15% больше."], "meteor": ["Конфетный метеор", "Каждый 4-й удар обрушивает метеор, подбрасывающий врагов рядом."], "undying": ["Бессмертная душа", "После нокаута встаёшь на месте с 40% здоровья (раз в минуту)."], "storm": ["Проклятая буря", "Каждые несколько секунд молния бьёт ближайшего врага."]}}; for (const c in tr) for (const id in tr[c]) SKILLS[id][c] = tr[c][id]; }
 const SK_IDS = Object.keys(SKILLS);
 const skName = id => (SKILLS[id][LANG] || SKILLS[id].en)[0];
 const skDesc = id => (SKILLS[id][LANG] || SKILLS[id].en)[1];
@@ -692,6 +807,20 @@ const ICON = {
   atk: SK('M5 19 17 7', 3.2) + SK('M14 4l6 6', 3) + SK('M4 15l5 5', 2.4),
   gear: SK('M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z', 2) + SK('M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1', 2.2),
 };
+
+Object.assign(ICON, { // v27 icons
+  thorns: F('M12 4c4.6 0 8 3.1 8 7.6S16.6 20 12 20s-8-3.9-8-8.4S7.4 4 12 4z') + SK('M12 4V1.5M3 9 .8 7.6M21 9l2.2-1.4M3.6 16.5 1.2 18M20.4 16.5l2.4 1.5', 2) + DK('M12 4v16M8 5c-1.4 4-1.4 10 0 14.4M16 5c1.4 4 1.4 10 0 14.4', 1.3),
+  frost: SK('M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7', 2.2) + SK('M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5M3.8 10.4l3.2.9-.8 3.3M20.2 13.6l-3.2-.9.8-3.3', 1.6),
+  sweet: F('M12 7.5c3.4 0 6.2 2 6.2 4.5s-2.8 4.5-6.2 4.5-6.2-2-6.2-4.5 2.8-4.5 6.2-4.5z') + F('M5.8 12 1.5 8.2v7.6zM18.2 12l4.3-3.8v7.6z') + DK('M9.5 8.3 12 15.7M13 8l2.3 7.4', 1.2),
+  meteor: '<circle cx="15" cy="15" r="6" fill="currentColor"/>' + SK('M3 3l7.5 7.5M7.5 2.5 12 7M2.5 7.5 7 12', 2.2) + DK('M13 13.5h.01M16.5 16h.01', 2.4),
+  undying: F('M12 21s-7.5-4.6-7.5-10.4A4.2 4.2 0 0 1 12 8.1a4.2 4.2 0 0 1 7.5 2.5C19.5 16.4 12 21 12 21z') + SK('M12 1.5v4M9.8 3.5h4.4', 2) + DK('M9 12.5l2.2 2.2L15.5 10', 1.8),
+  storm: F('M6.5 11.5a4.5 4.5 0 0 1 4-6 5.5 5.5 0 0 1 10 2.6 3.4 3.4 0 0 1-.9 6.4H7a3.5 3.5 0 0 1-.5-3z') + F('M12.5 13.5 9 19h3l-1.5 4L16 16.5h-3l1.5-3z'),
+  magnet: SK('M6 3v8a6 6 0 0 0 12 0V3', 4.2) + F('M3.9 2h4.2v3.5H3.9zM15.9 2h4.2v3.5h-4.2z'),
+  web: SK('M12 2v20M2 12h20M4.9 4.9l14.2 14.2M19.1 4.9 4.9 19.1', 1.3) + SK('M12 6.5 15.9 8.1 17.5 12 15.9 15.9 12 17.5 8.1 15.9 6.5 12 8.1 8.1Z M12 10 13.4 10.6 14 12 13.4 13.4 12 14 10.6 13.4 10 12 10.6 10.6Z', 1.4),
+  bell: F('M12 3a6 6 0 0 1 6 6v5l2 3H4l2-3V9a6 6 0 0 1 6-6z') + '<circle cx="12" cy="19.5" r="2.2" fill="currentColor"/>' + SK('M2.5 6.5a8 8 0 0 1 2.5-3.2M21.5 6.5A8 8 0 0 0 19 3.3', 1.6),
+});
+const SHARD_SVG = '<svg class="shd" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5 20 8l-3 13H7L4 8z" fill="#7fd8ff" stroke="#1b0f30" stroke-width="2" stroke-linejoin="round"/><path d="M12 1.5 9.5 8 12 21 14.5 8z" fill="#c8f0ff"/><path d="M4 8h16" stroke="#1b0f30" stroke-width="1.5"/></svg>';
+const STAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2 14.8 8l6.3.8-4.6 4.4 1.2 6.3L12 16.4l-5.7 3.1 1.2-6.3-4.6-4.4L9.2 8z" fill="currentColor" stroke="#1b0f30" stroke-width="1.8" stroke-linejoin="round"/></svg>';
 const svgIcon = id => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICON[id] || ''}</svg>`;
 const CROWN_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18 4.5 7l5 4.5L12 5l2.5 6.5 5-4.5L21 18z" fill="#ffc23d" stroke="#5a2a00" stroke-width="1.2"/></svg>';
 const isAct = id => !!SKILLS[id].fam;
@@ -738,7 +867,194 @@ const ITEMS = {
   bomb:  { cap: 2, en: 'Pumpkin Bomb', zh: '南瓜炸弹' },
 };
 { const tr = {"fr":{"apple":"Pomme d’amour","soda":"Soda pétillant","broom":"Balai volant","bomb":"Bombe citrouille"},"de":{"apple":"Liebesapfel","soda":"Sprudel-Limo","broom":"Fliegender Besen","bomb":"Kürbisbombe"},"es":{"apple":"Manzana de caramelo","soda":"Refresco burbujeante","broom":"Escoba voladora","bomb":"Bomba calabaza"},"it":{"apple":"Mela caramellata","soda":"Bibita frizzante","broom":"Scopa volante","bomb":"Bomba zucca"},"pt":{"apple":"Maçã do amor","soda":"Refrigerante borbulhante","broom":"Vassoura voadora","bomb":"Bomba de abóbora"},"tr":{"apple":"Şekerli Elma","soda":"Köpüklü Gazoz","broom":"Uçan Süpürge","bomb":"Balkabağı Bombası"},"ja":{"apple":"りんごあめ","soda":"シュワシュワソーダ","broom":"空飛ぶほうき","bomb":"カボチャ爆弾"},"ko":{"apple":"사탕 사과","soda":"톡톡 탄산","broom":"하늘 빗자루","bomb":"호박 폭탄"},"ru":{"apple":"Яблоко в карамели","soda":"Шипучка","broom":"Летучая метла","bomb":"Тыквенная бомба"}}; for (const c in tr) for (const id in tr[c]) ITEMS[id][c] = tr[c][id]; }
+
+// v27 items for the pedestals, unlocked on the rank ladder
+Object.assign(ITEMS, { magnet: { cap: 2, en: 'Candy Magnet', zh: '糖果磁铁' }, web: { cap: 2, en: 'Sticky Web', zh: '黏黏蛛网' }, bell: { cap: 2, en: 'Spooky Bell', zh: '吓人铃铛' } });
+{ const tr = {"fr":["Aimant à bonbons","Toile collante","Cloche hantée"],"de":["Bonbon-Magnet","Klebenetz","Gruselglocke"],"es":["Imán de caramelos","Telaraña pegajosa","Campana espeluznante"],"it":["Calamita di caramelle","Ragnatela appiccicosa","Campana spettrale"],"pt":["Ímã de doces","Teia grudenta","Sino assustador"],"tr":["Şeker Mıknatısı","Yapışkan Ağ","Ürkütücü Çan"],"ja":["キャンディマグネット","ねばねばクモの巣","おばけベル"],"ko":["사탕 자석","끈적 거미줄","으스스 종"],"ru":["Конфетный магнит","Липкая паутина","Жуткий колокол"]}; for (const c in tr) ['magnet', 'web', 'bell'].forEach((id, i) => { ITEMS[id][c] = tr[c][i]; }); }
+const NEW_ITEMS = ['magnet', 'web', 'bell'];
+const ITEM_DESC = {"en":["Pulls in all candy around you.","Throw a web that holds enemies in place.","Ring it to knock back enemies around you."],"zh":["把身边的糖果全吸过来。","扔出蛛网，把敌人粘在原地。","摇铃把身边的敌人震开。"],"fr":["Attire tous les bonbons autour de toi.","Lance une toile qui immobilise les ennemis.","Fais-la sonner pour repousser les ennemis autour."],"de":["Zieht alles Süße um dich heran.","Wirf ein Netz, das Gegner festhält.","Läute sie, um Gegner um dich wegzustoßen."],"es":["Atrae todos los caramelos cercanos.","Lanza una telaraña que inmoviliza a los enemigos.","Hazla sonar para empujar a los enemigos cercanos."],"it":["Attira tutte le caramelle intorno a te.","Lancia una ragnatela che blocca i nemici.","Suonala per respingere i nemici intorno."],"pt":["Puxa todos os doces ao seu redor.","Jogue uma teia que prende os inimigos.","Toque para empurrar os inimigos ao redor."],"tr":["Etrafındaki tüm şekerleri çeker.","Düşmanları yerinde tutan bir ağ fırlat.","Çal ve etrafındaki düşmanları it."],"ja":["まわりのキャンディを全部すい寄せる。","敵をその場にくっつけるクモの巣を投げる。","鳴らしてまわりの敵をはじき飛ばす。"],"ko":["주변 사탕을 전부 끌어와요.","적을 그 자리에 붙잡는 거미줄을 던져요.","울려서 주변 적을 밀쳐내요."],"ru":["Притягивает все конфеты вокруг.","Брось паутину, которая держит врагов на месте.","Позвони, чтобы отбросить врагов вокруг."]};
+const itemDesc = t => (ITEM_DESC[LANG] || ITEM_DESC.en)[NEW_ITEMS.indexOf(t)] || '';
 const itemName = t => ITEMS[t][LANG] || ITEMS[t].en;
+
+// ======================= v27: rank ladder (Honor of Kings style), shards, skins =======================
+// Stars move you up divisions (III → II → I) and tiers. Every new division pays shards; every new tier pays a skin
+// (and the first three also a new pedestal item). Shards unlock new powers. Saved with the CrazyGames Data module
+// (synced to the player's account), localStorage everywhere else.
+const TIERS = [
+  { id: 'bronze', div: 3, st: 2, c: ['#e7a06a', '#8a4b22'] },
+  { id: 'silver', div: 3, st: 3, c: ['#eef2fa', '#7a879c'] },
+  { id: 'gold', div: 4, st: 3, c: ['#ffe066', '#c08410'] },
+  { id: 'plat', div: 4, st: 4, c: ['#8ff5df', '#1f8a86'] },
+  { id: 'diamond', div: 5, st: 4, c: ['#a6d6ff', '#3a5fd0'] },
+  { id: 'star', div: 5, st: 5, c: ['#e2b8ff', '#7a3fd0'] },
+  { id: 'king', div: 0, st: 0, c: ['#ffe066', '#e0402a'] },
+];
+const TIER_REWARD = { silver: { skin: 'candy', item: 'magnet', sh: 30 }, gold: { skin: 'frost', item: 'web', sh: 40 }, plat: { skin: 'toxic', item: 'bell', sh: 50 }, diamond: { skin: 'inferno', sh: 60 }, star: { skin: 'shadow', sh: 80 }, king: { skin: 'golden', sh: 120 } };
+const DIV_SHARDS = 15, BRAVE_FULL = 100;
+function rankOf(pts) { // pts = stars collected on the whole ladder
+  let p = Math.max(0, pts | 0);
+  for (let i = 0; i < TIERS.length - 1; i++) { const Ti = TIERS[i], n = Ti.div * Ti.st; if (p < n) { const d = Math.floor(p / Ti.st); return { ti: i, div: Ti.div - d, star: p - d * Ti.st, of: Ti.st }; } p -= n; }
+  return { ti: TIERS.length - 1, div: 0, star: p, of: 0 };
+}
+const rankUp = (a, b) => b.ti > a.ti || (b.ti === a.ti && b.div < a.div);
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+const tierName = ti => T('rk_tiers')[ti];
+const rankName = r => tierName(r.ti) + (r.div ? ' ' + ROMAN[r.div] : '');
+// skins: every part's colour is pulled toward one hue (whites, greys, black and the gang colour stay)
+const SKINS = {
+  classic: { h: -1, sw: 'conic-gradient(#ff8b2c, #a46bff, #3fd0c9, #ff8b2c)' },
+  candy: { h: 0.93, pull: 0.7, s: 1, l: 0.1, sw: '#ff8fd0' },
+  frost: { h: 0.55, pull: 0.75, s: 0.85, l: 0.08, sw: '#8fd8ff' },
+  toxic: { h: 0.3, pull: 0.75, s: 1.1, l: 0, sw: '#7ee05a' },
+  inferno: { h: 0.02, pull: 0.7, s: 1.15, l: -0.02, sw: '#ff5a2a' },
+  shadow: { h: 0.75, pull: 0.6, s: 0.55, l: -0.18, sw: '#4a3a6a' },
+  golden: { h: 0.12, pull: 0.85, s: 0.9, l: 0.06, sw: '#ffd23f', legend: true },
+};
+const SKIN_IDS = Object.keys(SKINS);
+const skinName = s => T('skins')[SKIN_IDS.indexOf(s)] || s;
+const skinTier = s => TIERS.findIndex(t => (TIER_REWARD[t.id] || {}).skin === s);
+const itemTier = it => TIERS.findIndex(t => (TIER_REWARD[t.id] || {}).item === it);
+let CUR_SKIN = 'classic';
+function skinCol(c) {
+  const S = SKINS[CUR_SKIN]; if (!S || S.h < 0 || typeof c !== 'number' || TEAM_COL.includes(c)) return c;
+  const col = new THREE.Color(c), hsl = {}; col.getHSL(hsl);
+  if (hsl.s < 0.15) return c;
+  const dh = ((((S.h - hsl.h) % 1) + 1.5) % 1) - 0.5;
+  col.setHSL((hsl.h + dh * S.pull + 1) % 1, Math.min(1, hsl.s * S.s), Math.max(0.05, Math.min(0.9, hsl.l + S.l)));
+  return col.getHex();
+}
+const botSkin = () => Math.random() < 0.3 ? ['candy', 'frost', 'toxic', 'inferno', 'shadow'][(Math.random() * 5) | 0] : 'classic';
+let BADGE_N = 0;
+function rankBadge(ti, px = 40) {
+  const c = TIERS[ti].c, id = 'rkg' + (++BADGE_N);
+  const wings = ti >= 4 ? `<path d="M9 16 L1 11 L3 23 L9 29Z M39 16 L47 11 L45 23 L39 29Z" fill="${c[0]}" stroke="#1b0f30" stroke-width="2" stroke-linejoin="round"/>` : '';
+  const crown = ti === 6 ? '<path d="M13 10 L15.5 1.5 L20 6.5 L24 0.5 L28 6.5 L32.5 1.5 L35 10Z" fill="#ffe066" stroke="#1b0f30" stroke-width="2" stroke-linejoin="round"/>' : '';
+  const pips = ti >= 2 && ti < 6 ? Array.from({ length: Math.min(4, ti - 1) }, (_, i) => `<circle cx="${24 + (i - (Math.min(4, ti - 1) - 1) / 2) * 5}" cy="39" r="1.8" fill="#fff"/>`).join('') : '';
+  return `<svg class="rkb" viewBox="0 0 48 48" width="${px}" height="${px}" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c[0]}"/><stop offset="1" stop-color="${c[1]}"/></linearGradient></defs>${wings}<path d="M24 7 L40 12.5 L38.5 30 Q35 40.5 24 46 Q13 40.5 9.5 30 L8 12.5Z" fill="url(#${id})" stroke="#1b0f30" stroke-width="2.6" stroke-linejoin="round"/><path d="M24 14 L32 24 L24 34 L16 24Z" fill="#fff" fill-opacity=".9" stroke="#1b0f30" stroke-width="2.2" stroke-linejoin="round"/><path d="M24 14 L28 24 L24 34Z" fill="${c[1]}" fill-opacity=".35"/>${pips}${crown}</svg>`;
+}
+function starsHtml(r, newFrom = 99) {
+  if (!r.of) return `<span class="rkstars"><i class="on">${STAR_SVG}</i><b>×${r.star}</b></span>`;
+  let h = '';
+  for (let i = 0; i < r.of; i++) { const nw = i < r.star && i >= newFrom; h += `<i class="${i < r.star ? 'on' : ''}${nw ? ' new' : ''}"${nw ? ` style="animation-delay:${(0.35 + (i - newFrom) * 0.3).toFixed(2)}s"` : ''}>${STAR_SVG}</i>`; }
+  return `<span class="rkstars">${h}</span>`;
+}
+// progress
+const PROG_KEY = 'tob-prog';
+const PROG0 = () => ({ v: 1, pts: 0, best: 0, brave: 0, sh: 0, games: 0, wins: 0, unl: [], skins: ['classic'], skin: 'classic', items: [] });
+function progParse(raw) { try { const o = JSON.parse(raw); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
+function progClean(o) {
+  const P = Object.assign(PROG0(), o || {});
+  ['pts', 'best', 'brave', 'sh', 'games', 'wins'].forEach(k => { P[k] = Math.max(0, Math.min(1e6, Math.floor(+P[k] || 0))); });
+  P.unl = [...new Set((Array.isArray(P.unl) ? P.unl : []).filter(id => SKILLS[id] && SKILLS[id].lock))];
+  P.skins = [...new Set(['classic'].concat((Array.isArray(P.skins) ? P.skins : []).filter(s => SKINS[s])))];
+  P.items = [...new Set((Array.isArray(P.items) ? P.items : []).filter(t => NEW_ITEMS.includes(t)))];
+  if (!P.skins.includes(P.skin)) P.skin = 'classic';
+  P.best = Math.max(P.best, P.pts); P.brave = Math.min(P.brave, BRAVE_FULL - 1);
+  return P;
+}
+let PROG = progClean(progParse((() => { try { return localStorage.getItem(PROG_KEY); } catch (e) { return null; } })()));
+function progSave() { const s = JSON.stringify(PROG); try { localStorage.setItem(PROG_KEY, s); } catch (e) {} CG.dataSet(PROG_KEY, s); }
+const unlockedSet = () => new Set(PROG.unl);
+// end of a match: stars, brave points, shards, ladder rewards
+function settleMatch() {
+  if (!player) return null;
+  const winTeam = king ? king.team : 0, won = player.team === winTeam;
+  const place = [...units].sort((a, b) => b.score - a.score).indexOf(player) + 1;
+  const before = rankOf(PROG.pts), lines = [];
+  let d = 0;
+  if (won) { d++; lines.push(['up', T('rk_win')]); }
+  if (place === 1 || king === player) { d++; lines.push(['up', king === player ? T('boss') : T('rk_mvp')]); }
+  if (!won && place > 3) { if (before.ti >= 3) { d--; lines.push(['down', T('rk_lose')]); } else lines.push(['safe', T('rk_safe')]); }
+  const brave = Math.max(5, Math.min(40, 6 + player.kills * 3 + player.assists + Math.min(15, Math.floor(player.score / 25)) + (won ? 8 : 0)));
+  PROG.brave += brave;
+  if (PROG.brave >= BRAVE_FULL) { PROG.brave -= BRAVE_FULL; d++; lines.push(['up', T('rk_starBrave')]); }
+  let sh = 3 + (won ? 3 : 0) + Math.min(4, player.kills) + (king === player ? 3 : 0);
+  const shMatch = sh;
+  PROG.pts = Math.max(0, PROG.pts + d); PROG.games++; if (won) PROG.wins++;
+  const rewards = [];
+  if (PROG.pts > PROG.best) { // first time on these steps: shards per new division, a prize per new tier
+    for (let p = PROG.best + 1; p <= PROG.pts; p++) {
+      const a = rankOf(p - 1), b = rankOf(p);
+      if (a.ti === b.ti && a.div === b.div) continue;
+      sh += DIV_SHARDS;
+      const R = b.ti !== a.ti ? TIER_REWARD[TIERS[b.ti].id] : null;
+      if (R) { sh += R.sh; if (R.skin && !PROG.skins.includes(R.skin)) { PROG.skins.push(R.skin); rewards.push(['skin', R.skin]); } if (R.item && !PROG.items.includes(R.item)) { PROG.items.push(R.item); rewards.push(['item', R.item]); } }
+    }
+    PROG.best = PROG.pts;
+  }
+  PROG.sh += sh;
+  progSave();
+  return { before, after: rankOf(PROG.pts), d, lines, brave, sh, shMatch, rewards };
+}
+function renderRankResult(R) {
+  const el = document.getElementById('endRank'); if (!el) return;
+  if (!R) { el.innerHTML = ''; return; }
+  const a = R.after, b = R.before, up = rankUp(b, a);
+  const newFrom = up ? 0 : (a.ti === b.ti && a.div === b.div && a.star > b.star ? b.star : 99);
+  const sign = { up: '+1', down: '−1', safe: '✓' };
+  el.innerHTML = `<div class="rkres${up ? ' up' : ''}">${up ? `<div class="rkup">${esc(T('rk_up'))}</div>` : ''}`
+    + `<div class="rkline">${rankBadge(a.ti, 64)}<div><b class="rkn">${esc(rankName(a))}</b>${starsHtml(a, newFrom)}</div></div>`
+    + (R.lines.length ? `<div class="rkwhy">${R.lines.map(([k, t]) => `<span class="${k}">${sign[k]}${k === 'safe' ? '' : '★'} ${esc(t)}</span>`).join('')}</div>` : '')
+    + `<div class="rkbars"><div class="rkbrave"><span>${esc(T('rk_brave'))} +${R.brave}</span><div class="bar"><i style="width:${PROG.brave}%"></i></div><small>${PROG.brave}/${BRAVE_FULL}</small></div><div class="rksh">${SHARD_SVG}+${R.sh} <small>(${PROG.sh})</small></div></div>`
+    + (R.rewards.length ? `<div class="rkrews">${R.rewards.map(([k, v]) => k === 'skin'
+        ? `<div class="rkrew"><img alt="" src="${heroPortrait(startHero, startTeam, v)}"><span><small>${esc(T('rk_newSkin'))}</small><b>${esc(skinName(v))}</b></span></div>`
+        : `<div class="rkrew"><span class="ic">${svgIcon(v)}</span><span><small>${esc(T('rk_newItem'))}</small><b>${esc(itemName(v))}</b></span></div>`).join('')}</div>` : '')
+    + `<button type="button" class="ghost rkopen">${esc(T('rk_btn'))} ›</button></div>`;
+  el.querySelector('.rkopen').addEventListener('click', () => openRank(R.rewards.some(r => r[0] === 'skin') ? 'skins' : 'skills'));
+}
+let RK_TAB = 'road';
+function openRank(tab) { if (tab) RK_TAB = tab; document.getElementById('rankScreen').hidden = false; renderRank(); }
+function renderRank() {
+  const scr = document.getElementById('rankScreen'); if (scr.hidden) return;
+  const r = rankOf(PROG.pts);
+  document.getElementById('rkHead').innerHTML = `${rankBadge(r.ti, 58)}<div class="rkhi"><b class="rkn">${esc(rankName(r))}</b>${starsHtml(r)}<div class="rkbrave"><span>${esc(T('rk_brave'))}</span><div class="bar"><i style="width:${PROG.brave}%"></i></div><small>${PROG.brave}/${BRAVE_FULL}</small></div></div><span class="rksh">${SHARD_SVG}${PROG.sh}</span>`;
+  const tabs = document.getElementById('rkTabs'); tabs.innerHTML = '';
+  [['road', 'rk_road'], ['skills', 'rk_skills'], ['skins', 'rk_skins']].forEach(([id, k]) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'rktab'; b.textContent = T(k); b.setAttribute('aria-pressed', String(id === RK_TAB));
+    b.addEventListener('click', () => { RK_TAB = id; renderRank(); }); tabs.appendChild(b);
+  });
+  const body = document.getElementById('rkBody'); let h = '';
+  if (RK_TAB === 'road') {
+    h += `<p class="rkhint">${esc(T('rk_rules'))}</p>`;
+    TIERS.forEach((Ti, i) => {
+      const R = TIER_REWARD[Ti.id], st = i < r.ti ? 'done' : i === r.ti ? 'cur' : 'lock';
+      const steps = Ti.div ? `${ROMAN[Ti.div]} → I · ${Ti.st}★` : '★ ∞';
+      let rw = `<span>${SHARD_SVG}${DIV_SHARDS}/${esc(T('rk_div'))}</span>`;
+      if (R) rw += (R.skin ? `<span><i class="sw" style="background:${SKINS[R.skin].sw}"></i>${esc(skinName(R.skin))}</span>` : '') + (R.item ? `<span>${svgIcon(R.item)}${esc(itemName(R.item))}</span>` : '') + `<span>${SHARD_SVG}${R.sh}</span>`;
+      h += `<div class="rkrow ${st}">${rankBadge(i, 40)}<div><b>${esc(tierName(i))}</b> ${st === 'cur' ? `<em>${esc(T('rk_now'))}</em>` : ''}<small>${steps}</small></div><div class="rkrw">${rw}</div></div>`;
+    });
+    h += `<h2 class="stitle" style="font-size:18px;margin-top:6px">${esc(T('rk_items'))}</h2><div class="rkitems">` + NEW_ITEMS.map(it => {
+      const own = PROG.items.includes(it);
+      return `<div class="rkit${own ? '' : ' lock'}"><span class="ic">${svgIcon(it)}</span><div><b>${esc(itemName(it))}</b><small>${esc(own ? itemDesc(it) : T('rk_reach').replace('{r}', tierName(itemTier(it))))}</small></div></div>`;
+    }).join('') + '</div>';
+  } else if (RK_TAB === 'skills') {
+    h += `<p class="rkhint">${esc(T('rk_shardHint'))}</p>`;
+    SK_IDS.filter(id => SKILLS[id].lock).sort((a, b) => SKILLS[a].lock - SKILLS[b].lock).forEach(id => {
+      const S = SKILLS[id], own = PROG.unl.includes(id), can = PROG.sh >= S.lock;
+      h += `<div class="rkS${S.lock >= 100 ? ' strong' : ''}${own ? ' own' : ''}"><span class="slot" style="--c:${TYPE_COL[S.type]}">${svgIcon(id)}</span><div><b>${esc(skName(id))}</b>${S.lock >= 100 ? `<em>${esc(T('rk_strong'))}</em>` : ''}<small>${esc(T('t_' + S.type))} · ${esc(skDesc(id))}</small>`
+        + (own ? `<small style="color:#7cf07a">${esc(T('rk_owned'))}</small>` : `<div class="prog"><i style="width:${Math.min(100, PROG.sh / S.lock * 100).toFixed(0)}%"></i></div>`) + '</div>'
+        + `<div class="rkcost">${own ? '<span class="ok">✓</span>' : `<button type="button" class="go buy" data-id="${id}"${can ? '' : ' disabled'}>${SHARD_SVG}${S.lock}</button>${can ? '' : `<small>${esc(T('rk_need').replace('{n}', S.lock - PROG.sh))}</small>`}`}</div></div>`;
+    });
+  } else {
+    h += '<div class="rkskins">' + SKIN_IDS.map(s => {
+      const own = PROG.skins.includes(s), on = PROG.skin === s;
+      return `<button type="button" class="rkskin${on ? ' on' : ''}" data-s="${s}"${own ? '' : ' disabled'}><img alt="" src="${heroPortrait(startHero, startTeam, s)}"><b>${esc(skinName(s))}</b><small>${esc(on ? T('rk_wearing') : own ? T('rk_wear') : T('rk_reach').replace('{r}', tierName(skinTier(s))))}</small></button>`;
+    }).join('') + '</div>';
+  }
+  body.innerHTML = h;
+  body.querySelectorAll('.buy').forEach(b => b.addEventListener('click', () => {
+    const id = b.dataset.id, S = SKILLS[id]; if (!S || PROG.unl.includes(id) || PROG.sh < S.lock) return;
+    PROG.sh -= S.lock; PROG.unl.push(id); progSave(); SFX.play('level'); renderRank(); renderStart();
+  }));
+  body.querySelectorAll('.rkskin').forEach(b => b.addEventListener('click', () => { const s = b.dataset.s; if (!PROG.skins.includes(s)) return; PROG.skin = s; progSave(); renderRank(); renderStart(); }));
+  document.getElementById('rkBack').textContent = T('rk_back');
+}
+document.getElementById('rkBack').addEventListener('click', () => { document.getElementById('rankScreen').hidden = true; });
+// rank strings (11 languages)
+{ const L = ['en', 'zh', 'fr', 'de', 'es', 'it', 'pt', 'tr', 'ja', 'ko', 'ru'];
+  const V = {"rk_tiers": [["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Starlight", "Monster King"], ["青铜", "白银", "黄金", "铂金", "钻石", "星耀", "怪物王者"], ["Bronze", "Argent", "Or", "Platine", "Diamant", "Étoile", "Roi des monstres"], ["Bronze", "Silber", "Gold", "Platin", "Diamant", "Sternenglanz", "Monsterkönig"], ["Bronce", "Plata", "Oro", "Platino", "Diamante", "Estelar", "Rey monstruo"], ["Bronzo", "Argento", "Oro", "Platino", "Diamante", "Stellare", "Re dei mostri"], ["Bronze", "Prata", "Ouro", "Platina", "Diamante", "Estelar", "Rei monstro"], ["Bronz", "Gümüş", "Altın", "Platin", "Elmas", "Yıldız", "Canavar Kralı"], ["ブロンズ", "シルバー", "ゴールド", "プラチナ", "ダイヤ", "スター", "モンスターキング"], ["브론즈", "실버", "골드", "플래티넘", "다이아", "스타", "몬스터 킹"], ["Бронза", "Серебро", "Золото", "Платина", "Алмаз", "Звёздный", "Король монстров"]], "skins": [["Classic", "Candy Pop", "Frost", "Toxic", "Inferno", "Shadow", "Golden King"], ["经典", "糖果粉", "冰霜", "剧毒", "炼狱", "暗影", "黄金王者"], ["Classique", "Bonbon", "Givre", "Toxique", "Inferno", "Ombre", "Roi doré"], ["Klassisch", "Bonbon", "Frost", "Giftig", "Inferno", "Schatten", "Goldkönig"], ["Clásico", "Caramelo", "Escarcha", "Tóxico", "Infierno", "Sombra", "Rey dorado"], ["Classico", "Caramella", "Gelo", "Tossico", "Inferno", "Ombra", "Re d’oro"], ["Clássico", "Docinho", "Gelo", "Tóxico", "Inferno", "Sombra", "Rei dourado"], ["Klasik", "Şeker", "Ayaz", "Zehir", "Cehennem", "Gölge", "Altın Kral"], ["クラシック", "キャンディ", "フロスト", "ポイズン", "インフェルノ", "シャドウ", "黄金キング"], ["클래식", "캔디", "프로스트", "독", "인페르노", "섀도", "황금 킹"], ["Классика", "Конфетка", "Иней", "Яд", "Инферно", "Тень", "Золотой король"]], "rk_btn": ["Shards & skins", "碎片与皮肤", "Éclats et skins", "Splitter & Skins", "Fragmentos y aspectos", "Frammenti e skin", "Fragmentos e skins", "Parçalar ve kostümler", "かけらとスキン", "조각과 스킨", "Осколки и скины"], "rk_road": ["Rank road", "段位之路", "Route des rangs", "Rangweg", "Camino de rangos", "Percorso ranghi", "Caminho de ranks", "Rütbe yolu", "ランクロード", "랭크 로드", "Путь рангов"], "rk_skills": ["Power shards", "技能碎片", "Éclats de pouvoir", "Kraftsplitter", "Fragmentos de poder", "Frammenti di potere", "Fragmentos de poder", "Güç parçaları", "パワーのかけら", "능력 조각", "Осколки сил"], "rk_skins": ["Skins", "皮肤", "Skins", "Skins", "Aspectos", "Skin", "Skins", "Kostümler", "スキン", "스킨", "Скины"], "rk_div": ["division", "小段", "division", "Stufe", "división", "divisione", "divisão", "kademe", "段階", "단계", "ступень"], "rk_owned": ["Unlocked: now shows up in your level-up cards", "已兑换：升级选卡里会出现", "Débloqué : apparaît maintenant au niveau supérieur", "Freigeschaltet: kommt jetzt beim Level-up", "Desbloqueado: ya sale al subir de nivel", "Sbloccato: ora esce al livello su", "Desbloqueado: já aparece ao subir de nível", "Açıldı: artık seviye kartlarında çıkar", "解放済み：レベルアップで出るよ", "해금됨: 레벨 업 카드에 나와요", "Открыто: теперь выпадает на новом уровне"], "rk_need": ["{n} more", "还差 {n}", "encore {n}", "noch {n}", "faltan {n}", "mancano {n}", "faltam {n}", "{n} eksik", "あと {n}", "{n}개 더", "ещё {n}"], "rk_wear": ["Wear", "穿上", "Porter", "Anziehen", "Usar", "Indossa", "Usar", "Giy", "着る", "착용", "Надеть"], "rk_wearing": ["Wearing", "穿着中", "Porté", "Angezogen", "En uso", "Indossata", "Em uso", "Giyili", "着用中", "착용 중", "Надето"], "rk_reach": ["Reach {r}", "达到{r}解锁", "Atteins {r}", "Erreiche {r}", "Llega a {r}", "Raggiungi {r}", "Chegue a {r}", "{r} rütbesine ulaş", "{r}で解放", "{r} 달성 시", "Достигни: {r}"], "rk_back": ["Back", "返回", "Retour", "Zurück", "Atrás", "Indietro", "Voltar", "Geri", "もどる", "뒤로", "Назад"], "rk_strong": ["STRONG", "强力", "PUISSANT", "STARK", "FUERTE", "FORTE", "FORTE", "GÜÇLÜ", "強力", "강력", "МОЩНАЯ"], "rk_brave": ["Brave points", "勇者积分", "Bravoure", "Mutpunkte", "Puntos de valor", "Punti coraggio", "Bravura", "Cesaret puanı", "勇者ポイント", "용사 포인트", "Храбрость"], "rk_win": ["Your gang won", "帮派获胜", "Ton gang a gagné", "Deine Bande gewann", "Tu banda ganó", "La tua banda ha vinto", "Sua gangue venceu", "Çeten kazandı", "チームの勝利", "우리 갱 승리", "Твоя банда победила"], "rk_mvp": ["Most candy", "糖果第一", "Plus de bonbons", "Am meisten Süßes", "Más caramelos", "Più caramelle", "Mais doces", "En çok şeker", "キャンディ1位", "사탕 1위", "Больше всех конфет"], "rk_lose": ["Lost near the bottom", "输了且排名靠后", "Défaite en bas du classement", "Verloren und weit hinten", "Derrota en la parte baja", "Sconfitta in fondo", "Derrota no fim da tabela", "Alt sıralarda yenilgi", "下位で負け", "하위권 패배", "Поражение внизу таблицы"], "rk_safe": ["No star lost below Platinum", "铂金以下不掉星", "Pas d’étoile perdue avant Platine", "Unter Platin kein Sternverlust", "Bajo Platino no pierdes estrellas", "Sotto Platino niente stelle perse", "Abaixo de Platina não perde estrela", "Platin altında yıldız kaybı yok", "プラチナ未満は星が減らない", "플래티넘 아래는 별 유지", "До Платины звёзды не теряются"], "rk_starBrave": ["Brave points full", "勇者积分满了", "Bravoure au max", "Mutpunkte voll", "Valor al máximo", "Coraggio al massimo", "Bravura cheia", "Cesaret doldu", "勇者ポイント満タン", "용사 포인트 가득", "Храбрость заполнена"], "rk_up": ["RANK UP!", "段位提升！", "RANG SUPÉRIEUR !", "AUFSTIEG!", "¡SUBES DE RANGO!", "PROMOSSO!", "SUBIU DE RANK!", "RÜTBE ATLADIN!", "ランクアップ！", "랭크 업!", "НОВЫЙ РАНГ!"], "rk_newSkin": ["New skin", "新皮肤", "Nouveau skin", "Neuer Skin", "Nuevo aspecto", "Nuova skin", "Nova skin", "Yeni kostüm", "新スキン", "새 스킨", "Новый скин"], "rk_newItem": ["New item", "新道具", "Nouvel objet", "Neuer Gegenstand", "Nuevo objeto", "Nuovo oggetto", "Novo item", "Yeni eşya", "新アイテム", "새 아이템", "Новый предмет"], "rk_rules": ["Win: +1 star · most candy or Big Boss: +1 star · every 100 brave points: +1 star. From Platinum, losing near the bottom costs a star. Every new division gives shards, every new tier a skin.", "帮派获胜 +1 星 · 糖果第一或大魔王 +1 星 · 勇者积分每满 100 再 +1 星。铂金起，输了又排名靠后会掉 1 星。每升一个小段送碎片，每升一个大段位送皮肤。", "Victoire : +1 étoile · plus de bonbons ou Grand Boss : +1 · chaque 100 points de bravoure : +1. Dès Platine, perdre en bas du classement coûte une étoile. Chaque division rapporte des éclats, chaque rang un skin.", "Sieg: +1 Stern · am meisten Süßes oder Boss: +1 · je 100 Mutpunkte: +1. Ab Platin kostet eine Niederlage weit hinten einen Stern. Jede Stufe bringt Splitter, jeder Rang einen Skin.", "Victoria: +1 estrella · más caramelos o Gran Jefe: +1 · cada 100 puntos de valor: +1. Desde Platino, perder en la parte baja cuesta una estrella. Cada división da fragmentos y cada rango un aspecto.", "Vittoria: +1 stella · più caramelle o Boss: +1 · ogni 100 punti coraggio: +1. Da Platino, perdere in fondo costa una stella. Ogni divisione dà frammenti, ogni rango una skin.", "Vitória: +1 estrela · mais doces ou Chefão: +1 · a cada 100 pontos de bravura: +1. A partir de Platina, perder no fim da tabela custa uma estrela. Cada divisão dá fragmentos e cada rank uma skin.", "Galibiyet: +1 yıldız · en çok şeker ya da Patron: +1 · her 100 cesaret puanı: +1. Platin’den sonra alt sıralarda kaybetmek bir yıldız götürür. Her kademe parça, her rütbe kostüm verir.", "勝利 +1 星 · キャンディ1位か大魔王 +1 · 勇者ポイント100ごとに +1。プラチナ以上は下位で負けると -1。段階が上がるとかけら、ランクが上がるとスキンがもらえる。", "승리 +1별 · 사탕 1위 또는 대마왕 +1 · 용사 포인트 100마다 +1. 플래티넘부터 하위권으로 지면 -1. 단계마다 조각, 랭크마다 스킨을 받아요.", "Победа: +1 звезда · больше всех конфет или Босс: +1 · каждые 100 очков храбрости: +1. С Платины поражение внизу таблицы стоит звезду. Каждая ступень даёт осколки, каждый ранг — скин."], "rk_shardHint": ["Earn shards every match and on every rank up. Unlocked powers show up in your level-up cards and as starting powers.", "每局和每次升段都能拿碎片。兑换后的技能会出现在升级选卡和开局能力里。", "Gagne des éclats à chaque partie et à chaque rang. Les pouvoirs débloqués apparaissent au niveau supérieur et au départ.", "Splitter gibt es jede Runde und bei jedem Aufstieg. Freigeschaltete Kräfte kommen beim Level-up und als Start-Kraft.", "Ganas fragmentos cada partida y al subir de rango. Los poderes desbloqueados salen al subir de nivel y como poder inicial.", "Guadagni frammenti a ogni partita e promozione. I poteri sbloccati escono al livello su e come potere iniziale.", "Ganhe fragmentos a cada partida e subida de rank. Poderes desbloqueados aparecem ao subir de nível e como poder inicial.", "Her maçta ve her rütbe atlayışında parça kazanırsın. Açılan güçler seviye kartlarında ve başlangıçta çıkar.", "毎試合とランクアップでかけらがもらえる。解放した力はレベルアップと最初の力に出るよ。", "매 판, 랭크 업마다 조각을 얻어요. 해금한 능력은 레벨 업 카드와 시작 능력에 나와요.", "Осколки дают за каждый матч и новый ранг. Открытые силы выпадают на новом уровне и как стартовые."], "rk_now": ["YOU", "当前", "TOI", "DU", "TÚ", "TU", "VOCÊ", "SEN", "いま", "현재", "ТЫ"], "rk_items": ["Pedestal items", "道具台新道具", "Objets des socles", "Sockel-Gegenstände", "Objetos de pedestal", "Oggetti dei piedistalli", "Itens dos pedestais", "Kürsü eşyaları", "台座アイテム", "받침대 아이템", "Предметы на постаментах"]};
+  for (const k in V) L.forEach((c, i) => { if (STR[c]) STR[c][k] = V[k][i]; }); }
+
 
 // ======================= constants =======================
 const MAP_K = 1.8; // arena scale vs v9: the camera shows about half the map width, like the reference
@@ -1075,6 +1391,7 @@ const CHIBI_V = {
 let CVN = 'cartoon', CV = CHIBI_V.cartoon;
 function setChibiVariant(n) { CVN = n; CV = CHIBI_V[n]; }
 function chibiMat(c, extra, kind) { // matcap + gloss + an emissive term so the game's hit-flash still works
+  c = skinCol(c);
   const m = new THREE.MeshMatcapMaterial(Object.assign({ color: c, matcap: CV.matcap, vertexColors: CV.paint }, extra || {}));
   if (kind && CV.tex) { const T = chibiTex(kind); m.map = T.map; m.normalMap = T.normal; m.normalScale = new THREE.Vector2(T.ns * 0.6, T.ns * 0.6); }
   const gl = CV.gloss;
@@ -1087,7 +1404,7 @@ function chibiMat(c, extra, kind) { // matcap + gloss + an emissive term so the 
   return m;
 }
 const chibiCache = {};
-const CM = (c, extra, kind) => { const k = CVN + c + (extra ? JSON.stringify(extra) : '') + (kind || ''); return chibiCache[k] || (chibiCache[k] = chibiMat(c, extra, kind)); };
+const CM = (c, extra, kind) => { const k = CVN + CUR_SKIN + c + (extra ? JSON.stringify(extra) : '') + (kind || ''); return chibiCache[k] || (chibiCache[k] = chibiMat(c, extra, kind)); };
 const basicCache = {};
 const BM = c => basicCache[c] || (basicCache[c] = new THREE.MeshBasicMaterial({ color: c }));
 
@@ -1360,13 +1677,14 @@ function buildChibi(hero, body, tc, flashMats) {
     crownY = 1.55;
   }
   if (CV.outline) { // thin dark outline around every visible part, like the concept lineup
-    const OUT = ghost ? new THREE.MeshBasicMaterial({ color: 0x2a1838, side: THREE.BackSide, transparent: true }) : CHIBI_OUT;
+    const OUT = ghost ? new THREE.MeshBasicMaterial({ color: CUR_SKIN === 'golden' ? 0xffc23d : 0x2a1838, side: THREE.BackSide, transparent: true }) : CUR_SKIN === 'golden' ? GOLD_OUT : CHIBI_OUT;
     const list = []; body.traverse(m => { if (m.isMesh && m.material && m.material.isMeshMatcapMaterial && m.material.side === THREE.FrontSide) list.push(m); });
     list.forEach(m => { const g = m.geometry; if (!g.boundingSphere) g.computeBoundingSphere(); const r = g.boundingSphere.radius; if (r < 0.045) return; const o = new THREE.Mesh(g, OUT); o.scale.setScalar(1 + Math.min(0.2, 0.02 / r)); o.userData.noOutline = true; m.add(o); });
   }
   return { legL, legR, torso, head, arm, crownY };
 }
 const CHIBI_OUT = new THREE.MeshBasicMaterial({ color: 0x2a1838, side: THREE.BackSide });
+const GOLD_OUT = new THREE.MeshBasicMaterial({ color: 0xffc23d, side: THREE.BackSide }); // legendary skin: gold outline
 
 setChibiVariant('cartoon');
 
@@ -1497,7 +1815,8 @@ function buildRound(hero, body, tc, flashMats) {
   }
   return { legL, legR, torso, head, arm, crownY };
 }
-function makeMonster(hero, team, target = scene) {
+function makeMonster(hero, team, target = scene, skin = 'classic') {
+  const prevSkin = CUR_SKIN; CUR_SKIN = SKINS[skin] ? skin : 'classic';
   const root = new THREE.Group(), lean = new THREE.Group(), yaw = new THREE.Group();
   lean.rotation.x = -LEAN; root.add(lean); lean.add(yaw);
   const body = new THREE.Group(); yaw.add(body);
@@ -1620,21 +1939,21 @@ function makeMonster(hero, team, target = scene) {
   trap.position.y = 0.75; trap.visible = false; lean.add(trap);
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.46, 0.6, 24), new THREE.MeshBasicMaterial({ color: tc, transparent: true, opacity: 0.85 }));
   ring.rotation.x = -Math.PI / 2; ring.position.y = 0.02; root.add(ring);
-  target.add(root);
+  target.add(root); CUR_SKIN = prevSkin;
   return { root, lean, yaw, body, torso, head, arm, legL, legR, crown, lid, ring, flashMats, bubble, trap, outline };
 }
 // portraits for the start screen, drawn once per monster and team with a small second renderer
 let portraitR = null;
 const portraitCache = {};
-function heroPortrait(hero, team) {
-  const key = STYLE + hero + team;
+function heroPortrait(hero, team, skin = 'classic') {
+  const key = STYLE + hero + team + skin;
   if (portraitCache[key]) return portraitCache[key];
   try {
     if (!portraitR) { portraitR = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); portraitR.setPixelRatio(1); portraitR.setSize(168, 168); }
     const sc2 = new THREE.Scene();
     sc2.add(new THREE.HemisphereLight(0xffffff, 0x5a4a80, 1.15));
     const dl = new THREE.DirectionalLight(0xffffff, 0.8); dl.position.set(2, 4, 5); sc2.add(dl);
-    const V = makeMonster(hero, team, sc2); V.ring.visible = false; V.lean.rotation.x = 0; V.yaw.rotation.y = -0.5;
+    const V = makeMonster(hero, team, sc2, skin); V.ring.visible = false; V.lean.rotation.x = 0; V.yaw.rotation.y = -0.5;
     const half = hero === 'witch' ? 1.45 : 1.3, cam = new THREE.OrthographicCamera(-half, half, half, -half, 0.1, 50);
     cam.position.set(0, 2.2, 6); cam.lookAt(0, hero === 'witch' ? 1.3 : 0.95, 0);
     portraitR.render(sc2, cam);
@@ -1750,6 +2069,9 @@ function itemModel(type) {
   if (type === 'apple') { g.add(box(0.42, 0.4, 0.42, M(0xe8323f, { emissive: 0x400008 }))); g.add(box(0.06, 0.34, 0.06, M(0x6b4228), 0, 0.3, 0)); g.add(box(0.18, 0.06, 0.1, M(0x5fd05a), 0.09, 0.26, 0)); }
   else if (type === 'soda') { g.add(box(0.3, 0.52, 0.3, M(0x3fd0ff, { emissive: 0x0a3a50 }))); g.add(box(0.31, 0.12, 0.31, M(0xffffff), 0, 0.05, 0)); g.add(box(0.04, 0.22, 0.04, M(0xff5fa2), 0.06, 0.34, 0)); }
   else if (type === 'broom') { const st = box(0.07, 0.07, 0.95, M(0x8a5a36)); g.add(st); g.add(box(0.34, 0.2, 0.32, M(0xe0b24a), 0, 0, -0.55)); }
+  else if (type === 'magnet') { g.add(box(0.16, 0.5, 0.16, M(0xe8323f, { emissive: 0x400008 }), -0.2, 0, 0)); g.add(box(0.16, 0.5, 0.16, M(0xe8323f, { emissive: 0x400008 }), 0.2, 0, 0)); g.add(box(0.56, 0.16, 0.16, M(0xe8323f, { emissive: 0x400008 }), 0, -0.25, 0)); g.add(box(0.17, 0.12, 0.17, M(0xe6e6f0), -0.2, 0.27, 0)); g.add(box(0.17, 0.12, 0.17, M(0xe6e6f0), 0.2, 0.27, 0)); }
+  else if (type === 'web') { const d = new THREE.Mesh(new THREE.CircleGeometry(0.34, 8), new THREE.MeshBasicMaterial({ color: 0xf4ecff, transparent: true, opacity: 0.55, side: THREE.DoubleSide })); g.add(d); for (let k = 0; k < 4; k++) { const l = box(0.7, 0.03, 0.03, M(0xffffff)); l.rotation.z = k * Math.PI / 4; g.add(l); } }
+  else if (type === 'bell') { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.3, 0.42, 14), M(0xffc23d, { emissive: 0x5a3800 })); g.add(b); g.add(box(0.1, 0.1, 0.1, M(0x7a4a00), 0, -0.26, 0)); g.add(box(0.06, 0.14, 0.06, M(0x7a4a00), 0, 0.27, 0)); }
   else { g.add(box(0.5, 0.4, 0.5, M(0xff7a1a, { emissive: 0x401500 }))); g.add(box(0.07, 0.18, 0.07, M(0x3c6b2a), 0, 0.28, 0)); g.add(box(0.07, 0.07, 0.04, M(0x1a0d05), -0.1, 0.04, 0.26)); g.add(box(0.07, 0.07, 0.04, M(0x1a0d05), 0.1, 0.04, 0.26)); }
   return g;
 }
@@ -1760,8 +2082,15 @@ const PEDS = [[-7, -12, 'apple'], [7, -12, 'broom'], [-12, 5, 'soda'], [12, 5, '
   glow.rotation.x = -Math.PI / 2; glow.position.y = 0.31; g.add(glow);
   const im = itemModel(type); im.position.y = 1.05; g.add(im);
   g.position.set(x, 0, z); scene.add(g);
-  return { x, z, type, has: true, respawn: 0, itemMesh: im, glow };
+  return { x, z, type, base: type, has: true, respawn: 0, itemMesh: im, glow, g };
 });
+function setPedType(p, type) { // swap the item a pedestal hands out
+  if (p.type === type || !ITEMS[type]) return;
+  const vis = p.itemMesh.visible; p.g.remove(p.itemMesh);
+  const im = itemModel(type); im.position.y = 1.05; im.visible = vis; p.g.add(im); p.itemMesh = im; p.type = type;
+}
+const PED_NEW = [9, 10, 11, 12, 4, 5]; // pedestals that switch to unlocked items: the four corners first, then two in the south
+function assignPeds(items) { PEDS.forEach(p => setPedType(p, p.base)); (items || []).forEach((it, i) => { [PED_NEW[i * 2], PED_NEW[i * 2 + 1]].forEach(k => { if (PEDS[k]) setPedType(PEDS[k], it); }); }); }
 // Campfires with a roasting chicken: stand inside the warm circle to heal (centre of the map, both sides, and the top between the two upper bases)
 const FIRE_R = 2.6, FIRE_HEAL = 8;
 const FIRES = [[0, 0], [-20, -2], [20, -2], [0, -27]].map(([x, z]) => {
@@ -1807,8 +2136,8 @@ const BOOSTS = Array.from({ length: 18 }, () => {
 function placeBoost(b) { const f = freeSpot(); b.x = f.x; b.z = f.z; b.has = true; b.mesh.position.set(b.x, 0, b.z); b.mesh.visible = true; }
 
 // ---------- units ----------
-function newUnit(team, hero, name, isPlayer) {
-  const vis = makeMonster(hero, team);
+function newUnit(team, hero, name, isPlayer, skin) {
+  const vis = makeMonster(hero, team, scene, skin);
   const u = {
     id: units.length, team, hero, name, isPlayer, vis,
     pounceCd: 0, charmCd: 0, lastAtk: -99, kickVis: 0, actCd: 0, dashT: 0, dashTime: 0, dashSp: 0, dashN: 0, dashGap: 0, dashHit: false, headWin: 0, kickChain: 0, kickLand: false, burstArmed: false, guardSwift: false, pounceLeft: 0, sprint: false, anchor: null, spinBat: 0, empowerT: 0, bubbleT: 0, trappedT: 0, form: 0, phaseCd: 0, hitAt: 0, react: 0, lastHurt: -99, getup: false,
@@ -1821,6 +2150,8 @@ function newUnit(team, hero, name, isPlayer) {
     thinkT: Math.random() * 0.3, goal: null, kills: 0, aggro: rnd(0.75, 1.1),
   };
   u.maxHp = u.hp = HEROES[hero].hp;
+  u.skin = SKINS[skin] ? skin : 'classic';
+  Object.assign(u, { metN: 0, metQ: [], sweetAcc: 0, stormCd: 1, slowT: 0, undyCd: 0, unl: null });
   Object.assign(u, { deaths: 0, assists: 0, streak: 0, item: null, hitBy: new Map(), candyAcc: 0, candyT: 0 });
   u.tag = document.createElement('div'); u.tag.className = 'tag';
   u.tag.innerHTML = '<span class="bt">' + T('bossTag') + '</span><span class="hx">' + svgIcon('hex') + '</span><span class="nm"></span><div class="r2"><span class="lvb"><b>1</b></span><div class="bars"><div class="hp"><i></i></div><div class="stb"><i></i></div></div><span class="itm" hidden></span></div>';
@@ -1848,6 +2179,7 @@ const speedOf = u => {
   if (u.sprint) s *= 1.55;
   if (u.hero === 'ghost' && u.form === 1) s *= 1.35;
   if (u.bubbleT > 0) s *= 1.4;
+  if (u.slowT > 0) s *= 0.65;
   return s;
 };
 function spawnAt(u, first) {
@@ -1864,6 +2196,7 @@ function spawnAt(u, first) {
 // ======================= skills: picks =======================
 function eligible(u, id) {
   const S = SKILLS[id];
+  if (S.lock && !(u.unl && u.unl.has(id))) return false; // shard powers: only for players who unlocked them
   if ((u.skills[id] || 0) >= S.max) return false;
   if (!S.fam) return true;
   const f = famOf(u);
@@ -1876,15 +2209,24 @@ function eligible(u, id) {
   return true;
 }
 function offerFor(u, n = 3) {
-  const pool = SK_IDS.filter(id => eligible(u, id));
   const wOf = id => SKILLS[id].w * (u.skills.sniffer && (SKILLS[id].fam === 'toss' || id === 'guard') ? 1.5 : 1); // magnet makes toss and guard cards show up more
-  const out = [];
-  while (out.length < n && pool.length) {
-    const tot = pool.reduce((a, id) => a + wOf(id), 0);
-    let r = Math.random() * tot, i = 0;
-    for (; i < pool.length; i++) { r -= wOf(pool[i]); if (r <= 0) break; }
-    out.push(pool.splice(Math.min(i, pool.length - 1), 1)[0]);
-  }
+  const draw = (pool, k, out) => {
+    pool = pool.filter(id => !out.includes(id));
+    while (k-- > 0 && pool.length) {
+      const tot = pool.reduce((a, id) => a + wOf(id), 0);
+      let r = Math.random() * tot, i = 0;
+      for (; i < pool.length; i++) { r -= wOf(pool[i]); if (r <= 0) break; }
+      out.push(pool.splice(Math.min(i, pool.length - 1), 1)[0]);
+    }
+    return out;
+  };
+  const all = SK_IDS.filter(id => eligible(u, id));
+  if (n < 3) return draw(all, n, []);
+  // level-up cards (v27): two powers that work on their own (red or blue) + one yellow or green card for the active key.
+  // Candy Sniffer is only a starting power, never a level-up card.
+  const auto = all.filter(id => !SKILLS[id].fam && id !== 'sniffer'), act = all.filter(id => SKILLS[id].fam);
+  const out = draw(auto, 2, []); draw(act, 1, out);
+  if (out.length < n) draw(auto.concat(act), n - out.length, out); // fallback when one group has run out
   return out;
 }
 function learn(u, id) {
@@ -1953,11 +2295,19 @@ function dealDamage(src, tgt, amount, o = {}) {
   impact(src, tgt, dmg, !!o.launch || dmg >= 16);
   netEv(['i', src ? src.id : -1, tgt.id, dmg, (o.launch || dmg >= 16) ? 1 : 0, r2(tgt.kvx), r2(tgt.kvz), r2(tgt.stun), r2(tgt.air)]);
   if (tgt.isPlayer || src === player) popText(tgt, '-' + dmg, tgt.isPlayer ? '#ff4d6a' : (o.launch || dmg >= 16 ? '#ffe066' : '#ffffff'), dmg >= 16);
+  if (o.melee && src && src !== tgt && src.alive && tgt.skills.thorns) dealDamage(tgt, src, 3 + 3 * tgt.skills.thorns, {}); // Pumpkin Thorns
   if (tgt.hp <= 0) knockOut(tgt, src);
   return true;
 }
 function onHit(u, t, fromSpin) {
   const S = u.skills;
+  if (S.frost && t.alive) { if (!(t.slowT > 0)) proc(u, 'frost', t); t.slowT = 1 + 0.5 * S.frost; }
+  if (S.meteor && t.alive && !fromSpin && ++u.metN >= 4) { // every 4th hit: a meteor falls on the target
+    u.metN = 0; proc(u, 'meteor', t);
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 8), new THREE.MeshBasicMaterial({ color: 0xff8a2a, transparent: true }));
+    m.position.set(t.x, 7.3, t.z); scene.add(m); fxMeshes.push({ m, t: 0.4, max: 0.4, kind: 'fall' });
+    u.metQ.push({ x: t.x, z: t.z, t: 0.4 });
+  }
   if (S.snag && t.alive && !fromSpin) {
     const tx = u.x + u.fx * 1.1, tz = u.z + u.fz * 1.1;
     t.x += (tx - t.x) * 0.85; t.z += (tz - t.z) * 0.85; t.kvx = t.kvz = 0;
@@ -2281,7 +2631,22 @@ function useItem(u) {
   if (!u.item || !u.alive || u.stun > 0 || u.leap) return;
   if (u.hero === 'ghost' && u.form === 1) ghostRevert(u);
   const type = u.item.type;
-  if (type === 'apple') { u.hp = Math.min(u.maxHp, u.hp + u.maxHp * 0.45); burst(u.x, 1, u.z, 0x9dff6a, 8); if (u.isPlayer) popText(u, '+HP', '#9dff6a'); }
+  if (type === 'magnet') { // pull in all candy around you
+    let n = 0; spawnRing(u.x, u.z, 9, 0xff4d6a); burst(u.x, 1, u.z, 0xff4d6a, 10);
+    for (const p of pickups) { if (!p.alive || p.dead || (p.x - u.x) ** 2 + (p.z - u.z) ** 2 > 81) continue; if (n < 14) flyOrbs(p.x, p.z, u, 0xffd23f, 1); collect(u, p); n++; }
+    if (u.isPlayer) popText(u, '+' + n, '#ffe066', true);
+  }
+  else if (type === 'web') { // a web that holds enemies in place
+    const t = nearestEnemy(u, 9), cx = t ? t.x : clampX(u.x + u.fx * 4), cz = t ? t.z : clampX(u.z + u.fz * 4);
+    const d = new THREE.Mesh(new THREE.CircleGeometry(2.6, 10), new THREE.MeshBasicMaterial({ color: 0xf4ecff, transparent: true, opacity: 0.6, depthWrite: false }));
+    d.rotation.x = -Math.PI / 2; d.position.set(cx, 0.08, cz); scene.add(d); fxMeshes.push({ m: d, t: 1.6, max: 1.6, kind: 'fade' });
+    for (const e of units) { if (!isEnemy(u, e) || !e.alive || e.invuln > 0 || (e.x - cx) ** 2 + (e.z - cz) ** 2 > 2.6 * 2.6) continue; e.stun = Math.max(e.stun, 1.5); e.slowT = Math.max(e.slowT, 3); e.guardT = 0; e.revealT = 2; e.kvx = e.kvz = 0; popText(e, T('trapped'), '#f4ecff'); }
+  }
+  else if (type === 'bell') { // knock back everyone around you
+    spawnRing(u.x, u.z, 3.6, 0xffc23d); burst(u.x, 1, u.z, 0xffc23d, 12);
+    for (const e of units) { if (!isEnemy(u, e) || !e.alive || d2(u, e) > 3.6 * 3.6) continue; const a = Math.atan2(e.x - u.x, e.z - u.z); if (dealDamage(u, e, 6 * dmgMul(u), { kb: 12, dx: Math.sin(a), dz: Math.cos(a), stun: 0.8 })) { e.hitAt = 0; e.kickT = 0; e.spinT = 0; } }
+  }
+  else if (type === 'apple') { u.hp = Math.min(u.maxHp, u.hp + u.maxHp * 0.45); burst(u.x, 1, u.z, 0x9dff6a, 8); if (u.isPlayer) popText(u, '+HP', '#9dff6a'); }
   else if (type === 'soda') { u.hasteT = Math.max(u.hasteT, 3.5); burst(u.x, 0.6, u.z, 0x3fd0ff, 8); }
   else {
     const t = nearestEnemy(u, type === 'bomb' ? 7 : 11); if (t) faceTo(u, t);
@@ -2329,6 +2694,12 @@ function explode(bo) {
 }
 function knockOut(u, by) {
   if (NET.role === 'client') return;
+  if (u.skills.undying && !(u.undyCd > 0)) { // Undying Soul: back up on the spot
+    u.undyCd = 60; u.hp = Math.round(u.maxHp * 0.4); u.invuln = Math.max(u.invuln, 1.5); u.stun = 0; u.air = 0;
+    burst(u.x, 1, u.z, 0xffe9a8, 16); spawnRing(u.x, u.z, 2, 0xffe9a8); proc(u, 'undying');
+    if (u.isPlayer) popText(u, skName('undying'), '#ffe9a8', true);
+    return;
+  }
   SFX.play('ko', u); if (by === player) SFX.play('kill');
   u.alive = false; u.hp = 0; u.vis.root.visible = false;
   u.respawn = 3 + u.level * 0.5;
@@ -2348,6 +2719,32 @@ function knockOut(u, by) {
   feed(`<b style="color:${TEAM_CSS[u.team]}">${esc(u.isPlayer ? T('you') : u.name)}</b> ${T('knocked')}` + (by ? ` · ${T('by')} <b style="color:${TEAM_CSS[by.team]}">${esc(by.isPlayer ? T('you') : by.name)}</b>` : ''));
 }
 const clampX = v => Math.max(-HALF, Math.min(HALF, v));
+// v27 power ticks (host only): falling meteors, Hex Storm lightning
+function extraPowers(u, dt) {
+  if (NET.role === 'client') return;
+  if (u.metQ.length) {
+    for (const m of u.metQ) {
+      m.t -= dt; if (m.t > 0) continue;
+      const r = 2.1; spawnRing(m.x, m.z, r, 0xff7a1a); burst(m.x, 0.5, m.z, 0xffb03a, 14); SFX.play('swing3', u);
+      for (const t of units) {
+        if (!isEnemy(u, t) || !t.alive || (t.x - m.x) ** 2 + (t.z - m.z) ** 2 > (r + 0.3) ** 2) continue;
+        const a = Math.atan2(t.x - m.x, t.z - m.z);
+        dealDamage(u, t, (14 + 8 * (u.skills.meteor || 1)) * dmgMul(u), { kb: 7, dx: Math.sin(a), dz: Math.cos(a), launch: true });
+      }
+    }
+    u.metQ = u.metQ.filter(m => m.t > 0);
+  }
+  const st = u.skills.storm; if (!st) return;
+  u.stormCd -= dt; if (u.stormCd > 0) return;
+  const t = nearestEnemy(u, 6.5); if (!t) { u.stormCd = 0.4; return; }
+  u.stormCd = 3.4 - 0.5 * st;
+  const bolt = new THREE.Mesh(new THREE.BoxGeometry(0.2, 9, 0.2), new THREE.MeshBasicMaterial({ color: 0xe4c8ff, transparent: true }));
+  bolt.position.set(t.x, 4.5, t.z); scene.add(bolt); fxMeshes.push({ m: bolt, t: 0.22, max: 0.22, kind: 'fade' });
+  burst(t.x, 0.6, t.z, 0xc79bff, 8);
+  if (dealDamage(u, t, (7 + 4 * st) * dmgMul(u), { stun: 0.3 })) t.hitAt = 0;
+  proc(u, 'storm', t);
+}
+
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // ======================= fx =======================
@@ -2771,6 +3168,7 @@ function botThink(u) {
   nd = Math.sqrt(nd);
   const alliesNear = units.filter(m => m !== u && m.alive && m.team === u.team && d2(m, u) < 25).length;
   if (u.item && u.item.type === 'apple' && hpF < 0.45) useItem(u);
+  if (u.item && NEW_ITEMS.includes(u.item.type) && ((u.item.type === 'magnet' && Math.random() < 0.05) || (near && nd < (u.item.type === 'bell' ? 3 : 8) && Math.random() < 0.15))) { if (near) faceTo(u, near); useItem(u); }
   if (famOf(u) === 'toss' && u.stamina >= tossCost(u) + 0.5 && u.tossCd <= 0 && units.some(m => m !== u && m.alive && m.team === u.team && d2(m, u) < 144 && (m.hp / m.maxHp < 0.55 || clock - m.lastHurt < 1))) toss(u);
   if (hpF < 0.3 && near && nd < 6.5) { u.goal = { k: 'flee', t: near }; return; }
   if (hpF < 0.45) u.wantFire = true; else if (hpF > 0.9) u.wantFire = false;
@@ -2934,7 +3332,7 @@ function updateUnit(u, dt) {
   }
   const wasAir = u.air > 0, wasKick = u.kickT > 0;
   const dec = k => { if (u[k] > 0) u[k] = Math.max(0, u[k] - dt); };
-  ['heroCd', 'boostT', 'punch', 'pounceCd', 'charmCd', 'kickVis', 'actCd', 'dashT', 'headWin', 'empowerT', 'bubbleT', 'trappedT', 'react', 'phaseCd', 'invuln', 'stun', 'air', 'flash', 'atkCd', 'comboT', 'swingT', 'rollT', 'hasteT', 'jumpReady', 'guardT', 'guardCd', 'kickT', 'kickCd', 'tossCd', 'spinCd', 'rushT', 'hexT', 'revealT'].forEach(dec);
+  ['heroCd', 'boostT', 'punch', 'pounceCd', 'charmCd', 'kickVis', 'actCd', 'dashT', 'headWin', 'empowerT', 'bubbleT', 'trappedT', 'react', 'phaseCd', 'invuln', 'stun', 'air', 'flash', 'atkCd', 'comboT', 'swingT', 'rollT', 'hasteT', 'jumpReady', 'guardT', 'guardCd', 'kickT', 'kickCd', 'tossCd', 'spinCd', 'rushT', 'hexT', 'revealT', 'slowT', 'undyCd'].forEach(dec);
   if (wasKick && u.kickT <= 0 && u.alive) { // kick combos: extra kicks, then the landing slam
     if (u.kickChain > 0) { u.kickChain--; u.kickT = 0.26; u.kickHit = false; }
     else if (u.kickLand) { u.kickLand = false; u.leap = { sx: u.x, sz: u.z, tx: clampX(u.x + u.fx), tz: clampX(u.z + u.fz), t: 0, dur: 0.22 }; }
@@ -2943,6 +3341,7 @@ function updateUnit(u, dt) {
   if (u.burstArmed && u.guardT <= 0) burstGuard(u);
   if (u.guardT <= 0) u.guardSwift = false;
   updateAnchor(u, dt);
+  extraPowers(u, dt);
   if (wasAir && u.air <= 0 && u.getup) { u.getup = false; u.invuln = Math.max(u.invuln, 0.5); } // brief get-up protection after being launched
   if (u.hitAt > 0) { u.hitAt -= dt; if (u.stun > 0) u.hitAt = 0; else if (u.hitAt <= 0) meleeHit(u); }
   if (u.sprint) { u.stamina -= dt * 0.7; if (u.stamina <= 0) { u.stamina = 0; u.sprint = false; } }
@@ -3019,7 +3418,9 @@ function pickItems(u) {
 function collect(u, p) {
   if (NET.role === 'client') return;
   if (u.isPlayer) SFX.play('candy');
-  addXp(u, p.v);
+  let v = p.v;
+  if (u.skills.sweet) { u.sweetAcc += p.v * 0.15 * u.skills.sweet; const b = Math.floor(u.sweetAcc); u.sweetAcc -= b; v += b; } // Sweet Tooth
+  addXp(u, v);
   if (p.field) { p.alive = false; p.respawn = p.home !== undefined ? -1 : rnd(14, 20); } // patch candy waits for its patch to move; loose candy is slow to come back
   else p.alive = false, p.dead = true;
 }
@@ -3132,6 +3533,7 @@ function updateWorld(dt) {
     else if (f.kind === 'rise') { f.m.position.y += 1.8 * dt; f.m.material.opacity = k; }
     else if (f.kind === 'flash') { const s = f.s0 * (1 + (1 - k) * 1.2); f.m.scale.set(s, s, s); f.m.material.opacity = k; }
     else if (f.kind === 'orb') { const q = 1 - k, tx = f.to.x, tz = f.to.z; f.m.position.set(f.sx + (tx - f.sx) * q, 0.9 + Math.sin(q * Math.PI) * f.h, f.sz + (tz - f.sz) * q); f.m.material.opacity = Math.min(1, k * 4); }
+    else if (f.kind === 'fall') { f.m.position.y = 0.3 + 7 * k; }
     else if (f.kind === 'grow') { const s = 0.6 + (1 - k) * 0.5; f.m.scale.set(s, s, s); f.m.material.opacity = k * 0.7; }
     else f.m.material.opacity = k * 0.6;
     if (f.t <= 0) { scene.remove(f.m); if (f.m.geometry !== burstGeo && !f.shared) f.m.geometry.dispose(); f.m.material.dispose(); f.gone = true; }
@@ -3403,13 +3805,14 @@ function setupMatch(withPlayer) {
     if (withPlayer && t === startTeam) { heroes.splice(heroes.indexOf(startHero), 1); heroes.unshift(startHero); }
     for (let k = 0; k < 3; k++) {
       const me = withPlayer && t === startTeam && k === 0;
-      const u = newUnit(t, heroes[k], me ? T('you') : names[k], me);
-      if (me) { player = u; learn(u, startSkill); }
+      const u = newUnit(t, heroes[k], me ? T('you') : names[k], me, me ? PROG.skin : botSkin());
+      if (me) { player = u; u.unl = unlockedSet(); learn(u, startSkill); }
       else learn(u, offerFor(u, 1)[0]);
       spawnAt(u, true);
     }
   }
   PEDS.forEach(p => { p.has = true; p.respawn = 0; p.itemMesh.visible = true; p.glow.visible = true; });
+  assignPeds(withPlayer ? PROG.items : []);
   BOOSTS.forEach(placeBoost);
   colorTags();
   timeLeft = MATCH_TIME; over = false; hurryShown = false; picking = false;
@@ -3451,6 +3854,7 @@ function endGame() {
   const sorted = [...units].sort((a, b) => b.score - a.score);
   document.getElementById('endList').innerHTML = sorted.map((u, i) =>
     `<div class="row${u.isPlayer ? ' me' : ''}"><span class="rk">${i + 1}</span><span class="dot" style="background:${TEAM_CSS[u.team]}"></span><span class="nmc">${u === king ? '♛ ' : ''}${esc(u.isPlayer ? T('you') : u.name)} · Lv${u.level}</span><span>${u.score}</span></div>`).join('');
+  renderRankResult(settleMatch());
   document.getElementById('endScreen').hidden = false;
   netOnEnd();
 }
@@ -3593,7 +3997,7 @@ const GAME_ID = '3f6b2c1e-9a47-4d2b-b8e5-7c0d91a4e6f2';
 const NETLIB_URL = 'https://cdn.jsdelivr.net/npm/@poki/netlib/+esm';
 const NET = { role: 'solo', net: null, code: '', pub: false, hostId: null, peers: new Map(), ev: [], snapT: 0, worldT: 0, pickT: 0, sendT: 0, ps: new Map(), PK: new Map(), king: -1, restartT: 0, pending: null, name: '', replaying: false, welcome: null, lastSnap: 0 };
 const r1 = v => Math.round(v * 10) / 10, r2 = v => Math.round(v * 100) / 100;
-const NET_ITEMS = ['', 'apple', 'soda', 'broom', 'bomb'];
+const NET_ITEMS = ['', 'apple', 'soda', 'broom', 'bomb', 'magnet', 'web', 'bell'];
 const NT = (k, n) => String(T(k)).replace('{n}', n);
 function netEv(e) { if (NET.role === 'host' && NET.peers.size) NET.ev.push(e); }
 function sendTo(id, m, unrel) { if (!NET.net || !id) return; try { NET.net.send(unrel ? 'unreliable' : 'reliable', id, JSON.stringify(m)); } catch (e) {} }
@@ -3682,10 +4086,10 @@ function netKing() {
 }
 
 // ---- seats
-function replaceUnit(idx, team, hero, name, isPlayer) {
+function replaceUnit(idx, team, hero, name, isPlayer, skin) {
   const old = units[idx];
   if (old) { old.alive = false; scene.remove(old.vis.root); old.tag.remove(); old.edge.remove(); removeAnchor(old); if (old.wispM) old.wispM.forEach(g => scene.remove(g)); if (king === old) king = null; }
-  const u = newUnit(team, hero, name, isPlayer);
+  const u = newUnit(team, hero, name, isPlayer, skin);
   units.pop(); u.id = idx; units[idx] = u;
   return u;
 }
@@ -3695,9 +4099,9 @@ function netSeat(P) { // host: give a person a seat (their gang if it still has 
   if (!free.length) return null;
   const humansIn = t => units.filter(u => u.team === t && isHuman(u)).length;
   const pick = free.find(u => u.team === P.team) || free.slice().sort((a, b) => humansIn(a.team) - humansIn(b.team))[0];
-  const u = replaceUnit(pick.id, pick.team, HERO_IDS.includes(P.hero) ? P.hero : pick.hero, P.name, false);
-  u.remote = P.id; u.human = true; P.unit = u;
-  learn(u, SKILLS[P.skill] ? P.skill : offerFor(u, 1)[0]);
+  const u = replaceUnit(pick.id, pick.team, HERO_IDS.includes(P.hero) ? P.hero : pick.hero, P.name, false, P.skin);
+  u.remote = P.id; u.human = true; P.unit = u; u.unl = new Set(P.unl || []);
+  learn(u, SKILLS[P.skill] && (!SKILLS[P.skill].lock || u.unl.has(P.skill)) ? P.skill : offerFor(u, 1)[0]);
   spawnAt(u, !running);
   colorTags();
   return u;
@@ -3711,7 +4115,7 @@ function netUnseat(P) {
   banner(NT('n_left', nm)); netEv(['msg', 'n_left', nm]);
   netReportRoom();
 }
-const unitRow = u => [u.team, u.hero, u.isPlayer ? NET.name : u.name, isHuman(u) ? 1 : 0, u.skills, r2(u.x), r2(u.z), u.score, u.level, u.xp, Math.round(u.maxHp), Math.round(u.hp), u.alive ? 1 : 0];
+const unitRow = u => [u.team, u.hero, u.isPlayer ? NET.name : u.name, isHuman(u) ? 1 : 0, u.skills, r2(u.x), r2(u.z), u.score, u.level, u.xp, Math.round(u.maxHp), Math.round(u.hp), u.alive ? 1 : 0, u.skin || 'classic'];
 const pickRow = p => [p.id, r2(p.x), r2(p.z), p.v, Math.max(0, CANDY_COLS.indexOf(p.col)), p.corn ? 1 : 0, p.field ? 1 : 0, p.alive ? 1 : 0, r2(p.vx), r2(p.vz), r2(p.air)];
 function netSendSetup(P) {
   sendTo(P.id, { t: 'setup', me: P.unit.id, tl: r1(timeLeft), k: king ? king.id : -1, code: NET.code, u: units.map(unitRow), f: CANDY_FIELDS.map(F => [r2(F.x), r2(F.z), r2(F.r), F.active ? 1 : 0]), b: buckets.map(b => [r2(b.x), r2(b.z), b.alive ? 1 : 0]) });
@@ -3748,7 +4152,7 @@ function netSnap() {
   bcast({ t: 'S', tl: r1(timeLeft), k: king ? king.id : -1, u: units.map(row) }, true);
 }
 function netWorld() {
-  return { t: 'W', b: buckets.map(b => [r2(b.x), r2(b.z), b.alive ? 1 : 0]), bo: BOOSTS.map(b => [b.has ? 1 : 0, r2(b.x), r2(b.z)]), pe: PEDS.map(p => p.has ? 1 : 0).join(''), f: CANDY_FIELDS.map(F => [r2(F.x), r2(F.z), r2(F.r), F.active ? 1 : 0]) };
+  return { t: 'W', b: buckets.map(b => [r2(b.x), r2(b.z), b.alive ? 1 : 0]), bo: BOOSTS.map(b => [b.has ? 1 : 0, r2(b.x), r2(b.z)]), pe: PEDS.map(p => p.has ? 1 : 0).join(''), pt: PEDS.map(p => NET_ITEMS.indexOf(p.type)).join(','), f: CANDY_FIELDS.map(F => [r2(F.x), r2(F.z), r2(F.r), F.active ? 1 : 0]) };
 }
 function netPickDiff() { // host: which candy appeared, was eaten or moved since last time
   const adds = [], rem = [], mov = [], seen = new Set();
@@ -3778,7 +4182,7 @@ function netApplySetup(m) {
   for (const [x, z, a] of m.b) { const mesh = makeBucket(); mesh.position.set(x, 0, z); mesh.visible = !!a; buckets.push({ x, z, hp: 32, alive: !!a, respawn: 0, mesh }); }
   player = null;
   m.u.forEach((a, i) => {
-    const u = newUnit(a[0], a[1], i === m.me ? T('you') : a[2], i === m.me);
+    const u = newUnit(a[0], a[1], i === m.me ? T('you') : a[2], i === m.me, a[13]);
     netInitUnit(u, a);
     if (i === m.me) player = u;
   });
@@ -3838,6 +4242,7 @@ function netApplyWorld(m) {
     b.alive = !!a; b.x = x; b.z = z; b.mesh.visible = b.alive;
   });
   m.bo.forEach(([h, x, z], i) => { const b = BOOSTS[i]; if (!b) return; if (b.has && !h && player && (b.x - player.x) ** 2 + (b.z - player.z) ** 2 < 2) { popText(player, T('boost'), '#5ff2ff', true); SFX.play('boost'); burst(b.x, 0.6, b.z, 0x5ff2ff, 10); } b.has = !!h; b.x = x; b.z = z; b.mesh.position.set(x, 0, z); b.mesh.visible = b.has; });
+  if (m.pt) String(m.pt).split(',').forEach((v, i) => { const t = NET_ITEMS[+v]; if (t && PEDS[i]) setPedType(PEDS[i], t); });
   PEDS.forEach((p, i) => { const h = m.pe[i] === '1'; p.has = h; p.itemMesh.visible = h; p.glow.visible = h; });
   m.f.forEach(([x, z, r, a], i) => { const F = CANDY_FIELDS[i]; if (F) { F.x = x; F.z = z; F.r = r; F.active = !!a; } });
 }
@@ -3874,7 +4279,7 @@ function netApplyEvents(list) {
       case 'tp': if (u) { u.x = e[2]; u.z = e[3]; u.nx = e[2]; u.nz = e[3]; u.kvx = u.kvz = 0; } break;
       case 'nm': if (u) { u.name = e[2]; u.human = !!e[3]; if (!u.isPlayer) u.tagNm.textContent = e[2]; u.edge.querySelector('span').textContent = e[2]; } break;
       case 'rep': {
-        const r = e[2]; const nu = replaceUnit(e[1], r[0], r[1], r[2], false);
+        const r = e[2]; const nu = replaceUnit(e[1], r[0], r[1], r[2], false, r[13]);
         netInitUnit(nu, r); colorTags(); break;
       }
       case 'msg': if (!(e[1] === 'n_joined' && e[2] === NET.name)) banner(NT(e[1], e[2])); break;
@@ -3952,7 +4357,7 @@ function onNet(peer, m) {
     if (m.t === 'H') {
       if (NET.peers.has(peer.id)) return;
       const nm = cleanName(m.name, NT('n_player', 10 + ((Math.random() * 89) | 0)));
-      const P = { id: peer.id, name: nm, team: [0, 1, 2].includes(m.team) ? m.team : 0, hero: m.hero, skill: m.skill, unit: null };
+      const P = { id: peer.id, name: nm, team: [0, 1, 2].includes(m.team) ? m.team : 0, hero: m.hero, skill: m.skill, skin: SKINS[m.skin] ? m.skin : 'classic', unl: Array.isArray(m.unl) ? m.unl.filter(id => SKILLS[id] && SKILLS[id].lock).slice(0, 20) : [], unit: null };
       if (units.filter(u => !isHuman(u)).length === 0) { sendTo(peer.id, { t: 'full' }); return; }
       NET.peers.set(peer.id, P);
       if (running) {
@@ -3980,7 +4385,7 @@ function onNet(peer, m) {
   if (m.t === 'hi') {
     if (NET.hostId && NET.hostId !== peer.id) return;
     NET.hostId = peer.id;
-    sendTo(peer.id, { t: 'H', name: NET.name, team: startTeam, hero: startHero, skill: startSkill });
+    sendTo(peer.id, { t: 'H', name: NET.name, team: startTeam, hero: startHero, skill: startSkill, skin: PROG.skin, unl: PROG.unl });
     if (NET.welcome) { NET.welcome(); NET.welcome = null; }
     return;
   }
@@ -4091,6 +4496,11 @@ function joinFromInvite(code) { if (!code || NET.role !== 'solo') return; openOn
 
 // ======================= start screen =======================
 function renderStart() {
+  if (!SKILLS[startSkill] || (SKILLS[startSkill].lock && !PROG.unl.includes(startSkill))) startSkill = 'sniffer';
+  { const r = rankOf(PROG.pts), ping = SK_IDS.some(id => SKILLS[id].lock && !PROG.unl.includes(id) && PROG.sh >= SKILLS[id].lock);
+    document.getElementById('rankCard').innerHTML = `<button type="button" class="rkcard${ping ? ' ping' : ''}" id="rankBtn">${rankBadge(r.ti, 40)}<span class="rkn">${esc(rankName(r))}</span>${starsHtml(r)}<span class="rksh">${SHARD_SVG}${PROG.sh}</span><span class="rkgo">${esc(T('rk_btn'))} ›</span></button>`;
+    document.getElementById('rankBtn').addEventListener('click', () => openRank('road')); }
+  renderRank();
   document.getElementById('protoTag').textContent = T('proto');
   document.getElementById('pitch').textContent = T('goal');
   document.getElementById('hFamily').textContent = T('family');
@@ -4099,7 +4509,7 @@ function renderStart() {
   HERO_IDS.forEach(h => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'team';
     b.setAttribute('aria-pressed', String(h === startHero));
-    const im = document.createElement('img'); im.alt = ''; im.src = heroPortrait(h, startTeam); if (im.src) b.appendChild(im);
+    const im = document.createElement('img'); im.alt = ''; im.src = heroPortrait(h, startTeam, PROG.skin); if (im.src) b.appendChild(im);
     const bn = document.createElement('b'); bn.textContent = heroName(h);
     const sm = document.createElement('small'); sm.textContent = heroSkillName(h);
     b.appendChild(bn); b.appendChild(sm);
@@ -4130,7 +4540,7 @@ function renderStart() {
     teams.appendChild(b);
   });
   const ss = document.getElementById('startSkills'), ssl = ss.scrollLeft; ss.innerHTML = '';
-  SK_IDS.forEach(id => {
+  SK_IDS.filter(id => !SKILLS[id].lock || PROG.unl.includes(id)).forEach(id => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'sbtn';
     b.setAttribute('aria-pressed', String(id === startSkill));
     b.innerHTML = svgIcon(id); b.style.setProperty('--c', TYPE_COL[SKILLS[id].type]); b.title = skName(id); b.setAttribute('aria-label', skName(id)); // compact colored icons, 2 rows of 10, name shown below
@@ -4157,6 +4567,7 @@ requestAnimationFrame(frame);
 CG.init().then(async ok => {
   if (ok) {
     const c = pickCode(CG.locale()); if (c && !LANG_SAVED && c !== LANG) { LANG = c; renderStart(); }
+    { const cd = progParse(CG.dataGet(PROG_KEY)); if (cd && (+cd.games || 0) >= PROG.games) { PROG = progClean(cd); try { localStorage.setItem(PROG_KEY, JSON.stringify(PROG)); } catch (e) {} renderStart(); } else progSave(); }
     if (CG.deviceType() === 'desktop' && isTouch && !running) { isTouch = false; document.body.classList.remove('touch', 'lefty'); renderStart(); } // a touchscreen laptop gets the keyboard + mouse layout
     CG.loadingStop();
     const un = await CG.userName(); if (un) { NET.name = un.slice(0, 14); document.getElementById('onName').value = NET.name; }
