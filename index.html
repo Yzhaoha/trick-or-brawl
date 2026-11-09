@@ -389,6 +389,19 @@ body.touch #picker .opt .ds { display: -webkit-box; -webkit-line-clamp: 3; -webk
 @media (orientation: landscape) { body.touch #picker { transform: translate(-50%, -50%) scale(.8); width: min(520px, calc(100% - 40px)); } body.touch #picker .opt .ds { -webkit-line-clamp: 2; } }
 #banner { white-space: normal; width: max-content; max-width: 92vw; line-height: 1.1; }
 body.touch #banner { font-size: 26px; }
+
+#startScreen #keys { display: none; } /* the controls cards already show the keys; the tutorial teaches the rest */
+@media (max-height: 600px) and (pointer: fine) { body:not(.touch) #rows .row:nth-child(n+6) { display: none; } body:not(.touch) #board { font-size: 13px; } }
+
+#respawn { position: fixed; inset: 0; z-index: 8; display: grid; place-items: center; pointer-events: none; }
+#respawn .rsb { display: flex; flex-direction: column; align-items: center; gap: 8px; transform: translateY(-6vh); }
+#rsT { font: 400 clamp(22px, 4vw, 34px) var(--display); color: #fff; text-shadow: 0 2px 0 var(--ol), 2px 0 0 var(--ol), -2px 0 0 var(--ol), 0 -2px 0 var(--ol), 0 4px 0 rgba(0,0,0,.3); }
+.rsr { --p: 0; width: clamp(96px, 16vw, 132px); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--gold) calc(var(--p) * 1%), rgba(27, 15, 48, .75) 0); box-shadow: 0 0 0 4px var(--ol), 0 6px 0 var(--ol); }
+.rsr span { width: 78%; aspect-ratio: 1; border-radius: 50%; background: linear-gradient(180deg, #4b3584, #2b1c50); display: grid; place-items: center; font: 400 clamp(46px, 8vw, 64px) var(--display); color: #fff; text-shadow: 0 3px 0 var(--ol), 3px 0 0 var(--ol), -3px 0 0 var(--ol), 0 -3px 0 var(--ol); box-shadow: inset 0 0 0 3px var(--ol); }
+body.touch #respawn .rsb { transform: translateY(-27vh) scale(.75); }
+@media (orientation: landscape) { body.touch #respawn .rsb { transform: translate(-30vw, -4vh) scale(.7); } }
+#game canvas { transition: filter .35s; }
+#game.dead canvas { filter: grayscale(.75) brightness(.8); }
 </style>
 
 </head>
@@ -411,6 +424,7 @@ body.touch #banner { font-size: 26px; }
 <div class="hud" id="hudBR"><div id="actbar"></div></div>
 <div id="edges"></div>
 <div id="kb" hidden></div>
+<div id="respawn" hidden><div class="rsb"><b id="rsT">Back in</b><div class="rsr" id="rsRing"><span id="rsN">3</span></div></div></div>
 <div id="feed"></div>
 <div id="banner" hidden></div>
 <div id="adblock" hidden></div>
@@ -554,7 +568,7 @@ const T = k => { const t = STR[LANG] || STR.en; return t[k] !== undefined ? t[k]
 
 // ======================= CrazyGames SDK (v3) =======================
 const CG = (() => {
-  let sdk = null, playing = false, adBusy = false, platMute = false;
+  let sdk = null, playing = false, adBusy = false, adPlaying = false, platMute = false;
   const call = f => { if (!sdk) return; try { f(sdk); } catch (e) {} };
   return {
     async init() {
@@ -568,8 +582,9 @@ const CG = (() => {
     },
     get on() { return !!sdk; },
     get adBusy() { return adBusy; },
-    get muted() { return adBusy || platMute; },
+    get muted() { return adPlaying || platMute; },
     locale() { let l = null; call(S => { l = S.user.systemInfo.locale; }); return l; },
+    deviceType() { let d = null; call(S => { d = S.user.systemInfo.device.type; }); return d; },
     loadingStop() { call(S => S.game.loadingStop()); },
     setPlaying(on) { if (on === playing) return; playing = on; call(S => on ? S.game.gameplayStart() : S.game.gameplayStop()); },
     happy() { call(S => S.game.happytime()); },
@@ -580,12 +595,14 @@ const CG = (() => {
     inviteRoom() { let r = null; call(S => { const p = S.game.inviteParams; r = (p && p.room) || (S.game.getInviteParam && S.game.getInviteParam('room')) || null; }); return r; },
     instant() { let v = false; call(S => { v = !!S.game.isInstantMultiplayer; }); return v; },
     onJoinRoom(fn) { call(S => { if (S.game.addJoinRoomListener) S.game.addJoinRoomListener(p => { if (p && p.room) fn(String(p.room)); }); }); },
+    onAuth(fn) { call(S => { if (S.user.addAuthListener) S.user.addAuthListener(u => fn(u && u.username ? String(u.username) : null)); }); },
+    context(o) { call(S => { if (S.game.setGameContext) S.game.setGameContext(o); }); },
     async userName() { if (!sdk) return null; try { if (!sdk.user.isUserAccountAvailable) return null; const u = await sdk.user.getUser(); return u && u.username ? String(u.username) : null; } catch (e) { return null; } },
     midgame(done) { // interstitial between matches; input is blocked and sound is off while it plays
       if (!sdk) { done(); return; }
-      let fin = false; const end = () => { if (fin) return; fin = true; adBusy = false; document.getElementById('adblock').hidden = true; CG.applyMute(); done(); };
-      adBusy = true; document.getElementById('adblock').hidden = false; CG.applyMute();
-      try { sdk.ad.requestAd('midgame', { adStarted() { adBusy = true; CG.applyMute(); }, adFinished: end, adError: end }); } catch (e) { end(); }
+      let fin = false; const end = () => { if (fin) return; fin = true; adBusy = false; adPlaying = false; document.getElementById('adblock').hidden = true; CG.applyMute(); done(); };
+      adBusy = true; document.getElementById('adblock').hidden = false; // input is blocked while the request is pending; sound stays on until the ad really starts
+      try { sdk.ad.requestAd('midgame', { adStarted() { adPlaying = true; CG.applyMute(); }, adFinished: end, adError: end }); } catch (e) { end(); }
     },
   };
 })();
@@ -2522,7 +2539,10 @@ let CTRL = { scheme: 'arrows', binds: Object.assign({}, SCHEMES.arrows.binds) };
 try { const c = JSON.parse(localStorage.getItem('tob-ctrl2') || 'null'); if (c && SCHEMES[c.scheme] && c.binds && c.binds.p1 && c.binds.act) CTRL = { scheme: c.scheme, binds: Object.assign({}, SCHEMES[c.scheme].binds, c.binds) }; } catch (e) {}
 const saveCtrl = () => { try { localStorage.setItem('tob-ctrl2', JSON.stringify(CTRL)); } catch (e) {} };
 const moveKeys = () => SCHEMES[CTRL.scheme].move;
-const keyLabel = c => !c ? '—' : c.startsWith('Key') ? c.slice(3) : c.startsWith('Digit') ? c.slice(5) : ({ Space: 'Space', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Semicolon: ';', Comma: ',', Period: '.', Slash: '/', Quote: "'", BracketLeft: '[', BracketRight: ']', ShiftLeft: 'Shift', ShiftRight: 'Shift', Enter: 'Enter', Tab: 'Tab', ControlLeft: 'Ctrl', AltLeft: 'Alt' }[c] || c);
+let KB_LAYOUT = null;
+try { if (navigator.keyboard && navigator.keyboard.getLayoutMap) navigator.keyboard.getLayoutMap().then(m => { KB_LAYOUT = m; if (!running) renderStart(); }).catch(() => {}); } catch (e) {}
+const keyLabel = c => (c && KB_LAYOUT && /^Key[A-Z]$/.test(c) && KB_LAYOUT.get(c)) ? KB_LAYOUT.get(c).toUpperCase() : keyLabel0(c);
+const keyLabel0 = c => !c ? '—' : c.startsWith('Key') ? c.slice(3) : c.startsWith('Digit') ? c.slice(5) : ({ Space: 'Space', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Semicolon: ';', Comma: ',', Period: '.', Slash: '/', Quote: "'", BracketLeft: '[', BracketRight: ']', ShiftLeft: 'Shift', ShiftRight: 'Shift', Enter: 'Enter', Tab: 'Tab', ControlLeft: 'Ctrl', AltLeft: 'Alt' }[c] || c);
 function setScheme(id) { CTRL = { scheme: id, binds: Object.assign({}, SCHEMES[id].binds) }; saveCtrl(); refreshControlsUI(); }
 function applyBind(act, code) {
   if (moveKeys().includes(code) || code === 'Escape' || code === 'KeyP') return;
@@ -2624,7 +2644,7 @@ muteLabel();
 document.getElementById('resume').addEventListener('click', () => toggleSettings(false));
 document.getElementById('resetKeys').addEventListener('click', () => setScheme(CTRL.scheme));
 // touch
-const isTouch = window.matchMedia('(pointer: coarse)').matches;
+let isTouch = window.matchMedia('(pointer: coarse)').matches;
 const stick = { id: null, x: 0, y: 0 };
 let lefty = false; // true = steering with the right thumb, so the buttons move to the left
 try { lefty = localStorage.getItem('tob-hand') === 'right'; } catch (e) {}
@@ -3338,7 +3358,7 @@ function updateHud(dt) {
   document.getElementById('kA').textContent = player.assists;
   const sorted = [...units].sort((a, b) => b.score - a.score);
   document.getElementById('rows').innerHTML = sorted.map((u, i) => rowHtml(u, i)).join('');
-  { const me = document.getElementById('meRow'), rank = sorted.indexOf(player); me.hidden = !isTouch || rank < 3; if (!me.hidden) me.innerHTML = rowHtml(player, rank, true); } // the list already shows everyone on desktop; phones show top 3 + you
+  { const me = document.getElementById('meRow'), rank = sorted.indexOf(player); const lim = isTouch ? 3 : innerHeight < 600 ? 5 : 99; me.hidden = rank < lim; if (!me.hidden) me.innerHTML = rowHtml(player, rank, true); } // the list already shows everyone on desktop; phones show top 3 + you
   document.querySelectorAll('#skillbar .slot[data-id], #actbar .slot[data-id]').forEach(el => {
     const id = el.dataset.id; let cool;
     if (id === 'hero') cool = player.stamina < 1 || player.phaseCd > 0 || player.heroCd > 0;
@@ -3403,6 +3423,7 @@ function startGame(fromNet) {
   Music.start(); lastCount = -1;
   renderSkillbar();
   running = true; CG.setPlaying(true); CG.applyMute();
+  CG.context({ mode: NET.role, hero: startHero, gang: startTeam, room: NET.code || '' });
   document.getElementById('startScreen').hidden = true;
   document.getElementById('endScreen').hidden = true;
   document.getElementById('onlineScreen').hidden = true;
@@ -3414,7 +3435,7 @@ function startGame(fromNet) {
   if (!tutStart()) { banner(T('goal')); bannerT = 3.2; }
 }
 function endGame() {
-  toggleSettings(false); tutStop(false);
+  toggleSettings(false); tutStop(false); RS.shown = false; document.getElementById('respawn').hidden = true; document.getElementById('game').classList.remove('dead');
   Music.stop(); document.getElementById('count').hidden = true;
   running = false; over = true; picking = false; CG.setPlaying(false);
   document.getElementById('picker').hidden = true;
@@ -3493,6 +3514,17 @@ function tutNext() {
   if (TUT.step === 2) TUT.atk0 = player.lastAtk || 0, TUT.hits = 0;
   tutUI();
 }
+const RS = { shown: false, left: 0, total: 1 };
+function respawnTick(dt) {
+  if (!player) return;
+  const el = document.getElementById('respawn'), dead = running && !player.alive;
+  if (dead && !RS.shown) { RS.shown = true; RS.total = RS.left = NET.role === 'client' ? 3 + player.level * 0.5 : Math.max(0.5, player.respawn); document.getElementById('rsT').textContent = T('respawn'); el.hidden = false; document.getElementById('game').classList.add('dead'); }
+  if (!dead && RS.shown) { RS.shown = false; el.hidden = true; document.getElementById('game').classList.remove('dead'); }
+  if (!dead) return;
+  RS.left = NET.role === 'client' ? Math.max(0, RS.left - dt) : Math.max(0, player.respawn);
+  document.getElementById('rsN').textContent = Math.max(1, Math.ceil(RS.left));
+  document.getElementById('rsRing').style.setProperty('--p', (100 * (1 - RS.left / RS.total)).toFixed(1));
+}
 function tutTick(dt) {
   if (!TUT.on || !player) return;
   TUT.t += dt;
@@ -3534,7 +3566,7 @@ function frame(now) {
     if (timeLeft <= 0 && NET.role !== 'client') { countdownBeep(0); endGame(); }
     updateCountdown();
     updateHud(dt);
-    tutTick(realDt);
+    tutTick(realDt); respawnTick(realDt);
   }
   if (bannerT > 0) { bannerT -= dt; if (bannerT <= 0) document.getElementById('banner').hidden = true; }
   if (kbT > 0) { kbT -= dt; if (kbT <= 0) document.getElementById('kb').hidden = true; }
@@ -4125,8 +4157,10 @@ requestAnimationFrame(frame);
 CG.init().then(async ok => {
   if (ok) {
     const c = pickCode(CG.locale()); if (c && !LANG_SAVED && c !== LANG) { LANG = c; renderStart(); }
+    if (CG.deviceType() === 'desktop' && isTouch && !running) { isTouch = false; document.body.classList.remove('touch', 'lefty'); renderStart(); } // a touchscreen laptop gets the keyboard + mouse layout
     CG.loadingStop();
     const un = await CG.userName(); if (un) { NET.name = un.slice(0, 14); document.getElementById('onName').value = NET.name; }
+    CG.onAuth(un => { if (un) { NET.name = cleanName(un, NET.name); document.getElementById('onName').value = NET.name; if (player && NET.role === 'solo') player.name = NET.name; } });
     CG.onJoinRoom(code => { if (NET.role === 'solo') joinFromInvite(code); else { netLeave(); joinFromInvite(code); } });
   }
   const room = new URLSearchParams(location.search).get('room') || CG.inviteRoom();
