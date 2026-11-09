@@ -3592,17 +3592,18 @@ function waitLobby() {
 async function netHost(pub) {
   await initNet();
   const p = waitLobby();
-  NET.net.create({ public: pub, maxPlayers: 9 });
+  NET.net.create({ public: pub, maxPlayers: 9, codeFormat: 'short' }); // 4-character room codes like 3C2Y
   NET.code = await p; NET.role = 'host'; NET.pub = pub; NET.peers.clear();
   netNewMatch();
 }
 async function netJoin(code) {
   await initNet();
   NET.role = 'client'; NET.hostId = null;
+  code = String(code).trim(); if (code.length <= 6) code = code.toUpperCase(); // short codes are upper-case
   const p = waitLobby();
-  NET.net.join(String(code).trim());
-  await p;
-  NET.code = String(code).trim();
+  const jr = NET.net.join(code);
+  await Promise.race([p, Promise.resolve(jr).then(() => p, () => { throw new Error(T('n_timeout')); })]);
+  NET.code = code;
   await new Promise((res, rej) => { const to = setTimeout(() => { NET.welcome = null; rej(new Error(T('n_timeout'))); }, 15000); NET.welcome = () => { clearTimeout(to); res(); }; });
   netReportRoom();
 }
