@@ -246,7 +246,7 @@ body.touch .sbtn svg { width: 62%; height: 62%; }
 body.touch .sbtn[aria-pressed="true"] { background: var(--c); border-color: #fff; box-shadow: 0 0 0 2px var(--c), 0 0 12px var(--c); color: #fff; }
 body.touch #skillDesc b { color: var(--ink); }
 @media (max-height: 500px) and (orientation: landscape) { body.touch #startSkills { grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 4px; } }
-body.touch #sectSkill { order: 4; } body.touch .go.playbtn { order: 5; font-size: 24px; padding: 11px 54px; margin-top: 10px; }
+body.touch #sectSkill { order: 4; } body.touch #playRow { order: 5; margin-top: 10px; gap: 10px; } body.touch .go.playbtn { font-size: 22px; padding: 11px 30px; }
 @media (max-height: 500px) {
   body.touch .logo { font-size: 22px; }
   body.touch #heroes .team img { max-width: 34px; }
@@ -254,7 +254,7 @@ body.touch #sectSkill { order: 4; } body.touch .go.playbtn { order: 5; font-size
   body.touch .panel { gap: 7px; }
   body.touch #heroDesc, body.touch #skillDesc, body.touch .proto { display: none; }
   body.touch #startScreen { padding-block: 6px; }
-  body.touch .go.playbtn { font-size: 20px; padding: 8px 48px; }
+  body.touch .go.playbtn { font-size: 19px; padding: 8px 28px; }
   body.touch #teams .team { padding: 4px 7px; }
 }
 body.touch #timer { font-size: 18px; padding: 4px 10px; }
@@ -290,6 +290,22 @@ body.touch #picker { bottom: calc(env(safe-area-inset-bottom, 0px) + 230px); tra
   #hudBR { transform: scale(.8); transform-origin: bottom right; }
 }
 @media (prefers-reduced-motion: reduce) { #banner { text-shadow: none; } }
+#playRow { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; align-self: center; }
+.go.alt { background: #5fd0ff; color: #08263a; box-shadow: 0 5px 0 #1d6f96; }
+.go.alt:active { box-shadow: 0 2px 0 #1d6f96; }
+.go.playbtn.alt { box-shadow: 0 6px 0 #1d6f96, 0 10px 30px rgba(0, 0, 0, .55); }
+.go:disabled { opacity: .5; cursor: default; }
+#onlineScreen .panel { gap: 12px; }
+#onlineScreen .go { align-self: stretch; text-align: center; }
+.onrow { display: flex; gap: 10px; align-items: center; }
+.onrow span { color: var(--muted); font-weight: 800; white-space: nowrap; }
+.onrow input { flex: 1; min-width: 0; font: 800 18px var(--body); padding: 11px 14px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0, 0, 0, .35); color: var(--ink); letter-spacing: .04em; }
+.onrow .go { align-self: auto !important; padding: 11px 22px; }
+.onStatus { min-height: 1.3em; margin: 0; color: var(--gold); font-weight: 700; }
+#roomChip { align-self: flex-start; cursor: pointer; font-weight: 800; display: inline-flex; gap: 5px; align-items: center; pointer-events: auto; }
+#roomChip svg { width: 14px; height: 14px; }
+#endNet { margin: 0; color: var(--gold); font-weight: 700; }
+body.touch #roomChip { padding: 4px 7px; font-size: 11px; }
 </style>
 
 </head>
@@ -303,7 +319,7 @@ body.touch #picker { bottom: calc(env(safe-area-inset-bottom, 0px) + 230px); tra
 <div class="hud" id="hudTL">
   <button id="gear" type="button"></button>
   <canvas id="mini" width="248" height="248"></canvas>
-  <div class="chip" id="kda"><span><i>K</i><b id="kK">0</b></span><span><i>D</i><b id="kD">0</b></span><span><i>A</i><b id="kA">0</b></span></div>
+  <button type="button" id="roomChip" class="chip" hidden></button><div class="chip" id="kda"><span><i>K</i><b id="kK">0</b></span><span><i>D</i><b id="kD">0</b></span><span><i>A</i><b id="kA">0</b></span></div>
 </div>
 <div class="hud" id="hudTC"><div class="chip" id="timer">5:00</div><button type="button" id="mute" class="chip" title="Music on / off (M)"></button></div>
 <div id="count" hidden></div>
@@ -340,7 +356,7 @@ body.touch #picker { bottom: calc(env(safe-area-inset-bottom, 0px) + 230px); tra
     <p class="sub" id="pitch">Three monster families, one night of candy. Eat candy to grow, pick a new power every level, and be the Monster King when the sun comes up.</p>
     <div class="sect"><h2 id="hHero">PICK YOUR MONSTER</h2><div id="heroes"></div><p id="heroDesc"></p></div>
     <div class="sect"><h2 id="hFamily">PICK YOUR GANG</h2><div id="teams"></div></div>
-    <button class="go playbtn" id="play" type="button">PLAY</button>
+    <div id="playRow"><button class="go playbtn" id="play" type="button">PLAY</button><button class="go playbtn alt" id="onlineBtn" type="button">ONLINE</button></div>
     <div class="sect" id="sectSkill"><h2 id="hSkill">STARTING POWER</h2><div id="startSkills"></div><p id="skillDesc"></p></div>
     <div class="sect" id="sectCtrl"><h2 id="hCtrl">CONTROLS</h2><div id="schemes"></div></div>
     <div class="keys" id="keys"></div>
@@ -353,7 +369,7 @@ body.touch #picker { bottom: calc(env(safe-area-inset-bottom, 0px) + 230px); tra
     <div id="setSchemes"></div>
     <p class="sub" id="setHint"></p>
     <div id="bindList"></div>
-    <div class="btnrow"><button class="go" id="resume" type="button">Resume</button><button class="ghost" id="resetKeys" type="button">Reset keys</button></div>
+    <div class="btnrow"><button class="go" id="resume" type="button">Resume</button><button class="ghost" id="resetKeys" type="button">Reset keys</button><button class="ghost" id="leaveBtn" type="button" hidden>Leave</button></div>
   </div>
 </div>
 
@@ -362,7 +378,21 @@ body.touch #picker { bottom: calc(env(safe-area-inset-bottom, 0px) + 230px); tra
     <h1 id="endTitle"></h1>
     <p class="sub" id="endSub"></p>
     <div id="endList"></div>
-    <button class="go" id="again" type="button">PLAY AGAIN</button>
+    <p class="sub" id="endNet" hidden></p>
+    <div class="btnrow"><button class="go" id="again" type="button">PLAY AGAIN</button><button class="ghost" id="endLeave" type="button" hidden>Leave</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="onlineScreen" hidden>
+  <div class="panel narrow">
+    <h2 class="stitle" id="onTitle">Play online</h2>
+    <p class="sub" id="onSub"></p>
+    <label class="onrow"><span id="onNameL">Your name</span><input id="onName" maxlength="14" autocomplete="off" spellcheck="false"></label>
+    <button class="go" id="onQuick" type="button">Quick match</button>
+    <button class="go alt" id="onCreate" type="button">Create room</button>
+    <div class="onrow"><input id="onCode" maxlength="16" autocomplete="off" spellcheck="false" autocapitalize="characters"><button class="go alt" id="onJoin" type="button">Join</button></div>
+    <p class="onStatus" id="onStatus" role="status"></p>
+    <button class="ghost" id="onBack" type="button">Back</button>
   </div>
 </div>
 
@@ -409,6 +439,24 @@ const STR = {
   },
 };
 Object.assign(STR, {"fr":{"proto":"Solo · toi + 8 bots","pitch":"Trois gangs de monstres, une nuit de bonbons. Mange des bonbons pour grandir et choisis un nouveau pouvoir à chaque niveau. Le plus gros mangeur devient le Grand Boss : le gang qui l'a au lever du soleil gagne.","family":"CHOISIS TON GANG","hero":"CHOISIS TON MONSTRE","trapped":"PIÉGÉ","start":"POUVOIR DE DÉPART","play":"JOUER","again":"REJOUER","lv":"NIV","board":"BONBONS","pick":"Niveau supérieur ! Choisis-en un","pickStart":"Choisis un pouvoir","wins":" gagne !","youWin":"Ton gang remporte la nuit.","youLose":"Le Grand Boss appartient à un autre gang.","king":"est le Grand Boss !","newKing":"Nouveau Grand Boss","bossTag":"GRAND BOSS","youBoss":"Tu es le Grand Boss ! Tout le monde te voit","boss":"Grand Boss","you":"Toi","block":"BLOQUÉ","broken":"GARDE BRISÉE","noMate":"Aucun coéquipier proche","knocked":"mis K.O.","by":"par","sunrise":"AUBE DANS 30 s","respawn":"Retour dans","levelUp":"NIVEAU +","boost":"VITESSE +","a_atkShort":"Attaque","t_passive":"Passif","t_onhit":"Au coup","t_active":"Actif","t_toss":"Lancer","newSkill":"NEUF","upgrade":"Niv","controls":"COMMANDES","resume":"Reprendre","resetKeys":"Touches par défaut","rebindHint":"Clique sur une touche, puis appuie sur la nouvelle. Échap pour annuler.","pressKey":"Appuie sur une touche…","settings":"Réglages","a_move":"Bouger","a_atk":"Attaque (Espace et clic gauche aussi)","a_skill":"Pouvoir du monstre (clic droit aussi)","a_item":"Utiliser un objet","a_act":"Pouvoir actif","combine":"se combine en","a_p":"Choisir un pouvoir","auto":"Passif : agit tout seul","autoShort":"AUTO","w_move":"bouger","w_atk":"attaque","w_skill":"pouvoir du monstre","w_item":"objet","w_act":"pouvoir actif","w_skills":"choisir un pouvoir au niveau supérieur (1 2 3 marchent aussi)","w_pick":"Les pouvoirs rouges et bleus agissent seuls. Les jaunes (actifs) et verts (lancers) vont sur la touche de pouvoir actif ; les cartes jaunes se combinent.","w_set":"réglages","sch_arrows":["Flèches + main gauche","Bouge avec les flèches, combats de la main gauche."],"sch_wasd":["WASD + main droite","Bouge avec WASD, combats de la main droite."],"shield":"BOUCLIER","teams":[["Gang des Chauves-souris","Violet. Base : le vieux château, en haut à gauche."],["Gang des Citrouilles","Orange. Base : les bois, en haut à droite."],["Gang du Slime","Vert. Base : le cimetière, en bas."]],"music":"Musique on / off (M)","tb_hit":"FRAPPE","tb_skill":"POUVOIR","tb_item":"OBJET","lang":"Langue","adBreak":"Pub…"},"de":{"proto":"Solo · du + 8 Bots","pitch":"Drei Monsterbanden, eine Nacht voller Süßigkeiten. Iss Süßes, um zu wachsen, und wähle mit jedem Level eine neue Kraft. Wer am meisten futtert, wird der Große Boss – die Bande mit dem Boss bei Sonnenaufgang gewinnt.","family":"WÄHLE DEINE BANDE","hero":"WÄHLE DEIN MONSTER","trapped":"GEFANGEN","start":"START-KRAFT","play":"SPIELEN","again":"NOCHMAL","lv":"LV","board":"SÜSSES","pick":"Level up! Wähle eins","pickStart":"Wähle eine Kraft","wins":" gewinnt!","youWin":"Deine Bande gewinnt die Nacht.","youLose":"Der Große Boss gehört einer anderen Bande.","king":"ist der Große Boss!","newKing":"Neuer Großer Boss","bossTag":"BOSS","youBoss":"Du bist der Große Boss! Alle sehen dich","boss":"Boss","you":"Du","block":"BLOCK","broken":"DECKUNG WEG","noMate":"Kein Teamkollege in der Nähe","knocked":"ausgeknockt","by":"von","sunrise":"SONNENAUFGANG IN 30 s","respawn":"Zurück in","levelUp":"LEVEL UP","boost":"TEMPO","a_atkShort":"Angriff","t_passive":"Passiv","t_onhit":"Bei Treffer","t_active":"Aktiv","t_toss":"Wurf","newSkill":"NEU","upgrade":"Lv","controls":"STEUERUNG","resume":"Weiter","resetKeys":"Tasten zurücksetzen","rebindHint":"Klicke eine Taste und drücke dann die neue. Esc bricht ab.","pressKey":"Taste drücken…","settings":"Einstellungen","a_move":"Bewegen","a_atk":"Angriff (auch Leertaste und linke Maustaste)","a_skill":"Monster-Kraft (auch rechte Maustaste)","a_item":"Gegenstand nutzen","a_act":"Aktive Kraft","combine":"wird zu","a_p":"Kraft wählen","auto":"Passiv: wirkt von selbst","autoShort":"AUTO","w_move":"bewegen","w_atk":"Angriff","w_skill":"Monster-Kraft","w_item":"Gegenstand","w_act":"aktive Kraft","w_skills":"Kraft beim Level-up wählen (1 2 3 gehen auch)","w_pick":"Rote und blaue Kräfte wirken von selbst. Gelbe (aktiv) und grüne (Wurf) Kräfte liegen auf der Aktiv-Taste; gelbe Karten verschmelzen zu Kombos.","w_set":"Einstellungen","sch_arrows":["Pfeiltasten + linke Hand","Bewege dich mit den Pfeiltasten, kämpfe mit der linken Hand."],"sch_wasd":["WASD + rechte Hand","Bewege dich mit WASD, kämpfe mit der rechten Hand."],"shield":"SCHILD","teams":[["Fledermausbande","Lila. Basis: die alte Burg, oben links."],["Kürbisbande","Orange. Basis: der Wald, oben rechts."],["Schleimbande","Grün. Basis: der Friedhof, unten."]],"music":"Musik an / aus (M)","tb_hit":"HIEB","tb_skill":"KRAFT","tb_item":"ITEM","lang":"Sprache","adBreak":"Werbung…"},"es":{"proto":"Solo · tú + 8 bots","pitch":"Tres bandas de monstruos, una noche de caramelos. Come caramelos para crecer y elige un poder nuevo en cada nivel. El que más come se convierte en el Gran Jefe: gana la banda que lo tenga al amanecer.","family":"ELIGE TU BANDA","hero":"ELIGE TU MONSTRUO","trapped":"ATRAPADO","start":"PODER INICIAL","play":"JUGAR","again":"OTRA VEZ","lv":"NV","board":"CARAMELOS","pick":"¡Subes de nivel! Elige uno","pickStart":"Elige un poder","wins":" gana!","youWin":"Tu banda gana la noche.","youLose":"El Gran Jefe es de otra banda.","king":"¡es el Gran Jefe!","newKing":"Nuevo Gran Jefe","bossTag":"GRAN JEFE","youBoss":"¡Eres el Gran Jefe! Todos te ven","boss":"Gran Jefe","you":"Tú","block":"BLOQUEO","broken":"GUARDIA ROTA","noMate":"No hay compañeros cerca","knocked":"noqueado","by":"por","sunrise":"AMANECE EN 30 s","respawn":"Vuelves en","levelUp":"NIVEL +","boost":"VELOCIDAD","a_atkShort":"Ataque","t_passive":"Pasivo","t_onhit":"Al golpear","t_active":"Activo","t_toss":"Lanzar","newSkill":"NUEVO","upgrade":"Nv","controls":"CONTROLES","resume":"Seguir","resetKeys":"Restablecer teclas","rebindHint":"Haz clic en una tecla y pulsa la nueva. Esc cancela.","pressKey":"Pulsa una tecla…","settings":"Ajustes","a_move":"Moverse","a_atk":"Ataque (también Espacio y clic izquierdo)","a_skill":"Poder del monstruo (también clic derecho)","a_item":"Usar objeto","a_act":"Poder activo","combine":"se combina en","a_p":"Elegir poder","auto":"Pasivo: funciona solo","autoShort":"AUTO","w_move":"moverse","w_atk":"atacar","w_skill":"poder del monstruo","w_item":"objeto","w_act":"poder activo","w_skills":"elegir poder al subir de nivel (1 2 3 también)","w_pick":"Los poderes rojos y azules funcionan solos. Los amarillos (activos) y verdes (lanzamientos) van en la tecla de poder activo; las cartas amarillas se combinan.","w_set":"ajustes","sch_arrows":["Flechas + mano izquierda","Muévete con las flechas y lucha con la mano izquierda."],"sch_wasd":["WASD + mano derecha","Muévete con WASD y lucha con la mano derecha."],"shield":"ESCUDO","teams":[["Banda Murciélago","Morado. Base: el viejo castillo, arriba a la izquierda."],["Banda Calabaza","Naranja. Base: el bosque, arriba a la derecha."],["Banda Baba","Verde. Base: el cementerio, abajo."]],"music":"Música sí / no (M)","tb_hit":"GOLPE","tb_skill":"PODER","tb_item":"OBJETO","lang":"Idioma","adBreak":"Anuncio…"},"it":{"proto":"Solo · tu + 8 bot","pitch":"Tre bande di mostri, una notte di caramelle. Mangia caramelle per crescere e scegli un nuovo potere a ogni livello. Chi mangia di più diventa il Grande Boss: vince la banda che lo ha all’alba.","family":"SCEGLI LA BANDA","hero":"SCEGLI IL MOSTRO","trapped":"INTRAPPOLATO","start":"POTERE INIZIALE","play":"GIOCA","again":"ANCORA","lv":"LV","board":"CARAMELLE","pick":"Livello su! Scegline uno","pickStart":"Scegli un potere","wins":" vince!","youWin":"La tua banda vince la notte.","youLose":"Il Grande Boss è di un’altra banda.","king":"è il Grande Boss!","newKing":"Nuovo Grande Boss","bossTag":"GRANDE BOSS","youBoss":"Sei il Grande Boss! Tutti ti vedono","boss":"Boss","you":"Tu","block":"PARATA","broken":"GUARDIA ROTTA","noMate":"Nessun compagno vicino","knocked":"messo KO","by":"da","sunrise":"ALBA TRA 30 s","respawn":"Di nuovo tra","levelUp":"LIVELLO SU","boost":"VELOCITÀ","a_atkShort":"Attacco","t_passive":"Passivo","t_onhit":"Al colpo","t_active":"Attivo","t_toss":"Lancio","newSkill":"NUOVO","upgrade":"Lv","controls":"COMANDI","resume":"Riprendi","resetKeys":"Tasti predefiniti","rebindHint":"Clicca un tasto, poi premi quello nuovo. Esc annulla.","pressKey":"Premi un tasto…","settings":"Impostazioni","a_move":"Muoviti","a_atk":"Attacco (anche Spazio e clic sinistro)","a_skill":"Potere del mostro (anche clic destro)","a_item":"Usa oggetto","a_act":"Potere attivo","combine":"si combina in","a_p":"Scegli potere","auto":"Passivo: funziona da solo","autoShort":"AUTO","w_move":"muoversi","w_atk":"attacco","w_skill":"potere del mostro","w_item":"oggetto","w_act":"potere attivo","w_skills":"scegli un potere al livello su (vanno anche 1 2 3)","w_pick":"I poteri rossi e blu funzionano da soli. Quelli gialli (attivi) e verdi (lanci) vanno sul tasto del potere attivo; le carte gialle si combinano.","w_set":"impostazioni","sch_arrows":["Frecce + mano sinistra","Muoviti con le frecce, combatti con la mano sinistra."],"sch_wasd":["WASD + mano destra","Muoviti con WASD, combatti con la mano destra."],"shield":"SCUDO","teams":[["Banda dei Pipistrelli","Viola. Base: il vecchio castello, in alto a sinistra."],["Banda delle Zucche","Arancione. Base: il bosco, in alto a destra."],["Banda della Melma","Verde. Base: il cimitero, in basso."]],"music":"Musica on / off (M)","tb_hit":"COLPO","tb_skill":"POTERE","tb_item":"OGGETTO","lang":"Lingua","adBreak":"Pubblicità…"},"pt":{"proto":"Solo · você + 8 bots","pitch":"Três gangues de monstros, uma noite de doces. Coma doces para crescer e escolha um novo poder a cada nível. Quem come mais vira o Chefão: vence a gangue que tiver o Chefão ao nascer do sol.","family":"ESCOLHA A GANGUE","hero":"ESCOLHA O MONSTRO","trapped":"PRESO","start":"PODER INICIAL","play":"JOGAR","again":"DE NOVO","lv":"NV","board":"DOCES","pick":"Subiu de nível! Escolha um","pickStart":"Escolha um poder","wins":" vence!","youWin":"Sua gangue venceu a noite.","youLose":"O Chefão é de outra gangue.","king":"é o Chefão!","newKing":"Novo Chefão","bossTag":"CHEFÃO","youBoss":"Você é o Chefão! Todos veem você","boss":"Chefão","you":"Você","block":"BLOQUEIO","broken":"GUARDA QUEBRADA","noMate":"Nenhum aliado por perto","knocked":"nocauteado","by":"por","sunrise":"AMANHECE EM 30 s","respawn":"Volta em","levelUp":"NÍVEL +","boost":"VELOCIDADE","a_atkShort":"Ataque","t_passive":"Passivo","t_onhit":"Ao acertar","t_active":"Ativo","t_toss":"Arremesso","newSkill":"NOVO","upgrade":"Nv","controls":"CONTROLES","resume":"Continuar","resetKeys":"Teclas padrão","rebindHint":"Clique numa tecla e aperte a nova. Esc cancela.","pressKey":"Aperte uma tecla…","settings":"Configurações","a_move":"Mover","a_atk":"Ataque (Espaço e clique esquerdo também)","a_skill":"Poder do monstro (clique direito também)","a_item":"Usar item","a_act":"Poder ativo","combine":"combina em","a_p":"Escolher poder","auto":"Passivo: funciona sozinho","autoShort":"AUTO","w_move":"mover","w_atk":"atacar","w_skill":"poder do monstro","w_item":"item","w_act":"poder ativo","w_skills":"escolher poder ao subir de nível (1 2 3 também)","w_pick":"Poderes vermelhos e azuis funcionam sozinhos. Amarelos (ativos) e verdes (arremessos) vão na tecla de poder ativo; cartas amarelas se combinam.","w_set":"configurações","sch_arrows":["Setas + mão esquerda","Mova com as setas e lute com a mão esquerda."],"sch_wasd":["WASD + mão direita","Mova com WASD e lute com a mão direita."],"shield":"ESCUDO","teams":[["Gangue Morcego","Roxo. Base: o castelo velho, no alto à esquerda."],["Gangue Abóbora","Laranja. Base: o bosque, no alto à direita."],["Gangue Gosma","Verde. Base: o cemitério, embaixo."]],"music":"Música liga / desliga (M)","tb_hit":"GOLPE","tb_skill":"PODER","tb_item":"ITEM","lang":"Idioma","adBreak":"Anúncio…"},"tr":{"proto":"Tek kişilik · sen + 8 bot","pitch":"Üç canavar çetesi, şekerle dolu bir gece. Büyümek için şeker ye, her seviyede yeni bir güç seç. En çok şeker yiyen Büyük Patron olur: gün doğduğunda Patron hangi çetedeyse o çete kazanır.","family":"ÇETENİ SEÇ","hero":"CANAVARINI SEÇ","trapped":"TUZAKTA","start":"BAŞLANGIÇ GÜCÜ","play":"OYNA","again":"TEKRAR","lv":"SV","board":"ŞEKER","pick":"Seviye atladın! Birini seç","pickStart":"Bir güç seç","wins":" kazandı!","youWin":"Çeten geceyi kazandı.","youLose":"Büyük Patron başka bir çetede.","king":"Büyük Patron oldu!","newKing":"Yeni Büyük Patron","bossTag":"PATRON","youBoss":"Büyük Patron sensin! Herkes seni görüyor","boss":"Patron","you":"Sen","block":"BLOK","broken":"SAVUNMA KIRILDI","noMate":"Yakında takım arkadaşı yok","knocked":"nakavt oldu","by":"yapan","sunrise":"30 sn SONRA GÜN DOĞUYOR","respawn":"Dönüş","levelUp":"SEVİYE","boost":"HIZ","a_atkShort":"Saldırı","t_passive":"Pasif","t_onhit":"Vuruşta","t_active":"Aktif","t_toss":"Fırlat","newSkill":"YENİ","upgrade":"Sv","controls":"KONTROLLER","resume":"Devam","resetKeys":"Tuşları sıfırla","rebindHint":"Bir tuşa tıkla, sonra yenisine bas. Esc iptal eder.","pressKey":"Bir tuşa bas…","settings":"Ayarlar","a_move":"Hareket","a_atk":"Saldırı (Boşluk ve sol tık da olur)","a_skill":"Canavar gücü (sağ tık da olur)","a_item":"Eşya kullan","a_act":"Aktif güç","combine":"birleşir:","a_p":"Güç seç","auto":"Pasif: kendiliğinden çalışır","autoShort":"OTO","w_move":"hareket","w_atk":"saldırı","w_skill":"canavar gücü","w_item":"eşya","w_act":"aktif güç","w_skills":"seviye atlayınca güç seç (1 2 3 de olur)","w_pick":"Kırmızı ve mavi güçler kendiliğinden çalışır. Sarı (aktif) ve yeşil (fırlatma) güçler aktif güç tuşundadır; sarı kartlar birleşir.","w_set":"ayarlar","sch_arrows":["Ok tuşları + sol el","Ok tuşlarıyla hareket et, sol elinle dövüş."],"sch_wasd":["WASD + sağ el","WASD ile hareket et, sağ elinle dövüş."],"shield":"KALKAN","teams":[["Yarasa Çetesi","Mor. Üs: eski kale, sol üstte."],["Balkabağı Çetesi","Turuncu. Üs: orman, sağ üstte."],["Balçık Çetesi","Yeşil. Üs: mezarlık, aşağıda."]],"music":"Müzik aç / kapat (M)","tb_hit":"VUR","tb_skill":"GÜÇ","tb_item":"EŞYA","lang":"Dil","adBreak":"Reklam…"},"ja":{"proto":"ソロ · きみ + ボット8体","pitch":"3つのモンスター団、キャンディだらけの一夜。キャンディを食べて大きくなり、レベルごとに新しい力を選ぼう。一番食べたモンスターが大魔王になり、夜明けに大魔王がいるチームの勝ち。","family":"チームをえらぶ","hero":"モンスターをえらぶ","trapped":"つかまった","start":"さいしょの力","play":"プレイ","again":"もう一回","lv":"LV","board":"キャンディ","pick":"レベルアップ！ひとつ選んで","pickStart":"力をえらぶ","wins":"の勝ち！","youWin":"きみのチームが今夜の勝者だ。","youLose":"大魔王はほかのチームにいる。","king":"が大魔王になった！","newKing":"新しい大魔王","bossTag":"大魔王","youBoss":"きみが大魔王！みんなに居場所がバレてるぞ","boss":"大魔王","you":"きみ","block":"ガード","broken":"ガードブレイク","noMate":"近くに味方がいない","knocked":"がダウン","by":"倒した相手","sunrise":"あと30秒で夜明け","respawn":"復活まで","levelUp":"レベルアップ","boost":"スピードアップ","a_atkShort":"攻撃","t_passive":"パッシブ","t_onhit":"ヒット時","t_active":"アクティブ","t_toss":"投げ","newSkill":"NEW","upgrade":"Lv","controls":"操作","resume":"つづける","resetKeys":"キーを初期化","rebindHint":"キーをクリックしてから新しいキーを押してね。Escでキャンセル。","pressKey":"キーを押して…","settings":"設定","a_move":"移動","a_atk":"攻撃（スペース・左クリックも可）","a_skill":"モンスタースキル（右クリックも可）","a_item":"アイテム","a_act":"アクティブスキル","combine":"合体：","a_p":"力をえらぶ","auto":"パッシブ：自動で発動","autoShort":"自動","w_move":"移動","w_atk":"攻撃","w_skill":"モンスタースキル","w_item":"アイテム","w_act":"アクティブスキル","w_skills":"レベルアップ時に力をえらぶ（1 2 3も可）","w_pick":"赤と青の力は自動で発動。黄（アクティブ）と緑（投げ）はアクティブキーで使う。黄色のカードは合体する。","w_set":"設定","sch_arrows":["矢印キー + 左手","矢印キーで移動、左手で戦う。"],"sch_wasd":["WASD + 右手","WASDで移動、右手で戦う。"],"shield":"無敵","teams":[["コウモリ団","紫。基地は左上の古城。"],["カボチャ団","オレンジ。基地は右上の森。"],["スライム団","緑。基地は下の墓地。"]],"music":"音楽オン / オフ (M)","tb_hit":"攻撃","tb_skill":"スキル","tb_item":"アイテム","lang":"言語","adBreak":"広告…"},"ko":{"proto":"솔로 · 나 + 봇 8명","pitch":"세 몬스터 갱, 사탕 가득한 하룻밤. 사탕을 먹고 커지고, 레벨마다 새 능력을 골라요. 가장 많이 먹은 몬스터가 대마왕이 되고, 해가 뜰 때 대마왕이 있는 팀이 이겨요.","family":"갱 선택","hero":"몬스터 선택","trapped":"갇힘","start":"시작 능력","play":"플레이","again":"다시 하기","lv":"LV","board":"사탕","pick":"레벨 업! 하나를 고르세요","pickStart":"능력을 고르세요","wins":" 승리!","youWin":"우리 갱이 오늘 밤의 승자!","youLose":"대마왕은 다른 갱에 있어요.","king":"대마왕 등장!","newKing":"새로운 대마왕","bossTag":"대마왕","youBoss":"당신이 대마왕! 모두가 위치를 알아요","boss":"대마왕","you":"나","block":"막음","broken":"가드 깨짐","noMate":"근처에 팀원이 없어요","knocked":"쓰러짐","by":"처치자","sunrise":"30초 후 해 뜸","respawn":"부활까지","levelUp":"레벨 업","boost":"속도 업","a_atkShort":"공격","t_passive":"패시브","t_onhit":"적중 시","t_active":"액티브","t_toss":"던지기","newSkill":"NEW","upgrade":"Lv","controls":"조작","resume":"계속","resetKeys":"키 초기화","rebindHint":"키를 클릭한 뒤 새 키를 누르세요. Esc는 취소.","pressKey":"키를 누르세요…","settings":"설정","a_move":"이동","a_atk":"공격 (스페이스, 마우스 왼쪽도 가능)","a_skill":"몬스터 스킬 (마우스 오른쪽도 가능)","a_item":"아이템 사용","a_act":"액티브 스킬","combine":"합체:","a_p":"능력 선택","auto":"패시브: 자동 발동","autoShort":"자동","w_move":"이동","w_atk":"공격","w_skill":"몬스터 스킬","w_item":"아이템","w_act":"액티브 스킬","w_skills":"레벨 업 때 능력 선택 (1 2 3도 가능)","w_pick":"빨강·파랑 능력은 자동 발동. 노랑(액티브)과 초록(던지기)은 액티브 키로 써요. 노랑 카드는 서로 합체해요.","w_set":"설정","sch_arrows":["방향키 + 왼손","방향키로 이동하고 왼손으로 싸워요."],"sch_wasd":["WASD + 오른손","WASD로 이동하고 오른손으로 싸워요."],"shield":"무적","teams":[["박쥐 갱","보라. 기지: 왼쪽 위 낡은 성."],["호박 갱","주황. 기지: 오른쪽 위 숲."],["슬라임 갱","초록. 기지: 아래쪽 묘지."]],"music":"음악 켜기 / 끄기 (M)","tb_hit":"공격","tb_skill":"스킬","tb_item":"아이템","lang":"언어","adBreak":"광고…"},"ru":{"proto":"Соло · ты + 8 ботов","pitch":"Три банды монстров, одна ночь конфет. Ешь конфеты, чтобы расти, и выбирай новую силу на каждом уровне. Кто съест больше всех, становится Главным Боссом — побеждает банда, у которой он будет на рассвете.","family":"ВЫБЕРИ БАНДУ","hero":"ВЫБЕРИ МОНСТРА","trapped":"В ЛОВУШКЕ","start":"СТАРТОВАЯ СИЛА","play":"ИГРАТЬ","again":"ЕЩЁ РАЗ","lv":"УР","board":"КОНФЕТЫ","pick":"Новый уровень! Выбери","pickStart":"Выбери силу","wins":" побеждает!","youWin":"Твоя банда выиграла ночь.","youLose":"Главный Босс в другой банде.","king":"— Главный Босс!","newKing":"Новый Главный Босс","bossTag":"БОСС","youBoss":"Ты Главный Босс! Все тебя видят","boss":"Босс","you":"Ты","block":"БЛОК","broken":"ЗАЩИТА СЛОМАНА","noMate":"Рядом нет союзников","knocked":"нокаут","by":"от","sunrise":"РАССВЕТ ЧЕРЕЗ 30 с","respawn":"Вернёшься через","levelUp":"УРОВЕНЬ","boost":"УСКОРЕНИЕ","a_atkShort":"Атака","t_passive":"Пассив","t_onhit":"При ударе","t_active":"Актив","t_toss":"Бросок","newSkill":"НОВОЕ","upgrade":"Ур","controls":"УПРАВЛЕНИЕ","resume":"Продолжить","resetKeys":"Сбросить клавиши","rebindHint":"Нажми на клавишу в списке, затем новую. Esc — отмена.","pressKey":"Нажми клавишу…","settings":"Настройки","a_move":"Движение","a_atk":"Атака (также Пробел и левая кнопка мыши)","a_skill":"Сила монстра (также правая кнопка мыши)","a_item":"Предмет","a_act":"Активная сила","combine":"объединяется в","a_p":"Выбор силы","auto":"Пассив: работает сам","autoShort":"АВТО","w_move":"движение","w_atk":"атака","w_skill":"сила монстра","w_item":"предмет","w_act":"активная сила","w_skills":"выбор силы на новом уровне (1 2 3 тоже)","w_pick":"Красные и синие силы работают сами. Жёлтые (активные) и зелёные (броски) — на клавише активной силы; жёлтые карты объединяются.","w_set":"настройки","sch_arrows":["Стрелки + левая рука","Двигайся стрелками, сражайся левой рукой."],"sch_wasd":["WASD + правая рука","Двигайся WASD, сражайся правой рукой."],"shield":"ЩИТ","teams":[["Банда Летучих Мышей","Фиолетовые. База: старый замок, слева вверху."],["Банда Тыкв","Оранжевые. База: лес, справа вверху."],["Банда Слизи","Зелёные. База: кладбище, внизу."]],"music":"Музыка вкл / выкл (M)","tb_hit":"УДАР","tb_skill":"СИЛА","tb_item":"ПРЕДМЕТ","lang":"Язык","adBreak":"Реклама…"}});
+// online-play strings (11 languages)
+(() => {
+  const K = ['proto', 'n_online', 'n_title', 'n_sub', 'n_quick', 'n_create', 'n_join', 'n_code', 'n_name', 'n_back', 'n_connecting', 'n_joining', 'n_noRoom', 'n_full', 'n_fail', 'n_timeout', 'n_needCode', 'n_hostLeft', 'n_room', 'n_copied', 'n_leave', 'n_next', 'n_wait', 'n_waitJoin', 'n_joined', 'n_left', 'n_player', 'n_startNow'];
+  const V = {
+    en: ['Solo or online · 3 gangs × 3', 'ONLINE', 'Play online', 'Team up with real people: 3 gangs × 3 monsters. Empty seats are bots, and anyone can drop in mid-match.', 'Quick match', 'Create a room for friends', 'Join', 'Room code', 'Your name', 'Back', 'Connecting…', 'Joining the room…', 'No open rooms, so you are hosting a new one. Others can drop in any time.', 'That room is full', "Can't reach the online service right now. You can still play solo.", 'The room did not answer. Check the code and try again.', 'Enter a room code first', 'The host left, so the match ended', 'Room', 'Invite link copied! Send it to your friends', 'Leave match', 'Next match in {n} s', 'Waiting for the host to start the next match…', "You're in! The next match starts in a few seconds…", '{n} joined', '{n} left', 'Player {n}', 'START NOW'],
+    fr: ['Solo ou en ligne · 3 gangs × 3', 'EN LIGNE', 'Jouer en ligne', 'Fais équipe avec de vrais joueurs : 3 gangs × 3 monstres. Les places libres sont des bots, et on peut rejoindre en cours de partie.', 'Partie rapide', 'Créer un salon entre amis', 'Rejoindre', 'Code du salon', 'Ton pseudo', 'Retour', 'Connexion…', 'Connexion au salon…', 'Aucun salon ouvert : tu héberges une nouvelle partie. Les autres peuvent arriver à tout moment.', 'Ce salon est plein', 'Le service en ligne est injoignable pour le moment. Tu peux jouer en solo.', "Le salon n'a pas répondu. Vérifie le code et réessaie.", "Entre d'abord un code de salon", "L'hôte est parti, la partie est terminée", 'Salon', "Lien d'invitation copié ! Envoie-le à tes amis", 'Quitter la partie', 'Prochaine partie dans {n} s', "En attente de la prochaine partie de l'hôte…", "C'est bon ! La prochaine partie commence dans quelques secondes…", '{n} a rejoint', '{n} est parti', 'Joueur {n}', 'LANCER'],
+    it: ['Da solo o online · 3 bande × 3', 'ONLINE', 'Gioca online', 'Fai squadra con persone vere: 3 bande × 3 mostri. I posti liberi sono bot e chiunque può entrare a partita in corso.', 'Partita rapida', 'Crea una stanza per gli amici', 'Entra', 'Codice stanza', 'Il tuo nome', 'Indietro', 'Connessione…', 'Ingresso nella stanza…', 'Nessuna stanza aperta: ospiti tu una nuova partita. Gli altri possono entrare quando vogliono.', 'La stanza è piena', 'Il servizio online non è raggiungibile ora. Puoi comunque giocare da solo.', 'La stanza non ha risposto. Controlla il codice e riprova.', 'Inserisci prima un codice stanza', "L'host se n'è andato, la partita è finita", 'Stanza', 'Link di invito copiato! Mandalo ai tuoi amici', 'Esci dalla partita', 'Prossima partita tra {n} s', "In attesa che l'host avvii la prossima partita…", 'Sei dentro! La prossima partita inizia tra pochi secondi…', '{n} è entrato', '{n} è uscito', 'Giocatore {n}', 'INIZIA ORA'],
+    de: ['Solo oder online · 3 Banden × 3', 'ONLINE', 'Online spielen', 'Spiel mit echten Leuten: 3 Banden × 3 Monster. Freie Plätze sind Bots, und jeder kann mitten im Spiel einsteigen.', 'Schnelles Spiel', 'Raum für Freunde erstellen', 'Beitreten', 'Raumcode', 'Dein Name', 'Zurück', 'Verbinde…', 'Trete dem Raum bei…', 'Kein offener Raum, also hostest du einen neuen. Andere können jederzeit einsteigen.', 'Der Raum ist voll', 'Der Online-Dienst ist gerade nicht erreichbar. Du kannst trotzdem solo spielen.', 'Der Raum hat nicht geantwortet. Prüfe den Code und versuch es nochmal.', 'Gib zuerst einen Raumcode ein', 'Der Host ist gegangen, das Spiel ist vorbei', 'Raum', 'Einladungslink kopiert! Schick ihn deinen Freunden', 'Spiel verlassen', 'Nächstes Spiel in {n} s', 'Warte, bis der Host das nächste Spiel startet…', 'Du bist dabei! Das nächste Spiel startet in ein paar Sekunden…', '{n} ist beigetreten', '{n} ist gegangen', 'Spieler {n}', 'JETZT STARTEN'],
+    es: ['Solo u online · 3 bandas × 3', 'ONLINE', 'Jugar online', 'Forma equipo con gente real: 3 bandas × 3 monstruos. Los huecos libres son bots y cualquiera puede unirse a mitad de partida.', 'Partida rápida', 'Crear sala para amigos', 'Unirse', 'Código de sala', 'Tu nombre', 'Atrás', 'Conectando…', 'Entrando en la sala…', 'No hay salas abiertas, así que tú eres el anfitrión de una nueva. Otros pueden unirse cuando quieran.', 'La sala está llena', 'Ahora no se puede conectar con el servicio online. Puedes jugar en solitario.', 'La sala no respondió. Revisa el código e inténtalo de nuevo.', 'Primero escribe un código de sala', 'El anfitrión se fue y la partida terminó', 'Sala', '¡Enlace de invitación copiado! Envíaselo a tus amigos', 'Salir de la partida', 'Siguiente partida en {n} s', 'Esperando a que el anfitrión empiece la siguiente partida…', '¡Ya estás dentro! La siguiente partida empieza en unos segundos…', '{n} se unió', '{n} se fue', 'Jugador {n}', 'EMPEZAR YA'],
+    tr: ['Tek başına veya çevrimiçi · 3 çete × 3', 'ÇEVRİMİÇİ', 'Çevrimiçi oyna', 'Gerçek oyuncularla takım ol: 3 çete × 3 canavar. Boş yerler bot olur, herkes maçın ortasında katılabilir.', 'Hızlı maç', 'Arkadaşlar için oda kur', 'Katıl', 'Oda kodu', 'Adın', 'Geri', 'Bağlanılıyor…', 'Odaya katılınıyor…', 'Açık oda yok, yeni odayı sen kuruyorsun. Başkaları her an katılabilir.', 'Oda dolu', 'Çevrimiçi hizmete şu an ulaşılamıyor. Yine de tek başına oynayabilirsin.', 'Oda yanıt vermedi. Kodu kontrol edip tekrar dene.', 'Önce bir oda kodu gir', 'Oda sahibi ayrıldı, maç bitti', 'Oda', 'Davet linki kopyalandı! Arkadaşlarına gönder', 'Maçtan çık', 'Sonraki maç {n} sn içinde', 'Oda sahibinin sonraki maçı başlatması bekleniyor…', 'İçeridesin! Sonraki maç birkaç saniye içinde başlıyor…', '{n} katıldı', '{n} ayrıldı', 'Oyuncu {n}', 'ŞİMDİ BAŞLAT'],
+    zh: ['单人或联机 · 3 帮派 × 3', '联机', '联机对战', '和真人组队：3 个帮派，每帮 3 只怪物。空位由机器人补上，任何人都可以中途加入。', '快速匹配', '创建房间（和朋友玩）', '加入', '房间码', '你的名字', '返回', '正在连接…', '正在加入房间…', '暂时没有可加入的房间，已由你开一个新房间，其他人随时可以加入。', '房间已满', '暂时连不上联机服务，可以先玩单人。', '房间没有回应，请检查房间码后再试。', '请先输入房间码', '房主已离开，对局结束', '房间', '邀请链接已复制！发给朋友吧', '退出对局', '{n} 秒后开始下一局', '等待房主开始下一局…', '已加入！下一局几秒后开始…', '{n} 加入了', '{n} 离开了', '玩家{n}', '马上开始'],
+    ja: ['ひとりでもオンラインでも · 3チーム × 3', 'オンライン', 'オンラインで遊ぶ', '本物のプレイヤーとチームを組もう：3チーム × 3体のモンスター。空いた席はCPUが入り、試合の途中からでも参加できます。', 'クイックマッチ', '友だちと部屋をつくる', '参加', '部屋コード', 'なまえ', 'もどる', '接続中…', '部屋に参加中…', '空いている部屋がないので、新しい部屋をあなたがホストします。ほかの人はいつでも参加できます。', 'その部屋は満員です', 'いまオンラインサービスにつながりません。ひとりで遊ぶことはできます。', '部屋から応答がありません。コードを確認してもう一度試してください。', '先に部屋コードを入力してください', 'ホストが退出したため試合は終了しました', '部屋', '招待リンクをコピーしました！友だちに送ろう', '試合を抜ける', '次の試合まで {n} 秒', 'ホストが次の試合を始めるのを待っています…', '参加しました！次の試合は数秒後に始まります…', '{n} が参加', '{n} が退出', 'プレイヤー{n}', '今すぐ開始'],
+    ko: ['혼자 또는 온라인 · 3팀 × 3', '온라인', '온라인 플레이', '진짜 사람들과 팀을 짜세요: 3팀 × 몬스터 3마리. 빈자리는 봇이 채우고, 누구나 경기 중간에 들어올 수 있어요.', '빠른 매칭', '친구와 방 만들기', '참가', '방 코드', '이름', '뒤로', '연결 중…', '방에 들어가는 중…', '열린 방이 없어서 새 방을 직접 열었어요. 다른 사람이 언제든 들어올 수 있어요.', '방이 꽉 찼어요', '지금은 온라인 서비스에 연결할 수 없어요. 혼자 하기는 할 수 있어요.', '방이 응답하지 않아요. 코드를 확인하고 다시 시도하세요.', '먼저 방 코드를 입력하세요', '방장이 나가서 경기가 끝났어요', '방', '초대 링크를 복사했어요! 친구에게 보내세요', '경기 나가기', '{n}초 후 다음 경기', '방장이 다음 경기를 시작하기를 기다리는 중…', '들어왔어요! 다음 경기가 몇 초 뒤 시작돼요…', '{n} 님이 들어왔어요', '{n} 님이 나갔어요', '플레이어{n}', '지금 시작'],
+    pt: ['Solo ou online · 3 gangues × 3', 'ONLINE', 'Jogar online', 'Forme equipe com pessoas de verdade: 3 gangues × 3 monstros. Vagas livres ficam com bots e qualquer um pode entrar no meio da partida.', 'Partida rápida', 'Criar sala para amigos', 'Entrar', 'Código da sala', 'Seu nome', 'Voltar', 'Conectando…', 'Entrando na sala…', 'Nenhuma sala aberta, então você vai hospedar uma nova. Outros podem entrar a qualquer momento.', 'A sala está cheia', 'Não foi possível acessar o serviço online agora. Você ainda pode jogar solo.', 'A sala não respondeu. Confira o código e tente de novo.', 'Digite primeiro um código de sala', 'O anfitrião saiu e a partida acabou', 'Sala', 'Link de convite copiado! Mande para seus amigos', 'Sair da partida', 'Próxima partida em {n} s', 'Esperando o anfitrião começar a próxima partida…', 'Você entrou! A próxima partida começa em alguns segundos…', '{n} entrou', '{n} saiu', 'Jogador {n}', 'COMEÇAR AGORA'],
+    ru: ['Одиночная или онлайн · 3 банды × 3', 'ОНЛАЙН', 'Играть онлайн', 'Играй в команде с живыми людьми: 3 банды × 3 монстра. Свободные места занимают боты, войти можно прямо посреди матча.', 'Быстрая игра', 'Создать комнату для друзей', 'Войти', 'Код комнаты', 'Твоё имя', 'Назад', 'Подключение…', 'Входим в комнату…', 'Открытых комнат нет, поэтому ты создаёшь новую. Другие могут войти в любой момент.', 'Комната заполнена', 'Онлайн-сервис сейчас недоступен. Можно сыграть одному.', 'Комната не ответила. Проверь код и попробуй ещё раз.', 'Сначала введи код комнаты', 'Хозяин ушёл, матч окончен', 'Комната', 'Ссылка-приглашение скопирована! Отправь её друзьям', 'Выйти из матча', 'Следующий матч через {n} с', 'Ждём, когда хозяин начнёт следующий матч…', 'Ты в игре! Следующий матч начнётся через несколько секунд…', '{n} присоединился', '{n} вышел', 'Игрок {n}', 'НАЧАТЬ СЕЙЧАС'],
+  };
+  for (const c in V) { STR[c] = STR[c] || {}; K.forEach((k, i) => { STR[c][k] = V[c][i]; }); }
+})();
 const T = k => { const t = STR[LANG] || STR.en; return t[k] !== undefined ? t[k] : STR.en[k]; };
 
 // ======================= CrazyGames SDK (v3) =======================
@@ -433,6 +481,13 @@ const CG = (() => {
     setPlaying(on) { if (on === playing) return; playing = on; call(S => on ? S.game.gameplayStart() : S.game.gameplayStop()); },
     happy() { call(S => S.game.happytime()); },
     applyMute() { if (!actx) return; try { if (CG.muted) actx.suspend(); else if (actx.state === 'suspended') actx.resume(); } catch (e) {} },
+    room(code, joinable) { call(S => { if (S.game.updateRoom) S.game.updateRoom({ roomId: String(code), isJoinable: !!joinable, inviteParams: { room: String(code) } }); }); },
+    leftRoom() { call(S => { if (S.game.leftRoom) S.game.leftRoom(); }); },
+    inviteLink(code) { let l = null; call(S => { l = S.game.inviteLink({ room: String(code) }); }); if (l) return l; const u = new URL(location.href); u.searchParams.set('room', code); return u.href; },
+    inviteRoom() { let r = null; call(S => { const p = S.game.inviteParams; r = (p && p.room) || (S.game.getInviteParam && S.game.getInviteParam('room')) || null; }); return r; },
+    instant() { let v = false; call(S => { v = !!S.game.isInstantMultiplayer; }); return v; },
+    onJoinRoom(fn) { call(S => { if (S.game.addJoinRoomListener) S.game.addJoinRoomListener(p => { if (p && p.room) fn(String(p.room)); }); }); },
+    async userName() { if (!sdk) return null; try { if (!sdk.user.isUserAccountAvailable) return null; const u = await sdk.user.getUser(); return u && u.username ? String(u.username) : null; } catch (e) { return null; } },
     midgame(done) { // interstitial between matches; input is blocked and sound is off while it plays
       if (!sdk) { done(); return; }
       let fin = false; const end = () => { if (fin) return; fin = true; adBusy = false; document.getElementById('adblock').hidden = true; CG.applyMute(); done(); };
@@ -1453,8 +1508,10 @@ function fieldSpot(F, spread = 1) { // denser in the middle of a patch
   }
   return { x: F.x, z: F.z };
 }
+let PID = 0;
 function addPickup(x, z, v, opts = {}) {
-  const p = { home: opts.home, x, z, v, big: v >= 5, corn: v < 5 && Math.random() < 0.35, col: CANDY_COLS[(Math.random() * CANDY_COLS.length) | 0], alive: true, field: !!opts.field, respawn: 0, vx: opts.vx || 0, vz: opts.vz || 0, air: opts.air || 0, y: 0, ph: Math.random() * 6 };
+  if (NET.role === 'client' && !opts.net) return null; // online: only the host makes candy
+  const p = { id: opts.id || ++PID, home: opts.home, x, z, v, big: v >= 5, corn: opts.corn !== undefined ? !!opts.corn : v < 5 && Math.random() < 0.35, col: opts.col !== undefined ? CANDY_COLS[opts.col] || CANDY_COLS[0] : CANDY_COLS[(Math.random() * CANDY_COLS.length) | 0], alive: true, field: !!opts.field, respawn: 0, vx: opts.vx || 0, vz: opts.vz || 0, air: opts.air || 0, y: 0, ph: Math.random() * 6 };
   pickups.push(p); return p;
 }
 function scatter(x, z, total, n) {
@@ -1592,6 +1649,7 @@ function spawnAt(u, first) {
   u.bubbleT = 0; u.trappedT = 0; u.form = 0; u.hitAt = 0; u.empowerT = 0; u.getup = false;
   u.burstArmed = false; u.dashT = 0; u.dashN = 0; u.kickChain = 0; u.kickLand = false; u.pounceLeft = 0; u.sprint = false; removeAnchor(u);
   u.vis.root.visible = true;
+  if (u.remote) { u.rx = undefined; u.rxHold = clock + 1.5; } // online: ignore a remote player's old position until their screen catches up
 }
 
 // ======================= skills: picks =======================
@@ -1622,10 +1680,12 @@ function offerFor(u, n = 3) {
 }
 function learn(u, id) {
   u.skills[id] = (u.skills[id] || 0) + 1;
+  if (NET.role === 'host') netEv(['sk', u.id, u.skills]);
   if (id === 'moon') u.stamina += 1;
   if (u.isPlayer) renderSkillbar();
 }
 function addXp(u, v) {
+  if (NET.role === 'client') return; // the host keeps score
   u.score += v; u.xp += v;
   if (u.isPlayer) u.candyAcc += v;
   while (u.level < 30 && u.xp >= xpFor(u.level + 1)) {
@@ -1633,9 +1693,10 @@ function addXp(u, v) {
     if (u.level <= 5) { u.pendingPicks++; u.maxHp += 15; u.hp = Math.min(u.maxHp, u.hp + 25); }
     else { u.maxHp += 8; u.hp = Math.min(u.maxHp, u.hp + 12); }
     if (u.isPlayer) { popText(u, T('levelUp'), '#ffc23d', 1.2); SFX.play('level'); }
-    else if (u.level <= 5) { const o = offerFor(u); if (o.length) learn(u, o[(Math.random() * o.length) | 0]); u.pendingPicks--; }
+    else if (u.level <= 5 && !u.remote) { const o = offerFor(u); if (o.length) learn(u, o[(Math.random() * o.length) | 0]); u.pendingPicks--; }
   }
   if (u.isPlayer && u.pendingPicks > 0 && !picking) showPicker();
+  if (u.remote && u.pendingPicks > 0 && !u.offer) netOffer(u);
 }
 const ALLY = '#7cf07a', ENEMY = '#ff6a6a';
 const nameOf = u => u.isPlayer ? T('you') : u.name;
@@ -1645,6 +1706,7 @@ function colorTags() { units.forEach(u => { u.tagNm.style.color = relCol(u); u.t
 
 // ======================= combat =======================
 const isEnemy = (a, b) => a && b && a.team !== b.team;
+const isHuman = u => !!(u && (u.isPlayer || u.human));
 const BOT_VS_PLAYER = 0.85; // bots hit the player 15% softer
 const reachOf = u => HEROES[u.hero].reach;
 function canSee(viewer, t) {
@@ -1656,8 +1718,9 @@ function canSee(viewer, t) {
   return d2(viewer, t) < 2.4 * 2.4;
 }
 function dealDamage(src, tgt, amount, o = {}) {
+  if (NET.role === 'client') return false; // the host decides every hit
   if (!tgt.alive || tgt.invuln > 0 || (src && src.team === tgt.team && !o.ff)) return false;
-  if (tgt.isPlayer && src && !src.isPlayer) amount *= BOT_VS_PLAYER;
+  if (isHuman(tgt) && src && !isHuman(src)) amount *= BOT_VS_PLAYER;
   if (tgt.guardT > 0 && o.blockable) {
     if (o.breaksGuard) { tgt.guardT = 0; tgt.burstArmed = false; popText(tgt, T('broken'), '#ff8b2c'); }
     else {
@@ -1679,6 +1742,7 @@ function dealDamage(src, tgt, amount, o = {}) {
   if (o.stun) tgt.stun = Math.max(tgt.stun, o.stun);
   if (o.launch) { tgt.air = 0.5; tgt.stun = Math.max(tgt.stun, 0.55); tgt.spinT = 0; tgt.guardT = 0; tgt.getup = true; }
   impact(src, tgt, dmg, !!o.launch || dmg >= 16);
+  netEv(['i', src ? src.id : -1, tgt.id, dmg, (o.launch || dmg >= 16) ? 1 : 0, r2(tgt.kvx), r2(tgt.kvz), r2(tgt.stun), r2(tgt.air)]);
   if (tgt.isPlayer || src === player) popText(tgt, '-' + dmg, tgt.isPlayer ? '#ff4d6a' : (o.launch || dmg >= 16 ? '#ffe066' : '#ffffff'), dmg >= 16);
   if (tgt.hp <= 0) knockOut(tgt, src);
   return true;
@@ -1688,6 +1752,7 @@ function onHit(u, t, fromSpin) {
   if (S.snag && t.alive && !fromSpin) {
     const tx = u.x + u.fx * 1.1, tz = u.z + u.fz * 1.1;
     t.x += (tx - t.x) * 0.85; t.z += (tz - t.z) * 0.85; t.kvx = t.kvz = 0;
+    if (t.remote) { t.rx = t.x; t.rz = t.z; t.rxHold = clock + 0.5; netEv(['tp', t.id, r2(t.x), r2(t.z)]); }
     dealDamage(u, t, 3 * S.snag * dmgMul(u), {});
     spawnLine(u, t, 0xf4ecff); proc(u, 'snag', t);
     if (S.bats) bats.forEach(b => { if (b.u === u && b.left > 0) { b.home = t; b.left = Math.max(b.left, 4); } }); // Web Snag + Bat Swarm: your missed bats are pulled back onto the target
@@ -1730,7 +1795,7 @@ function attack(u) {
   }
   if (u.hero === 'witch' && u.bubbleT > 0) { u.bubbleT = 0; fireShot(u, 'bubble'); u.atkCd = 0.5; u.swingT = 0.24; SFX.play('shot', u); return; }
   u.combo = u.comboT > 0 ? (u.combo % 3) + 1 : 1; u.comboT = 0.9;
-  u.atkCd = u.isPlayer ? 0.42 : 0.55; u.swingT = 0.24;
+  u.atkCd = isHuman(u) ? 0.42 : 0.55; u.swingT = 0.24;
   SFX.play(u.combo === 3 ? 'swing3' : 'swing', u);
   u.hitAt = 0.1; // short wind-up: the swing is visible before it lands
 }
@@ -1750,6 +1815,7 @@ function meleeHit(u) {
   if (u.skills.bats) fireBat(u);
 }
 function trap(t) {
+  if (NET.role === 'client') return;
   if (!t.alive || t.invuln > 0 || t.leap) return;
   t.trappedT = 1.6; t.stun = Math.max(t.stun, 1.6); t.guardT = 0; t.spinT = 0; t.kickT = 0; t.rollT = 0; t.revealT = 2;
   popText(t, T('trapped'), '#ff9be0');
@@ -1936,7 +2002,7 @@ function useActive(u) {
   } else if (P.kind === 'pounce') {
     u.actCd = 3.5; u.pounceLeft = P.times - 1; startPounce(u);
   } else if (P.kind === 'shove') {
-    if (!u.isPlayer || Math.hypot(u.mx, u.mz) < 0.1) { const t = nearestEnemy(u, 4); if (t) faceTo(u, t); }
+    if (!isHuman(u) || Math.hypot(u.mx, u.mz) < 0.1) { const t = nearestEnemy(u, 4); if (t) faceTo(u, t); }
     u.actCd = 2.2; startDash(u, 0.16, 11, 1);
   } else if (P.kind === 'head') {
     const t = nearestEnemy(u, 4); if (t) faceTo(u, t);
@@ -1944,7 +2010,7 @@ function useActive(u) {
   }
 }
 function startDash(u, time, sp, extra) {
-  if (u.isPlayer && Math.hypot(u.mx, u.mz) > 0.1) { const l = Math.hypot(u.mx, u.mz); u.fx = u.mx / l; u.fz = u.mz / l; }
+  if (isHuman(u) && Math.hypot(u.mx, u.mz) > 0.1) { const l = Math.hypot(u.mx, u.mz); u.fx = u.mx / l; u.fz = u.mz / l; }
   u.dashT = time; u.dashTime = time; u.dashSp = sp; u.dashN = extra; u.dashGap = 0; u.dashHit = false;
 }
 function startPounce(u) {
@@ -2026,10 +2092,11 @@ function fireBat(u, ang = 0) {
   bats.push({ u, x: u.x, z: u.z, dx, dz, left: 6.5, dmg: (4 + 3 * u.skills.bats) * dmgMul(u), mesh: g, home: null });
 }
 function breakBucket(b) {
+  if (NET.role === 'client') return;
   b.alive = false; b.respawn = 30; b.mesh.visible = false;
   burst(b.x, 0.4, b.z, 0xff7a1a, 10);
   if (Math.random() < 0.72) scatter(b.x, b.z, 10, 5);
-  else spawnBomb(b.x, b.z);
+  else { spawnBomb(b.x, b.z); netEv(['bb', r2(b.x), r2(b.z)]); }
 }
 function spawnBomb(x, z) {
   const g = new THREE.Group();
@@ -2052,6 +2119,7 @@ function explode(bo) {
   }
 }
 function knockOut(u, by) {
+  if (NET.role === 'client') return;
   SFX.play('ko', u); if (by === player) SFX.play('kill');
   u.alive = false; u.hp = 0; u.vis.root.visible = false;
   u.respawn = 3 + u.level * 0.5;
@@ -2062,6 +2130,7 @@ function knockOut(u, by) {
   u.score -= drop;
   scatter(u.x, u.z, drop, Math.min(14, Math.ceil(drop / 4)));
   if (by) { by.kills++; by.streak++; }
+  netEv(['k', u.id, by ? by.id : -1]);
   u.deaths++; u.streak = 0; u.item = null;
   for (const [a, tt] of u.hitBy) if (a !== by && a.team !== u.team && clock - tt < 5) a.assists++;
   u.hitBy.clear();
@@ -2211,6 +2280,7 @@ function flyOrbs(fromX, fromZ, to, col, n) {
 // small label naming the red/blue power that just fired, so the player can see it working
 const procT = new Map();
 function proc(u, id, at) {
+  if (NET.role === 'host' && (u.remote || (at && at.remote))) netEv(['p', u.id, id, at ? at.id : -1]);
   if (u !== player && at !== player) return;
   const k = u.id + id, now = clock; if (now - (procT.get(k) || -9) < 0.9) return; procT.set(k, now);
   popText(at || u, skName(id), TYPE_COL[SKILLS[id].type], false, 'tag');
@@ -2404,7 +2474,7 @@ if (isTouch) {
     el.addEventListener('pointerup', e => { if (e.pointerType !== 'touch') up(); });
   };
   // stop iOS from reading two fingers as a pinch/zoom gesture (that cancels the steering finger); menus and the gear/music buttons keep normal taps
-  const noGesture = e => { if (!running || paused || picking && e.target.closest && e.target.closest('#picker')) return; if (e.target.closest && e.target.closest('.overlay, select, #gear, #mute')) return; e.preventDefault(); };
+  const noGesture = e => { if (!running || paused || picking && e.target.closest && e.target.closest('#picker')) return; if (e.target.closest && e.target.closest('.overlay, select, #gear, #mute, #roomChip')) return; e.preventDefault(); };
   document.addEventListener('touchstart', noGesture, { passive: false });
   document.addEventListener('touchmove', e => { if (running && !(e.target.closest && e.target.closest('.overlay'))) e.preventDefault(); }, { passive: false });
   document.addEventListener('gesturestart', e => e.preventDefault());
@@ -2427,8 +2497,8 @@ function playerMove() {
 
 // ======================= level-up picker =======================
 let picking = false, offer = [], lastCardTouch = 0;
-function showPicker() {
-  offer = offerFor(player);
+function showPicker(given) {
+  offer = given || offerFor(player);
   if (!offer.length) { player.pendingPicks = 0; return; }
   picking = true;
   document.getElementById('pickTitle').textContent = T('pick');
@@ -2445,6 +2515,7 @@ function showPicker() {
 }
 function choose(i) {
   if (!picking || !offer[i]) return;
+  if (NET.role === 'client') { netSend({ t: 'c', id: offer[i] }); picking = false; document.getElementById('picker').hidden = true; return; } // the host confirms with a skill update
   learn(player, offer[i]);
   player.pendingPicks--; picking = false;
   document.getElementById('picker').hidden = true;
@@ -2479,7 +2550,7 @@ function renderSkillbar() {
 }
 
 // ======================= bots =======================
-const attackersOn = (t, self) => units.filter(m => m !== self && m.alive && !m.isPlayer && m.goal && m.goal.k === 'fight' && m.goal.t === t).length;
+const attackersOn = (t, self) => units.filter(m => m !== self && m.alive && !isHuman(m) && m.goal && m.goal.k === 'fight' && m.goal.t === t).length;
 function botThink(u) {
   const hpF = u.hp / u.maxHp, early = running && MATCH_TIME - timeLeft < 40;
   let near = null, nd = 1e9;
@@ -2638,14 +2709,14 @@ function separate() {
     for (let j = i + 1; j < units.length; j++) {
       const b = units[j]; if (!b.alive || b.leap) continue;
       const dx = b.x - a.x, dz = b.z - a.z, dd = Math.hypot(dx, dz), min = 0.4 * scaleOf(a) + 0.4 * scaleOf(b);
-      if (dd < min && dd > 0.0001) { const p = (min - dd) / 2; a.x -= dx / dd * p; a.z -= dz / dd * p; b.x += dx / dd * p; b.z += dz / dd * p; }
+      if (dd < min && dd > 0.0001) { const p = (min - dd) / 2; if (pushable(a)) { a.x -= dx / dd * p; a.z -= dz / dd * p; } if (pushable(b)) { b.x += dx / dd * p; b.z += dz / dd * p; } }
     }
   }
 }
 function updateUnit(u, dt) {
   if (!u.alive) {
     u.respawn -= dt;
-    if (u.respawn <= 0) spawnAt(u);
+    if (u.respawn <= 0 && NET.role !== 'client') spawnAt(u);
     return;
   }
   const wasAir = u.air > 0, wasKick = u.kickT > 0;
@@ -2664,8 +2735,8 @@ function updateUnit(u, dt) {
   if (u.sprint) { u.stamina -= dt * 0.7; if (u.stamina <= 0) { u.stamina = 0; u.sprint = false; } }
   else u.stamina = Math.min(maxStamina(u), u.stamina + dt * 0.4 * (u.hero === 'ghost' && u.form === 1 ? 2.5 : 1)); // 2.5 s per bar (design doc: 2 s), a bit slower on request
   u.hp = Math.min(u.maxHp, u.hp + dt * (clock - u.lastHurt > 4 ? 2.5 : 0.6)); // slow natural regen; campfires heal faster
-  if (u.isPlayer) playerMove(); else botAct(u, dt);
-  moveUnit(u, dt);
+  if (u.isPlayer) playerMove(); else if (NET.role !== 'client' && !u.remote) botAct(u, dt);
+  if (NET.role === 'client' && !u.isPlayer) netFollow(u, dt); else { moveUnit(u, dt); if (u.remote) netPull(u, dt); }
   // spin
   if (u.spinT > 0) {
     u.spinT -= dt; u.spinTick -= dt;
@@ -2708,6 +2779,7 @@ function updateUnit(u, dt) {
       }
     }
   }
+  if (NET.role === 'client') { if (u.isPlayer) netPredictCandy(u, dt); return; }
   pickItems(u);
   for (const b of BOOSTS) if (b.has && (b.x - u.x) ** 2 + (b.z - u.z) ** 2 < 0.8) { b.has = false; b.respawn = BOOST_RESPAWN; b.mesh.visible = false; u.boostT = BOOST_TIME; burst(b.x, 0.6, b.z, 0x5ff2ff, 10); if (u.isPlayer) { popText(u, T('boost'), '#5ff2ff', true); SFX.play('boost'); } }
   if (u.isPlayer) { u.candyT -= dt; if (u.candyAcc > 0 && u.candyT <= 0) { popText(u, '+' + u.candyAcc, '#ffffff'); u.candyAcc = 0; u.candyT = 0.35; } }
@@ -2732,6 +2804,7 @@ function pickItems(u) {
   }
 }
 function collect(u, p) {
+  if (NET.role === 'client') return;
   if (u.isPlayer) SFX.play('candy');
   addXp(u, p.v);
   if (p.field) { p.alive = false; p.respawn = p.home !== undefined ? -1 : rnd(14, 20); } // patch candy waits for its patch to move; loose candy is slow to come back
@@ -2740,6 +2813,7 @@ function collect(u, p) {
 // candy patches dry up: once three quarters of a patch is eaten it stops, and 8-12 s later a full patch grows somewhere else,
 // away from the old spot and from where monsters are standing, so players have to move and meet
 function updatePatches(dt) {
+  if (NET.role === 'client') return;
   CANDY_FIELDS.forEach((F, fi) => {
     if (F.active) {
       let alive = 0; for (const p of pickups) if (p.home === fi && p.alive) alive++;
@@ -2764,18 +2838,18 @@ function updateWorld(dt) {
   updatePatches(dt);
   updateFires(dt);
   for (const b of BOOSTS) {
-    if (!b.has) { if (b.respawn > 0) { b.respawn -= dt; if (b.respawn <= 0) placeBoost(b); } continue; }
+    if (!b.has) { if (b.respawn > 0 && NET.role !== 'client') { b.respawn -= dt; if (b.respawn <= 0) placeBoost(b); } continue; }
     b.top.rotation.y += dt * 3; b.top.position.y = 0.55 + Math.sin(clock * 3 + b.x) * 0.08;
   }
   // pickups
   for (const p of pickups) {
-    if (p.field && !p.alive) { if (p.home === undefined) { p.respawn -= dt; if (p.respawn <= 0) { const f = freeSpot(); p.x = f.x; p.z = f.z; p.alive = true; } } continue; }
+    if (p.field && !p.alive) { if (p.home === undefined && NET.role !== 'client') { p.respawn -= dt; if (p.respawn <= 0) { const f = freeSpot(); p.x = f.x; p.z = f.z; p.alive = true; } } continue; }
     if (p.air > 0) { p.air -= dt; p.x = clampX(p.x + p.vx * dt); p.z = clampX(p.z + p.vz * dt); p.vx *= 0.94; p.vz *= 0.94; }
   }
   if (Math.random() < 0.05) pickups = pickups.filter(p => !p.dead);
   // buckets
   for (const b of buckets) {
-    if (!b.alive) { b.respawn -= dt; if (b.respawn <= 0) { const f = freeSpot(); b.x = f.x; b.z = f.z; b.hp = 32; b.alive = true; b.mesh.visible = true; } }
+    if (!b.alive && NET.role !== 'client') { b.respawn -= dt; if (b.respawn <= 0) { const f = freeSpot(); b.x = f.x; b.z = f.z; b.hp = 32; b.alive = true; b.mesh.visible = true; } }
     b.shake = Math.max(0, (b.shake || 0) - dt);
     b.mesh.position.set(b.x + (b.shake > 0 ? rnd(-0.06, 0.06) : 0), 0, b.z);
   }
@@ -2797,7 +2871,7 @@ function updateWorld(dt) {
   }
   traps = traps.filter(tr => !tr.gone);
   for (const p of PEDS) {
-    if (!p.has) { p.respawn -= dt; if (p.respawn <= 0) { p.has = true; p.itemMesh.visible = true; p.glow.visible = true; } }
+    if (!p.has && NET.role !== 'client') { p.respawn -= dt; if (p.respawn <= 0) { p.has = true; p.itemMesh.visible = true; p.glow.visible = true; } }
     p.itemMesh.rotation.y += dt * 1.5; p.itemMesh.position.y = 1.05 + Math.sin(clock * 2 + p.x) * 0.08;
   }
   // bats
@@ -2856,7 +2930,8 @@ function bossSting() {
   try { const t = actx.currentTime; [[110, 0], [165, 0.12], [220, 0.24]].forEach(([f, d]) => { const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sawtooth'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t + d); g.gain.exponentialRampToValueAtTime(0.2, t + d + 0.04); g.gain.exponentialRampToValueAtTime(0.001, t + d + 0.7); o.connect(g); g.connect(actx.destination); o.start(t + d); o.stop(t + d + 0.75); }); } catch (e) {}
 }
 function updateKing() {
-  if (running && MATCH_TIME - timeLeft < BOSS_AT) king = null;
+  if (NET.role === 'client') netKing();
+  else if (running && MATCH_TIME - timeLeft < BOSS_AT) king = null;
   else {
     let best = king && king.score > 0 ? king : null;
     for (const u of units) if (u.score > (best ? best.score + (best === king ? 5 : 0) : 0)) best = u;
@@ -3108,16 +3183,18 @@ function setupMatch(withPlayer) {
   timeLeft = MATCH_TIME; over = false; hurryShown = false; picking = false;
   document.getElementById('picker').hidden = true;
 }
-function startGame() {
+function startGame(fromNet) {
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
   try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch (e) { actx = null; }
-  setupMatch(true);
+  if (!fromNet) setupMatch(true);
   Music.start(); lastCount = -1;
   renderSkillbar();
   running = true; CG.setPlaying(true); CG.applyMute();
   document.getElementById('startScreen').hidden = true;
   document.getElementById('endScreen').hidden = true;
+  document.getElementById('onlineScreen').hidden = true;
+  document.getElementById('leaveBtn').hidden = NET.role === 'solo';
   document.getElementById('touch').hidden = !isTouch;
   ['hudTL', 'hudTC', 'hudTR', 'hudBC'].forEach(id => document.getElementById(id).hidden = false);
   document.getElementById('hudBR').hidden = isTouch; // on phones the touch buttons sit in the same corner
@@ -3141,6 +3218,7 @@ function endGame() {
   document.getElementById('endList').innerHTML = sorted.map((u, i) =>
     `<div class="row${u.isPlayer ? ' me' : ''}"><span class="rk">${i + 1}</span><span class="dot" style="background:${TEAM_CSS[u.team]}"></span><span class="nmc">${u === king ? '♛ ' : ''}${esc(u.isPlayer ? T('you') : u.name)} · Lv${u.level}</span><span>${u.score}</span></div>`).join('');
   document.getElementById('endScreen').hidden = false;
+  netOnEnd();
 }
 
 // ======================= loop =======================
@@ -3149,19 +3227,21 @@ function frame(now) {
   requestAnimationFrame(frame);
   let dt = Math.min(0.05, (now - last) / 1000); last = now;
   const realDt = dt;
-  if (hitStop > 0) { hitStop -= realDt; dt *= 0.06; } // hit-stop: a short freeze on every hit you deal or take
+  if (hitStop > 0) { hitStop -= realDt; if (NET.role !== 'host') dt *= 0.06; } // a host never slows the shared world // hit-stop: a short freeze on every hit you deal or take
   shake *= Math.exp(-realDt * 16);
   clock += dt;
-  if ((running || !over) && !paused) {
+  const live = !paused || NET.role !== 'solo'; // online the world keeps going while your settings are open
+  if ((running || !over) && live) {
     for (const u of units) updateUnit(u, dt);
     separate();
     updateWorld(dt);
     updateKing();
   }
-  if (running && !paused) {
-    timeLeft -= dt;
+  netTick(realDt);
+  if (running && live) {
+    timeLeft = Math.max(0, timeLeft - dt);
     if (timeLeft <= 30 && !hurryShown) { hurryShown = true; banner(T('sunrise')); }
-    if (timeLeft <= 0) { countdownBeep(0); endGame(); }
+    if (timeLeft <= 0 && NET.role !== 'client') { countdownBeep(0); endGame(); }
     updateCountdown();
     updateHud(dt);
   }
@@ -3179,6 +3259,511 @@ function frame(now) {
   syncVisuals(clock);
   renderer.render(scene, camera);
 }
+
+ICON.copy = SK('M9 9h10v10H9zM5 15V5h10', 2);
+// ======================= online play =======================
+// Poki netlib (WebRTC, free signaling). One player hosts: the host runs the bots, damage, candy, scores and the clock.
+// Everyone else steers their own monster on their own screen (their position is trusted, so moving feels instant),
+// sends attacks / skills / items to the host, and draws what the host reports. 3 gangs x 3 monsters: people take
+// over bot seats, empty seats stay bots, and anyone can drop in mid-match.
+const GAME_ID = '3f6b2c1e-9a47-4d2b-b8e5-7c0d91a4e6f2';
+const NETLIB_URL = 'https://cdn.jsdelivr.net/npm/@poki/netlib/+esm';
+const NET = { role: 'solo', net: null, code: '', pub: false, hostId: null, peers: new Map(), ev: [], snapT: 0, worldT: 0, pickT: 0, sendT: 0, ps: new Map(), PK: new Map(), king: -1, restartT: 0, pending: null, name: '', replaying: false, welcome: null, lastSnap: 0 };
+const r1 = v => Math.round(v * 10) / 10, r2 = v => Math.round(v * 100) / 100;
+const NET_ITEMS = ['', 'apple', 'soda', 'broom', 'bomb'];
+const NT = (k, n) => String(T(k)).replace('{n}', n);
+function netEv(e) { if (NET.role === 'host' && NET.peers.size) NET.ev.push(e); }
+function sendTo(id, m, unrel) { if (!NET.net || !id) return; try { NET.net.send(unrel ? 'unreliable' : 'reliable', id, JSON.stringify(m)); } catch (e) {} }
+function bcast(m, unrel, except) { if (!NET.net) return; const s = JSON.stringify(m); for (const id of NET.peers.keys()) { if (id === except) continue; try { NET.net.send(unrel ? 'unreliable' : 'reliable', id, s); } catch (e) {} } }
+const netSend = (m, unrel) => sendTo(NET.hostId, m, unrel);
+function netFlush() { // reliable events, split so no message gets near WebRTC's 16 KB comfort limit
+  if (!NET.ev.length) return;
+  let batch = [], size = 0;
+  for (const e of NET.ev) { const n = JSON.stringify(e).length; if (batch.length && size + n > 12000) { bcast({ t: 'E', e: batch }); batch = []; size = 0; } batch.push(e); size += n; }
+  bcast({ t: 'E', e: batch }); NET.ev = [];
+}
+
+// ---- actions: every attack / skill / active / item that really happens is reported, so other screens can replay it
+const ACT_SIG = u => [u.lastAtk, u.stamina, u.phaseCd, u.heroCd, u.bubbleT > 0, u.sprint, !!u.anchor, u.form, u.leap ? 1 : 0, u.actCd, u.tossCd, u.item ? u.item.n : 0, u.guardT > 0, u.x, u.z, u.rollT, u.headWin, u.dashT, u.kickT, u.hitAt > 0].join('|');
+function netWrap(fn, k) {
+  return function (u) {
+    if (NET.role === 'solo' || NET.replaying || !u) return fn(u);
+    const x = u.x, z = u.z, fx = u.fx, fz = u.fz, st = u.stamina, it = u.item ? NET_ITEMS.indexOf(u.item.type) : 0, before = ACT_SIG(u);
+    const r = fn(u);
+    if (ACT_SIG(u) !== before) {
+      if (NET.role === 'host') netEv(['a', u.id, k, r2(x), r2(z), r2(fx), r2(fz), r2(u.mx), r2(u.mz), it]);
+      else if (u.isPlayer) netSend({ t: 'a', k, fx: r2(fx), fz: r2(fz), mx: r2(u.mx), mz: r2(u.mz), st: r2(st) });
+    }
+    return r;
+  };
+}
+attack = netWrap(attack, 'atk'); heroSkill = netWrap(heroSkill, 'skill'); useActive = netWrap(useActive, 'act'); useItem = netWrap(useItem, 'item');
+const ACT = { atk: u => attack(u), skill: u => heroSkill(u), act: u => useActive(u), item: u => useItem(u) };
+// host: an action sent by a remote player (their screen already showed it, so be lenient about tiny timing differences)
+function netRemoteAct(u, m) {
+  if (!u || !u.alive || !ACT[m.k]) return;
+  if (typeof m.fx === 'number') { u.fx = m.fx; u.fz = m.fz; u.mx = m.mx; u.mz = m.mz; }
+  if (typeof m.st === 'number') u.stamina = Math.max(u.stamina, Math.min(maxStamina(u), m.st));
+  if (m.k === 'atk') { if (u.hitAt > 0) { u.hitAt = 0; meleeHit(u); } u.atkCd = 0; }
+  else { u.phaseCd = 0; u.heroCd = Math.max(0, (u.heroCd || 0) - 0.25); u.actCd = Math.max(0, u.actCd - 0.25); u.tossCd = Math.max(0, u.tossCd - 0.25); }
+  ACT[m.k](u);
+}
+// client: replay someone else's action so the swing, shot, bubble or leap shows up (damage still comes from the host)
+function netReplay(u, k, x, z, fx, fz, mx, mz, it) {
+  if (!u || u.isPlayer || !u.alive || !ACT[k]) return;
+  u.x = x; u.z = z; u.nx = x; u.nz = z; u.fx = fx; u.fz = fz; u.mx = mx; u.mz = mz;
+  const st = u.stamina, stun = u.stun;
+  u.stamina = 99; u.stun = 0; u.atkCd = 0; u.phaseCd = 0; u.heroCd = 0; u.actCd = 0; u.tossCd = 0;
+  if (u.hitAt > 0) { u.hitAt = 0; meleeHit(u); }
+  if (k === 'item' && it && (!u.item || u.item.type !== NET_ITEMS[it])) u.item = { type: NET_ITEMS[it], n: 1 };
+  NET.replaying = true;
+  try { ACT[k](u); } catch (e) {} finally { NET.replaying = false; }
+  u.stamina = Math.min(st, maxStamina(u)); u.stun = stun;
+}
+
+// ---- movement helpers
+function netFollow(u, dt) { // client: other monsters glide to where the host says they are
+  if (u.leap) {
+    const L = u.leap; L.t += dt; const k = Math.min(1, L.t / L.dur);
+    u.vis.root.position.y = Math.sin(k * Math.PI) * (L.zip ? 0.3 : 1.4);
+    if (k >= 1) { u.leap = null; u.vis.root.position.y = 0; if (L.anchor) anchorLand(u); else if (!L.zip) jumpLand(u); }
+  }
+  if (u.nx === undefined) return;
+  const ahead = Math.min(0.12, Math.max(0, clock - u.nt));
+  const tx = u.nx + u.nvx * ahead, tz = u.nz + u.nvz * ahead, dx = tx - u.x, dz = tz - u.z;
+  if (dx * dx + dz * dz > 25) { u.x = tx; u.z = tz; return; }
+  const k = Math.min(1, dt * 14); u.x += dx * k; u.z += dz * k;
+}
+function netPull(u, dt) { // host: a remote player's monster follows where their screen has it
+  if (u.rx === undefined || u.leap || !u.alive) return;
+  const dx = u.rx - u.x, dz = u.rz - u.z;
+  if (dx * dx + dz * dz > 36) { u.x = u.rx; u.z = u.rz; return; }
+  const k = Math.min(1, dt * 18); u.x += dx * k; u.z += dz * k;
+}
+const pushable = u => !(NET.role === 'client' && !u.isPlayer) && !u.remote;
+function netPredictCandy(u, dt) { // client: eat candy right away on your own screen (the host confirms it)
+  const pr = 0.55 * scaleOf(u) + 0.75 * (u.skills.sniffer || 0);
+  for (const p of pickups) {
+    if (!p.alive || p.air > 0) continue;
+    const dd = (p.x - u.x) ** 2 + (p.z - u.z) ** 2;
+    if (dd < pr * pr) {
+      if (dd < 0.36 * scaleOf(u)) { p.alive = false; p.predT = clock; u.candyAcc += p.v; SFX.play('candy'); continue; }
+      const l = Math.sqrt(dd) || 1; p.x += (u.x - p.x) / l * dt * 7; p.z += (u.z - p.z) / l * dt * 7;
+    }
+  }
+  u.candyT -= dt; if (u.candyAcc > 0 && u.candyT <= 0) { popText(u, '+' + u.candyAcc, '#ffffff'); u.candyAcc = 0; u.candyT = 0.35; }
+}
+function netKing() {
+  const nk = NET.king >= 0 ? units[NET.king] || null : null;
+  if (nk !== king) { king = nk; if (king && running) { banner(king.isPlayer ? T('youBoss') : `${king.name} ${T('king')}`); bossSting(); shake = Math.max(shake, 0.25); } }
+}
+
+// ---- seats
+function replaceUnit(idx, team, hero, name, isPlayer) {
+  const old = units[idx];
+  if (old) { old.alive = false; scene.remove(old.vis.root); old.tag.remove(); old.edge.remove(); removeAnchor(old); if (old.wispM) old.wispM.forEach(g => scene.remove(g)); if (king === old) king = null; }
+  const u = newUnit(team, hero, name, isPlayer);
+  units.pop(); u.id = idx; units[idx] = u;
+  return u;
+}
+function botName(team) { const used = new Set(units.map(u => u.name)); const free = BOT_NAMES[team].filter(n => !used.has(n)); return free.length ? free[(Math.random() * free.length) | 0] : BOT_NAMES[team][0]; }
+function netSeat(P) { // host: give a person a seat (their gang if it still has a bot, otherwise the gang with the fewest people)
+  const free = units.filter(u => !isHuman(u));
+  if (!free.length) return null;
+  const humansIn = t => units.filter(u => u.team === t && isHuman(u)).length;
+  const pick = free.find(u => u.team === P.team) || free.slice().sort((a, b) => humansIn(a.team) - humansIn(b.team))[0];
+  const u = replaceUnit(pick.id, pick.team, HERO_IDS.includes(P.hero) ? P.hero : pick.hero, P.name, false);
+  u.remote = P.id; u.human = true; P.unit = u;
+  learn(u, SKILLS[P.skill] ? P.skill : offerFor(u, 1)[0]);
+  spawnAt(u, !running);
+  colorTags();
+  return u;
+}
+function netUnseat(P) {
+  const u = P.unit; NET.peers.delete(P.id);
+  if (!u || units[u.id] !== u) return;
+  u.remote = null; u.human = false; u.offer = null; u.rx = undefined;
+  const nm = P.name; u.name = botName(u.team); u.tagNm.textContent = u.name; u.edge.querySelector('span').textContent = u.name;
+  netEv(['nm', u.id, u.name, 0]);
+  banner(NT('n_left', nm)); netEv(['msg', 'n_left', nm]);
+  netReportRoom();
+}
+const unitRow = u => [u.team, u.hero, u.isPlayer ? NET.name : u.name, isHuman(u) ? 1 : 0, u.skills, r2(u.x), r2(u.z), u.score, u.level, u.xp, Math.round(u.maxHp), Math.round(u.hp), u.alive ? 1 : 0];
+const pickRow = p => [p.id, r2(p.x), r2(p.z), p.v, Math.max(0, CANDY_COLS.indexOf(p.col)), p.corn ? 1 : 0, p.field ? 1 : 0, p.alive ? 1 : 0, r2(p.vx), r2(p.vz), r2(p.air)];
+function netSendSetup(P) {
+  sendTo(P.id, { t: 'setup', me: P.unit.id, tl: r1(timeLeft), k: king ? king.id : -1, code: NET.code, u: units.map(unitRow), f: CANDY_FIELDS.map(F => [r2(F.x), r2(F.z), r2(F.r), F.active ? 1 : 0]), b: buckets.map(b => [r2(b.x), r2(b.z), b.alive ? 1 : 0]) });
+  const live = pickups.filter(p => !p.dead);
+  for (let i = 0; i < live.length; i += 250) sendTo(P.id, { t: 'PA', l: live.slice(i, i + 250).map(pickRow) });
+  sendTo(P.id, netWorld());
+}
+function netResetPs() { NET.ps.clear(); for (const p of pickups) if (!p.dead) NET.ps.set(p.id, { a: p.alive, x: p.x, z: p.z }); }
+function netNewMatch() { // host: start a match with everyone in the room
+  NET.ev = [];
+  setupMatch(true); player.name = NET.name;
+  for (const P of [...NET.peers.values()]) { if (!netSeat(P)) { sendTo(P.id, { t: 'full' }); NET.peers.delete(P.id); } }
+  netResetPs();
+  startGame(true);
+  for (const P of NET.peers.values()) netSendSetup(P);
+  netReportRoom();
+}
+function netOffer(u) { // host: level-up cards for a remote player
+  const o = offerFor(u);
+  if (!o.length) { u.pendingPicks = 0; return; }
+  u.offer = o; u.offerT = clock;
+  sendTo(u.remote, { t: 'O', ids: o });
+}
+function netChoose(u, id) {
+  if (!u.offer || !u.offer.includes(id)) return;
+  learn(u, id); u.pendingPicks--; u.offer = null;
+  if (u.pendingPicks > 0) netOffer(u);
+}
+
+// ---- state the host sends
+function netSnap() {
+  const row = u => [r2(u.x), r2(u.z), r2(u.fx), r2(u.fz), Math.round(u.hp), Math.round(u.maxHp), u.score, u.level, u.xp, r1(u.stamina), u.alive ? 1 : 0, u.kills, u.deaths, u.assists, u.streak,
+    u.item ? NET_ITEMS.indexOf(u.item.type) : 0, u.item ? u.item.n : 0, r1(u.stun), r1(u.invuln), r1(u.guardT), r1(u.bubbleT), r1(u.trappedT), r1(u.hasteT), r1(u.boostT || 0), r1(u.hexT), r1(u.revealT), r1(u.air), u.form, r1(u.spinT), u.sprint ? 1 : 0, r1(u.mx), r1(u.mz)];
+  bcast({ t: 'S', tl: r1(timeLeft), k: king ? king.id : -1, u: units.map(row) }, true);
+}
+function netWorld() {
+  return { t: 'W', b: buckets.map(b => [r2(b.x), r2(b.z), b.alive ? 1 : 0]), bo: BOOSTS.map(b => [b.has ? 1 : 0, r2(b.x), r2(b.z)]), pe: PEDS.map(p => p.has ? 1 : 0).join(''), f: CANDY_FIELDS.map(F => [r2(F.x), r2(F.z), r2(F.r), F.active ? 1 : 0]) };
+}
+function netPickDiff() { // host: which candy appeared, was eaten or moved since last time
+  const adds = [], rem = [], mov = [], seen = new Set();
+  for (const p of pickups) {
+    if (p.dead) continue;
+    seen.add(p.id);
+    const s = NET.ps.get(p.id);
+    if (!s) { NET.ps.set(p.id, { a: p.alive, x: p.x, z: p.z }); adds.push(pickRow(p)); continue; }
+    if (p.alive !== s.a) { s.a = p.alive; if (!p.alive) rem.push(p.id); else { mov.push([p.id, r2(p.x), r2(p.z)]); s.x = p.x; s.z = p.z; } }
+    else if (p.alive && p.air <= 0 && (p.x - s.x) ** 2 + (p.z - s.z) ** 2 > 2) { mov.push([p.id, r2(p.x), r2(p.z)]); s.x = p.x; s.z = p.z; }
+  }
+  for (const [id, s] of NET.ps) if (!seen.has(id)) { if (s.a) rem.push(id); NET.ps.delete(id); }
+  if (adds.length || rem.length || mov.length) NET.ev.push(['pk', adds, rem, mov]);
+}
+
+// ---- client: apply what the host sends
+function netAddPick(a) {
+  let p = NET.PK.get(a[0]);
+  if (!p) { p = addPickup(a[1], a[2], a[3], { net: true, id: a[0], col: a[4], corn: a[5], field: !!a[6], vx: a[8], vz: a[9], air: a[10] }); NET.PK.set(a[0], p); }
+  else { p.x = a[1]; p.z = a[2]; p.v = a[3]; p.vx = a[8]; p.vz = a[9]; p.air = a[10]; }
+  p.alive = !!a[7]; p.dead = false; p.predT = 0;
+}
+function netApplySetup(m) {
+  document.getElementById('onlineScreen').hidden = true;
+  clearWorld(); NET.PK.clear(); NET.code = m.code || NET.code;
+  CANDY_FIELDS = m.f.map(([x, z, r, a]) => ({ x, z, r, active: !!a, total: 0 }));
+  for (const [x, z, a] of m.b) { const mesh = makeBucket(); mesh.position.set(x, 0, z); mesh.visible = !!a; buckets.push({ x, z, hp: 32, alive: !!a, respawn: 0, mesh }); }
+  player = null;
+  m.u.forEach((a, i) => {
+    const u = newUnit(a[0], a[1], i === m.me ? T('you') : a[2], i === m.me);
+    netInitUnit(u, a);
+    if (i === m.me) player = u;
+  });
+  PEDS.forEach(p => { p.has = true; p.respawn = 0; p.itemMesh.visible = true; p.glow.visible = true; });
+  BOOSTS.forEach(b => { b.has = false; b.mesh.visible = false; });
+  colorTags();
+  timeLeft = m.tl; over = false; hurryShown = timeLeft <= 30; picking = false; lastCount = -1;
+  document.getElementById('picker').hidden = true;
+  NET.king = m.k; king = null;
+  startGame(true);
+}
+function netInitUnit(u, a) {
+  u.human = !!a[3]; u.skills = Object.assign({}, a[4]);
+  spawnAt(u, true);
+  u.x = a[5]; u.z = a[6]; u.score = a[7]; u.level = a[8]; u.xp = a[9]; u.maxHp = a[10]; u.hp = a[11];
+  if (!a[12]) { u.alive = false; u.vis.root.visible = false; }
+  u.nx = u.x; u.nz = u.z; u.nvx = u.nvz = 0; u.nt = clock;
+}
+function netApplySnap(m) {
+  if (!running || !player) return;
+  timeLeft = m.tl; NET.king = m.k;
+  const now = clock, gap = Math.max(0.03, now - NET.lastSnap); NET.lastSnap = now;
+  m.u.forEach((a, i) => {
+    const u = units[i]; if (!u) return;
+    const [x, z, fx, fz, hp, maxHp, score, level, xp, st, alive, kills, deaths, assists, streak, itI, itN, stun, invuln, guardT, bubbleT, trappedT, hasteT, boostT, hexT, revealT, air, form, spinT, sprint, mx, mz] = a;
+    u.hp = hp; u.maxHp = maxHp; u.score = score; u.xp = xp; u.kills = kills; u.deaths = deaths; u.assists = assists; u.streak = streak;
+    const itemKey = itI ? NET_ITEMS[itI] + itN : '', had = u.item ? u.item.type + u.item.n : '';
+    u.item = itI ? { type: NET_ITEMS[itI], n: itN } : null;
+    u.hexT = hexT; u.revealT = revealT; u.invuln = invuln; u.trappedT = trappedT;
+    if (u.isPlayer) {
+      if (level > u.level) { popText(u, T('levelUp'), '#ffc23d', 1.2); SFX.play('level'); }
+      u.level = level;
+      if (itemKey !== had) renderSkillbar();
+      if (Math.abs(st - u.stamina) > 0.9) u.stamina = st;
+      if (stun > u.stun + 0.12) u.stun = stun;
+      if (trappedT > 0) u.stun = Math.max(u.stun, trappedT);
+      u.hasteT = Math.max(u.hasteT, hasteT); u.boostT = Math.max(u.boostT || 0, boostT);
+      for (const [k, v] of [['form', form], ['sprint', !!sprint]]) { if (u[k] !== v) { u['mis' + k] = (u['mis' + k] || 0) + gap; if (u['mis' + k] > 0.45) { u[k] = v; u['mis' + k] = 0; } } else u['mis' + k] = 0; }
+      if (alive && !u.alive) { spawnAt(u); u.x = x; u.z = z; camX = x; camZ = z; }
+      else if (!alive && u.alive) { u.alive = false; u.hp = 0; u.vis.root.visible = false; }
+      return;
+    }
+    u.level = level; u.stamina = st; u.stun = stun; u.guardT = guardT; u.bubbleT = bubbleT; u.hasteT = hasteT; u.boostT = boostT; u.air = air; u.form = form; u.spinT = Math.max(u.spinT, spinT); u.sprint = !!sprint; u.mx = mx; u.mz = mz;
+    if (!(u.swingT > 0)) { u.fx = fx; u.fz = fz; }
+    if (alive && !u.alive) { u.alive = true; u.vis.root.visible = true; u.leap = null; u.x = x; u.z = z; u.nvx = u.nvz = 0; }
+    else if (!alive && u.alive) { u.alive = false; u.vis.root.visible = false; }
+    if (u.nt !== undefined && now - u.nt < 0.5) { const t = Math.max(0.03, now - u.nt); u.nvx = Math.max(-12, Math.min(12, (x - u.nx) / t)); u.nvz = Math.max(-12, Math.min(12, (z - u.nz) / t)); }
+    else { u.nvx = u.nvz = 0; }
+    u.nx = x; u.nz = z; u.nt = now;
+  });
+}
+function netApplyWorld(m) {
+  if (!running) return;
+  m.b.forEach(([x, z, a], i) => {
+    const b = buckets[i]; if (!b) return;
+    if (b.alive && !a) burst(b.x, 0.4, b.z, 0xff7a1a, 10);
+    b.alive = !!a; b.x = x; b.z = z; b.mesh.visible = b.alive;
+  });
+  m.bo.forEach(([h, x, z], i) => { const b = BOOSTS[i]; if (!b) return; if (b.has && !h && player && (b.x - player.x) ** 2 + (b.z - player.z) ** 2 < 2) { popText(player, T('boost'), '#5ff2ff', true); SFX.play('boost'); burst(b.x, 0.6, b.z, 0x5ff2ff, 10); } b.has = !!h; b.x = x; b.z = z; b.mesh.position.set(x, 0, z); b.mesh.visible = b.has; });
+  PEDS.forEach((p, i) => { const h = m.pe[i] === '1'; p.has = h; p.itemMesh.visible = h; p.glow.visible = h; });
+  m.f.forEach(([x, z, r, a], i) => { const F = CANDY_FIELDS[i]; if (F) { F.x = x; F.z = z; F.r = r; F.active = !!a; } });
+}
+function koFx(u, by) { // client: a knock-out the host reported
+  SFX.play('ko', u); if (by === player) SFX.play('kill');
+  u.alive = false; u.hp = 0; u.vis.root.visible = false; u.item = null; u.leap = null;
+  burst(u.x, 0.8, u.z, TEAM_COL[u.team], 14);
+  if (u.isPlayer) renderSkillbar();
+  killBanner(by, u);
+  feed(`<b style="color:${TEAM_CSS[u.team]}">${esc(u.isPlayer ? T('you') : u.name)}</b> ${T('knocked')}` + (by ? ` · ${T('by')} <b style="color:${TEAM_CSS[by.team]}">${esc(by.isPlayer ? T('you') : by.name)}</b>` : ''));
+}
+function netApplyEvents(list) {
+  for (const e of list) {
+    const u = units[e[1]];
+    switch (e[0]) {
+      case 'a': netReplay(u, e[2], e[3], e[4], e[5], e[6], e[7], e[8], e[9]); break;
+      case 'i': {
+        const s = e[1] >= 0 ? units[e[1]] : null, t = units[e[2]]; if (!t || !t.alive) break;
+        t.flash = 0.12; t.revealT = Math.max(t.revealT, 1); t.lastHurt = clock;
+        if (t.bubbleT > 0 && t.isPlayer) { t.bubbleT = 0; burst(t.x, 0.8, t.z, 0x9be7ff, 8); }
+        impact(s, t, e[3], !!e[4]);
+        if (t.isPlayer || s === player) popText(t, '-' + e[3], t.isPlayer ? '#ff4d6a' : (e[4] ? '#ffe066' : '#ffffff'), e[3] >= 16);
+        if (t.isPlayer) {
+          t.kvx = e[5]; t.kvz = e[6]; t.stun = Math.max(t.stun, e[7]);
+          if (e[8] > 0) { t.air = Math.max(t.air, e[8]); t.getup = true; t.spinT = 0; t.guardT = 0; }
+          if (t.leap && t.leap.pounce) { t.leap = null; t.pounceLeft = 0; t.vis.root.position.y = 0; }
+        }
+        break;
+      }
+      case 'k': if (u) koFx(u, e[2] >= 0 ? units[e[2]] : null); break;
+      case 'p': if (u && SKILLS[e[2]]) proc(u, e[2], e[3] >= 0 ? units[e[3]] : undefined); break;
+      case 'sk': if (u) { u.skills = Object.assign({}, e[2]); if (u.isPlayer) renderSkillbar(); } break;
+      case 'bb': spawnBomb(e[1], e[2]); break;
+      case 'tp': if (u) { u.x = e[2]; u.z = e[3]; u.nx = e[2]; u.nz = e[3]; u.kvx = u.kvz = 0; } break;
+      case 'nm': if (u) { u.name = e[2]; u.human = !!e[3]; if (!u.isPlayer) u.tagNm.textContent = e[2]; u.edge.querySelector('span').textContent = e[2]; } break;
+      case 'rep': {
+        const r = e[2]; const nu = replaceUnit(e[1], r[0], r[1], r[2], false);
+        netInitUnit(nu, r); colorTags(); break;
+      }
+      case 'msg': if (!(e[1] === 'n_joined' && e[2] === NET.name)) banner(NT(e[1], e[2])); break;
+      case 'pk': {
+        for (const a of e[1]) netAddPick(a);
+        for (const id of e[2]) { const p = NET.PK.get(id); if (p) { p.alive = false; p.predT = 0; if (!p.field) { p.dead = true; NET.PK.delete(id); } } }
+        for (const [id, x, z] of e[3]) { const p = NET.PK.get(id); if (p) { p.x = x; p.z = z; p.alive = true; p.air = 0; p.predT = 0; } }
+        break;
+      }
+      case 'end': if (running) { NET.king = e[2]; king = e[2] >= 0 ? units[e[2]] : null; countdownBeep(0); endGame(); } break;
+    }
+  }
+}
+
+// ---- netlib plumbing
+async function initNet() {
+  if (NET.net) return NET.net;
+  let Network = window.__NETLIB;
+  if (!Network) { const mod = await import(NETLIB_URL); Network = mod.Network || (mod.default && mod.default.Network) || mod.default; }
+  const n = new Network(GAME_ID);
+  await new Promise((res, rej) => {
+    const to = setTimeout(() => rej(new Error(T('n_fail'))), 15000);
+    n.on('ready', () => { clearTimeout(to); res(); });
+    n.on('signalingerror', () => { clearTimeout(to); rej(new Error(T('n_fail'))); });
+  }).catch(e => { try { n.close(); } catch (x) {} throw e; });
+  n.on('message', (peer, channel, data) => { let m = data; try { if (typeof data === 'string') m = JSON.parse(data); } catch (e) { return; } if (m && m.t) { try { onNet(peer, m); } catch (e) { console.warn('net', e); } } });
+  n.on('connected', peer => { if (NET.role === 'host') sendTo(peer.id, { t: 'hi' }); });
+  n.on('disconnected', peer => {
+    if (NET.role === 'host') { const P = NET.peers.get(peer.id); if (P) netUnseat(P); }
+    else if (NET.role === 'client' && peer.id === NET.hostId) netLeave(T('n_hostLeft'));
+  });
+  NET.net = n;
+  return n;
+}
+function waitLobby() {
+  return new Promise((res, rej) => { const to = setTimeout(() => rej(new Error(T('n_timeout'))), 15000); NET.net.on('lobby', code => { clearTimeout(to); res(code); }); });
+}
+async function netHost(pub) {
+  await initNet();
+  const p = waitLobby();
+  NET.net.create({ public: pub, maxPlayers: 9 });
+  NET.code = await p; NET.role = 'host'; NET.pub = pub; NET.peers.clear();
+  netNewMatch();
+}
+async function netJoin(code) {
+  await initNet();
+  NET.role = 'client'; NET.hostId = null;
+  const p = waitLobby();
+  NET.net.join(String(code).trim());
+  await p;
+  NET.code = String(code).trim();
+  await new Promise((res, rej) => { const to = setTimeout(() => { NET.welcome = null; rej(new Error(T('n_timeout'))); }, 15000); NET.welcome = () => { clearTimeout(to); res(); }; });
+  netReportRoom();
+}
+async function netQuick() {
+  await initNet();
+  let list = [];
+  try { list = await NET.net.list({ playerCount: { $lt: 9 } }); } catch (e) {}
+  list = (list || []).filter(l => l.playerCount > 0 && l.playerCount < 9).sort((a, b) => b.playerCount - a.playerCount);
+  for (const l of list.slice(0, 3)) {
+    try { setOnStatus(T('n_joining')); await netJoin(l.code); return; } catch (e) { netDrop(); await initNet(); }
+  }
+  await netHost(true);
+  banner(T('n_noRoom'));
+}
+function netDrop() { try { if (NET.net) NET.net.close(); } catch (e) {} NET.net = null; NET.role = 'solo'; NET.hostId = null; NET.peers.clear(); NET.ev = []; NET.code = ''; NET.pending = null; NET.welcome = null; }
+function netReportRoom() {
+  if (NET.role === 'solo' || !NET.code) return;
+  const humans = NET.role === 'host' ? 1 + NET.peers.size : units.filter(isHuman).length;
+  CG.room(NET.code, humans < 9);
+}
+function onNet(peer, m) {
+  if (NET.role === 'host') {
+    if (m.t === 'H') {
+      if (NET.peers.has(peer.id)) return;
+      const nm = String(m.name || '').replace(/[<>]/g, '').trim().slice(0, 14) || NT('n_player', 10 + ((Math.random() * 89) | 0));
+      const P = { id: peer.id, name: nm, team: [0, 1, 2].includes(m.team) ? m.team : 0, hero: m.hero, skill: m.skill, unit: null };
+      if (units.filter(u => !isHuman(u)).length === 0) { sendTo(peer.id, { t: 'full' }); return; }
+      NET.peers.set(peer.id, P);
+      if (running) {
+        netFlush(); netPickDiff(); netFlush();
+        const u = netSeat(P);
+        netFlush();
+        netSendSetup(P);
+        bcast({ t: 'E', e: [['rep', u.id, unitRow(u)]] }, false, P.id);
+      } else { netSeat(P); sendTo(peer.id, { t: 'wait' }); }
+      banner(NT('n_joined', nm)); netEv(['msg', 'n_joined', nm]);
+      netReportRoom();
+      return;
+    }
+    const P = NET.peers.get(peer.id); if (!P || !P.unit) return;
+    const u = P.unit;
+    if (m.t === 's') {
+      if (clock < (u.rxIgnore || 0) && Math.hypot(m.x - u.x, m.z - u.z) > 3) return;
+      u.rx = clampX(+m.x || 0); u.rz = clampX(+m.z || 0); u.mx = +m.mx || 0; u.mz = +m.mz || 0;
+      if (!(u.swingT > 0) && Math.hypot(m.fx, m.fz) > 0.5) { u.fx = m.fx; u.fz = m.fz; }
+    } else if (m.t === 'a') netRemoteAct(u, m);
+    else if (m.t === 'c') netChoose(u, m.id);
+    return;
+  }
+  if (NET.role !== 'client') return;
+  if (m.t === 'hi') {
+    if (NET.hostId && NET.hostId !== peer.id) return;
+    NET.hostId = peer.id;
+    sendTo(peer.id, { t: 'H', name: NET.name, team: startTeam, hero: startHero, skill: startSkill });
+    if (NET.welcome) { NET.welcome(); NET.welcome = null; }
+    return;
+  }
+  if (peer.id !== NET.hostId) return;
+  if (m.t === 'setup') { if (CG.adBusy) NET.pending = m; else netApplySetup(m); }
+  else if (m.t === 'PA') { if (running || NET.pending === null) m.l.forEach(netAddPick); }
+  else if (m.t === 'S') netApplySnap(m);
+  else if (m.t === 'W') netApplyWorld(m);
+  else if (m.t === 'E') { if (running) netApplyEvents(m.e); }
+  else if (m.t === 'O') { if (running && player) showPicker(m.ids); }
+  else if (m.t === 'wait') setOnStatus(T('n_waitJoin'));
+  else if (m.t === 'full') { netLeave(T('n_full')); }
+}
+function netTick(dt) {
+  if (NET.role === 'host') {
+    if (running) {
+      NET.snapT -= dt; if (NET.snapT <= 0) { NET.snapT = 1 / 15; if (NET.peers.size) netSnap(); }
+      NET.pickT -= dt; if (NET.pickT <= 0) { NET.pickT = 0.15; netPickDiff(); }
+      NET.worldT -= dt; if (NET.worldT <= 0) { NET.worldT = 0.25; if (NET.peers.size) bcast(netWorld(), true); }
+      for (const P of NET.peers.values()) { const u = P.unit; if (u && u.offer && clock - u.offerT > 20) netChoose(u, u.offer[(Math.random() * u.offer.length) | 0]); }
+    } else if (over && !CG.adBusy) {
+      NET.restartT -= dt;
+      const el = document.getElementById('endNet'); if (el) el.textContent = NT('n_next', Math.max(0, Math.ceil(NET.restartT)));
+      if (NET.restartT <= 0) netNewMatch();
+    }
+    if (NET.peers.size) netFlush(); else NET.ev = [];
+  } else if (NET.role === 'client') {
+    if (NET.pending && !CG.adBusy) { const m = NET.pending; NET.pending = null; netApplySetup(m); }
+    if (running && player) {
+      NET.sendT -= dt;
+      if (NET.sendT <= 0) { NET.sendT = 0.05; netSend({ t: 's', x: r2(player.x), z: r2(player.z), fx: r2(player.fx), fz: r2(player.fz), mx: r2(player.mx), mz: r2(player.mz) }, true); }
+      for (const p of pickups) if (p.predT && !p.alive && clock - p.predT > 1.5) { p.alive = true; p.predT = 0; } // the host never confirmed it: put it back
+    }
+  }
+  const chip = document.getElementById('roomChip');
+  const showChip = NET.role !== 'solo' && running && !!NET.code;
+  if (chip.hidden === showChip) chip.hidden = !showChip;
+  if (showChip) { const tx = `${T('n_room')} ${NET.code}`; if (chip.dataset.t !== tx) { chip.dataset.t = tx; chip.innerHTML = `${esc(tx)} <span>${svgIcon('copy')}</span>`; } }
+}
+function netOnEnd() { // results screen in an online match: short break (with an ad on CrazyGames), then the next match
+  const again = document.getElementById('again'), el = document.getElementById('endNet'), lv = document.getElementById('endLeave');
+  lv.hidden = NET.role === 'solo'; el.hidden = NET.role === 'solo';
+  if (NET.role === 'solo') { again.hidden = false; again.textContent = T('again'); return; }
+  if (NET.role === 'host') { netEv(['end', king ? king.team : 0, king ? king.id : -1]); netFlush(); NET.restartT = 12; again.hidden = false; again.textContent = T('n_startNow'); el.textContent = NT('n_next', 12); }
+  else { again.hidden = true; el.textContent = T('n_wait'); }
+  CG.midgame(() => {});
+}
+function netLeave(msg) { // leave the room and go back to the title screen
+  CG.leftRoom(); netDrop();
+  if (running || over) {
+    toggleSettings(false); Music.stop(); running = false; over = false; picking = false; CG.setPlaying(false);
+    ['picker', 'kb', 'count', 'touch', 'endScreen'].forEach(id => { document.getElementById(id).hidden = true; });
+    ['hudTL', 'hudTC', 'hudTR', 'hudBC', 'hudBR'].forEach(id => document.getElementById(id).hidden = true);
+    document.querySelectorAll('.edge').forEach(e => { e.hidden = true; });
+    setupMatch(false);
+  }
+  if (msg) openOnline(msg); else { document.getElementById('onlineScreen').hidden = true; document.getElementById('startScreen').hidden = false; }
+}
+
+// ---- online screen
+let onBusy = false;
+function setOnStatus(t) { document.getElementById('onStatus').textContent = t || ''; }
+function openOnline(msg) {
+  document.getElementById('startScreen').hidden = true; document.getElementById('onlineScreen').hidden = false;
+  renderOnline(); setOnStatus(msg || '');
+}
+function renderOnline() {
+  const s = (id, k) => { document.getElementById(id).textContent = T(k); };
+  s('onTitle', 'n_title'); s('onSub', 'n_sub'); s('onQuick', 'n_quick'); s('onCreate', 'n_create'); s('onJoin', 'n_join'); s('onBack', 'n_back'); s('onNameL', 'n_name');
+  document.getElementById('onCode').placeholder = T('n_code');
+  const ni = document.getElementById('onName'); if (!ni.value) ni.value = NET.name;
+}
+function netName() {
+  const v = document.getElementById('onName').value.replace(/[<>]/g, '').trim().slice(0, 14);
+  if (v) { NET.name = v; try { localStorage.setItem('tob-name', v); } catch (e) {} }
+  return NET.name;
+}
+async function onGo(fn, status) {
+  if (onBusy) return;
+  onBusy = true; netName(); setOnStatus(status);
+  ['onQuick', 'onCreate', 'onJoin'].forEach(id => { document.getElementById(id).disabled = true; });
+  try { await fn(); } catch (e) { netDrop(); setOnStatus((e && e.message) || T('n_fail')); }
+  onBusy = false;
+  ['onQuick', 'onCreate', 'onJoin'].forEach(id => { document.getElementById(id).disabled = false; });
+}
+try { NET.name = (localStorage.getItem('tob-name') || '').slice(0, 14); } catch (e) {}
+if (!NET.name) NET.name = NT('n_player', 10 + ((Math.random() * 89) | 0));
+document.getElementById('onlineBtn').addEventListener('click', () => openOnline());
+document.getElementById('onBack').addEventListener('click', () => { document.getElementById('onlineScreen').hidden = true; document.getElementById('startScreen').hidden = false; });
+document.getElementById('onQuick').addEventListener('click', () => onGo(() => netQuick(), T('n_connecting')));
+document.getElementById('onCreate').addEventListener('click', () => onGo(() => netHost(false), T('n_connecting')));
+document.getElementById('onJoin').addEventListener('click', () => {
+  const code = document.getElementById('onCode').value.trim();
+  if (!code) { setOnStatus(T('n_needCode')); return; }
+  onGo(() => netJoin(code), T('n_joining'));
+});
+document.getElementById('onCode').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('onJoin').click(); e.stopPropagation(); });
+document.getElementById('onName').addEventListener('keydown', e => e.stopPropagation());
+document.getElementById('roomChip').addEventListener('click', async e => {
+  e.stopPropagation(); if (!NET.code) return;
+  const link = CG.inviteLink(NET.code); let ok = false;
+  try { await navigator.clipboard.writeText(link); ok = true; } catch (er) {}
+  banner(ok ? T('n_copied') : `${T('n_room')} ${NET.code}`);
+});
+document.getElementById('leaveBtn').addEventListener('click', () => netLeave());
+document.getElementById('endLeave').addEventListener('click', () => netLeave());
+function joinFromInvite(code) { if (!code || NET.role !== 'solo') return; openOnline(); document.getElementById('onCode').value = code; onGo(() => netJoin(code), T('n_joining')); }
 
 // ======================= start screen =======================
 function renderStart() {
@@ -3200,6 +3785,9 @@ function renderStart() {
   document.getElementById('heroDesc').textContent = heroDesc(startHero);
   document.getElementById('hSkill').textContent = T('start');
   document.getElementById('play').textContent = T('play');
+  document.getElementById('onlineBtn').textContent = T('n_online');
+  document.getElementById('leaveBtn').textContent = T('n_leave'); document.getElementById('endLeave').textContent = T('n_leave');
+  if (!document.getElementById('onlineScreen').hidden) renderOnline();
   document.getElementById('again').textContent = T('again');
   document.getElementById('boardTitle').textContent = T('board');
   const ls = document.getElementById('lang');
@@ -3235,15 +3823,25 @@ document.getElementById('lang').addEventListener('change', e => {
   try { localStorage.setItem('tob-lang', LANG); } catch (e) {}
   renderStart();
 });
-document.getElementById('play').addEventListener('click', startGame);
-document.getElementById('again').addEventListener('click', () => CG.midgame(() => { document.getElementById('endScreen').hidden = true; document.getElementById('startScreen').hidden = false; setupMatch(false); }));
+document.getElementById('play').addEventListener('click', () => startGame());
+document.getElementById('again').addEventListener('click', () => NET.role === 'host' ? netNewMatch() : NET.role === 'client' ? null : CG.midgame(() => { document.getElementById('endScreen').hidden = true; document.getElementById('startScreen').hidden = false; setupMatch(false); }));
 ['hudTL', 'hudTC', 'hudTR', 'hudBC', 'hudBR'].forEach(id => document.getElementById(id).hidden = true);
 
-window.__tob = { get units() { return units; }, get king() { return king; } }; // debug hook
+window.__tob = { get units() { return units; }, get king() { return king; }, get NET() { return NET; } }; // debug hook
 renderStart();
 setupMatch(false); // bots play behind the title screen
 requestAnimationFrame(frame);
-CG.init().then(ok => { if (!ok) return; const c = pickCode(CG.locale()); if (c && !LANG_SAVED && c !== LANG) { LANG = c; renderStart(); } CG.loadingStop(); });
+CG.init().then(async ok => {
+  if (ok) {
+    const c = pickCode(CG.locale()); if (c && !LANG_SAVED && c !== LANG) { LANG = c; renderStart(); }
+    CG.loadingStop();
+    const un = await CG.userName(); if (un) { NET.name = un.slice(0, 14); document.getElementById('onName').value = NET.name; }
+    CG.onJoinRoom(code => { if (NET.role === 'solo') joinFromInvite(code); else { netLeave(); joinFromInvite(code); } });
+  }
+  const room = new URLSearchParams(location.search).get('room') || CG.inviteRoom();
+  if (room) joinFromInvite(room);
+  else if (ok && CG.instant()) { openOnline(); onGo(() => netHost(false), T('n_connecting')); }
+});
 })();
 </script>
 
