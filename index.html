@@ -3050,7 +3050,7 @@ function updateHud(dt) {
   document.getElementById('kA').textContent = player.assists;
   const sorted = [...units].sort((a, b) => b.score - a.score);
   document.getElementById('rows').innerHTML = sorted.map((u, i) => rowHtml(u, i)).join('');
-  document.getElementById('meRow').innerHTML = rowHtml(player, sorted.indexOf(player), true);
+  { const me = document.getElementById('meRow'), rank = sorted.indexOf(player); me.hidden = !isTouch || rank < 3; if (!me.hidden) me.innerHTML = rowHtml(player, rank, true); } // the list already shows everyone on desktop; phones show top 3 + you
   document.querySelectorAll('#skillbar .slot[data-id], #actbar .slot[data-id]').forEach(el => {
     const id = el.dataset.id; let cool;
     if (id === 'hero') cool = player.stamina < 1 || player.phaseCd > 0 || player.heroCd > 0;
