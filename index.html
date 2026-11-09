@@ -28,7 +28,7 @@ html, body { margin: 0; }
   color-scheme: dark;
 }
 html, body { height: 100%; }
-body { background: var(--night); color: var(--ink); font-family: var(--body); overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+body { background: var(--night); color: var(--ink); font-family: var(--body); overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 #game { position: fixed; inset: 0; }
 #game canvas { display: block; width: 100%; height: 100%; }
 button { font-family: var(--body); }
@@ -2122,6 +2122,7 @@ const Music = (() => {
     get muted() { return muted; },
   };
 })();
+['touchend', 'pointerup', 'click', 'keydown'].forEach(ev => window.addEventListener(ev, () => { try { if (actx && actx.state !== 'running' && !CG.muted) actx.resume(); } catch (e) {} }, { passive: true }));
 // last 15 seconds: a tick every second (higher for the final 3), a horn at zero
 function countdownBeep(n) {
   if (!actx || Music.muted) return;
