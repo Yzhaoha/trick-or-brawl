@@ -349,7 +349,14 @@ body.touch #gear { width: 38px; height: 38px; padding: 0; }
 .go { font-size: 26px; color: #fff; border: 3px solid var(--ol); border-radius: 18px; }
 .go.playbtn { font-size: 34px; }
 .go.alt { color: #fff; }
-.sbtn { border: 2px solid var(--ol); box-shadow: 0 2px 0 var(--ol); font-weight: 900; }
+.sbtn, body.touch .sbtn { aspect-ratio: 1; width: 100%; padding: 0; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 38%, #1c1232); border: 2.5px solid var(--ol); box-shadow: 0 3px 0 var(--ol), inset 0 0 0 2px color-mix(in srgb, var(--c) 70%, transparent); color: #fff; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .1s; }
+.sbtn svg { width: 60%; height: 60%; }
+.sbtn:hover { transform: translateY(-2px); }
+.sbtn[aria-pressed="true"], body.touch .sbtn[aria-pressed="true"] { background: var(--c); border-color: #fff; box-shadow: 0 3px 0 var(--ol), 0 0 0 3px var(--ol), 0 0 14px var(--c); }
+#startSkills, body.touch #startSkills { display: grid; grid-template-columns: repeat(10, minmax(0, 52px)); gap: 8px; justify-content: start; }
+body.touch #startSkills { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
+@media (max-height: 500px) and (orientation: landscape) { body.touch #startSkills { grid-template-columns: repeat(10, minmax(0, 34px)); gap: 5px; } }
+#skillDesc b { color: #fff; font-family: var(--display); font-weight: 400; font-size: 15px; }
 
 #tut { position: fixed; z-index: 7; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 70px); transform: translateX(-50%); display: flex; align-items: center; gap: 12px; pointer-events: none; }
 #tut .tc { display: flex; flex-direction: column; align-items: center; gap: 6px; background: linear-gradient(180deg, #4b3584, #2b1c50); border: 3px solid var(--ol); border-radius: 18px; box-shadow: 0 4px 0 var(--ol); padding: 8px 20px 10px; }
@@ -4056,12 +4063,11 @@ function renderStart() {
   SK_IDS.forEach(id => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'sbtn';
     b.setAttribute('aria-pressed', String(id === startSkill));
-    if (isTouch) { b.innerHTML = svgIcon(id); b.style.setProperty('--c', TYPE_COL[SKILLS[id].type]); b.title = skName(id); b.setAttribute('aria-label', skName(id)); } // phones: compact colored icons, name shown below
-    else b.textContent = skName(id);
+    b.innerHTML = svgIcon(id); b.style.setProperty('--c', TYPE_COL[SKILLS[id].type]); b.title = skName(id); b.setAttribute('aria-label', skName(id)); // compact colored icons, 2 rows of 10, name shown below
     b.addEventListener('click', () => { startSkill = id; renderStart(); });
     ss.appendChild(b);
   });
-  document.getElementById('skillDesc').innerHTML = (isTouch ? `<b>${esc(skName(startSkill))}</b> · ` : '') + esc(`${T('t_' + SKILLS[startSkill].type)} · ${skDesc(startSkill)}`);
+  document.getElementById('skillDesc').innerHTML = `<b>${esc(skName(startSkill))}</b> · ` + esc(`${T('t_' + SKILLS[startSkill].type)} · ${skDesc(startSkill)}`);
   ss.scrollLeft = ssl;
   refreshControlsUI();
 }
