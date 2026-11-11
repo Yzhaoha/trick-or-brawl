@@ -717,7 +717,7 @@ const CG = (() => {
 const SKILLS = {
   sniffer: { type: 'passive', max: 5, w: 10, en: ['Candy Sniffer', 'Pull in candy from farther away.'], zh: ['糖果嗅觉', '扩大吸糖范围。'] },
   snag:    { type: 'onhit', max: 3, w: 8, en: ['Web Snag', 'Hits pull the target back in front of you.'], zh: ['蛛丝钩', '打中后把敌人拽回面前。'] },
-  spin:    { type: 'onhit', max: 3, w: 7, en: ['Spooky Spin', 'A hit starts a 3-hit spin around you (4s cooldown).'], zh: ['幽灵旋风', '打中后原地旋转三圈（4 秒冷却）。'] },
+  spin:    { type: 'onhit', max: 3, w: 7, en: ["Spooky Twister", "Every hit sends a little ghost twister flying forward. It hits every enemy in its path."], zh: ["幽灵旋风", "每次打中敌人都会放出一股小旋风向前飞，沿途碰到的敌人都会被打中。"] },
   bats:    { type: 'onhit', max: 3, w: 8, en: ['Bat Swarm', 'Every swing also sends out a bat.'], zh: ['蝙蝠群', '每次挥击放出一只蝙蝠。'] },
   hex:     { type: 'onhit', max: 3, w: 3, rare: true, en: ['Hex Mark', 'Hits mark the target. Its next damage taken is doubled.'], zh: ['诅咒印记', '打中后标记敌人，它下一次受到的伤害翻倍。'] },
   rush:    { type: 'onhit', max: 3, w: 8, en: ['Sugar Rush', 'Hits give you a short burst of speed.'], zh: ['糖分冲刺', '打中后短时间加速。'] },
@@ -739,6 +739,7 @@ const SKILLS = {
   shriek: { type: 'toss', fam: 'toss', max: 3, w: 4, en: ['Toss Shriek Jar', 'Your throw hurts and interrupts enemies around the teammate, triggers your red powers on them, heals and speeds the teammate a little, then bounces once to the next teammate.'], zh: ['扔尖叫瓶', '伤害并打断队友身边的敌人，对它们触发你的红色攻击效果，给队友少量回血加速，再弹给下一个队友一次。'] },
 };
 { const tr = {"fr":{"sniffer":["Flair à bonbons","Attire les bonbons de plus loin."],"snag":["Toile collante","Tes coups ramènent la cible devant toi."],"spin":["Toupie hantée","Un coup lance une toupie de 3 coups autour de toi (recharge 4 s)."],"bats":["Nuée de chauves-souris","Chaque coup lance aussi une chauve-souris."],"hex":["Marque maudite","Tes coups marquent la cible : ses prochains dégâts subis sont doublés."],"rush":["Rush sucré","Tes coups te donnent un petit boost de vitesse."],"drain":["Vol de vie","Tes coups te soignent, toi et tes coéquipiers proches."],"echo":["Écho d'âme","Tes coups rechargent l'endurance, la tienne et celle des coéquipiers proches."],"wisps":["Feux follets","Des feux follets tournent autour de toi et repoussent les ennemis qui les touchent."],"bones":["Piste d'os","Laisse derrière toi des pics en os qui blessent tes poursuivants."],"moon":["Endurance pleine lune","+1 endurance max."],"guard":["Garde cercueil","Bloque les coups pendant 1 s et repousse les attaquants. Coups de pied, bulles et bombes la brisent. Se combine avec d'autres pouvoirs jaunes."],"kick":["Coup de crâne","Coup de pied sauté qui brise toute garde et déclenche tes pouvoirs rouges. Une attaque simple peut l’interrompre."],"pounce":["Bond lunaire","Bondis en avant et frappe une large zone, renversant les ennemis. Un coup en l'air l'annule."],"shove":["Poussée zombie","Deux poussées rapides vers l’avant. Peu de dégâts, pas de chute ; idéal pour percer ou fuir."],"head":["Coup de citrouille","Courte charge presque sans temps mort ; rappuie dans la seconde pour une 2e charge dans une autre direction."],"choco":["Lancer de chocolat","Lance au coéquipier le plus proche : soigne 2/5 de ses PV."],"pop":["Lancer de glace fusée","Ton lancer rend le coéquipier plus rapide un moment."],"charm":["Lancer de porte-bonheur","Ton lancer rend le coéquipier invulnérable 2 s."],"shriek":["Lancer de bocal hurlant","Blesse et interrompt les ennemis autour du coéquipier, y déclenche tes pouvoirs rouges, soigne et accélère un peu le coéquipier, puis rebondit une fois vers le suivant."]},"de":{"sniffer":["Süßigkeiten-Spürnase","Zieht Süßes aus größerer Entfernung an."],"snag":["Spinnennetz","Treffer ziehen das Ziel vor dich zurück."],"spin":["Spukwirbel","Ein Treffer startet einen Wirbel mit 3 Treffern um dich (4 s Abklingzeit)."],"bats":["Fledermausschwarm","Jeder Schlag schickt auch eine Fledermaus los."],"hex":["Fluchmal","Treffer markieren das Ziel. Sein nächster erlittener Schaden wird verdoppelt."],"rush":["Zuckerrausch","Treffer geben dir einen kurzen Temposchub."],"drain":["Lebensraub","Treffer heilen dich und Teamkollegen in der Nähe."],"echo":["Seelenecho","Treffer füllen Ausdauer für dich und Teamkollegen in der Nähe auf."],"wisps":["Irrlichter","Irrlichter kreisen um dich und stoßen Gegner weg, die sie berühren."],"bones":["Knochenspur","Hinterlässt Knochenstacheln, die Verfolger verletzen."],"moon":["Vollmond-Ausdauer","+1 maximale Ausdauer."],"guard":["Sargschild","Blockt 1 s lang Treffer und stößt Angreifer zurück. Tritte, Blasen und Bomben brechen ihn. Kombinierbar mit anderen gelben Kräften."],"kick":["Schädeltritt","Sprungtritt, der jede Deckung bricht und deine roten Kräfte auslöst. Ein normaler Angriff kann ihn unterbrechen."],"pounce":["Mondsprung","Spring nach vorn und schlag auf eine große Fläche – Gegner fallen um. Ein Treffer in der Luft bricht ihn ab."],"shove":["Zombie-Stoß","Zwei schnelle Stöße nach vorn. Wenig Schaden, kein Umwerfen; gut zum Durchbrechen oder Fliehen."],"head":["Kürbis-Kopfstoß","Kurzer Ansturm fast ohne Erholung; innerhalb 1 s nochmal drücken für einen zweiten in neue Richtung."],"choco":["Schoko werfen","Wirf zum nächsten Teamkollegen: heilt 2/5 seiner LP."],"pop":["Raketeneis werfen","Dein Wurf macht den Teamkollegen eine Weile schneller."],"charm":["Glücksbringer werfen","Dein Wurf macht den Teamkollegen 2 s unverwundbar."],"shriek":["Kreischglas werfen","Verletzt und unterbricht Gegner um den Teamkollegen, löst dort deine roten Kräfte aus, heilt und beschleunigt ihn etwas und springt dann einmal zum nächsten Teamkollegen."]},"es":{"sniffer":["Olfato dulce","Atrae caramelos desde más lejos."],"snag":["Telaraña","Tus golpes arrastran al objetivo delante de ti."],"spin":["Giro fantasmal","Un golpe inicia un giro de 3 golpes a tu alrededor (4 s de recarga)."],"bats":["Enjambre de murciélagos","Cada golpe también lanza un murciélago."],"hex":["Marca maldita","Tus golpes marcan al objetivo: el próximo daño que reciba se duplica."],"rush":["Subidón de azúcar","Tus golpes te dan un breve impulso de velocidad."],"drain":["Robo de vida","Tus golpes te curan a ti y a los compañeros cercanos."],"echo":["Eco del alma","Tus golpes recargan energía para ti y los compañeros cercanos."],"wisps":["Fuegos fatuos","Fuegos fatuos giran a tu alrededor y empujan a los enemigos que los tocan."],"bones":["Rastro de huesos","Deja púas de hueso que hieren a quien te persigue."],"moon":["Energía de luna llena","+1 energía máxima."],"guard":["Escudo ataúd","Bloquea golpes 1 s y empuja a los atacantes. Patadas, burbujas y bombas lo rompen. Se combina con otros poderes amarillos."],"kick":["Patada calavera","Patada voladora que rompe cualquier guardia y activa tus poderes rojos. Un ataque básico puede interrumpirla."],"pounce":["Salto lunar","Salta hacia delante y golpea una zona amplia, derribando enemigos. Un golpe en el aire lo cancela."],"shove":["Empujón zombi","Dos empujones rápidos hacia delante. Poco daño, no derriba; útil para abrirse paso o huir."],"head":["Cabezazo calabaza","Carga corta casi sin recuperación; pulsa otra vez en 1 s para una segunda carga en otra dirección."],"choco":["Lanzar chocolate","Lanza al compañero más cercano: cura 2/5 de su vida."],"pop":["Lanzar polo cohete","Tu lanzamiento hace más rápido al compañero un rato."],"charm":["Lanzar amuleto","Tu lanzamiento hace invulnerable al compañero 2 s."],"shriek":["Lanzar frasco chillón","Hiere e interrumpe a los enemigos cerca del compañero, activa tus poderes rojos en ellos, cura y acelera un poco al compañero y rebota una vez al siguiente."]},"it":{"sniffer":["Fiuto dolce","Attira le caramelle da più lontano."],"snag":["Ragnatela","I colpi trascinano il bersaglio davanti a te."],"spin":["Trottola spettrale","Un colpo avvia una trottola di 3 colpi attorno a te (ricarica 4 s)."],"bats":["Sciame di pipistrelli","Ogni colpo lancia anche un pipistrello."],"hex":["Marchio maledetto","I colpi marcano il bersaglio: il prossimo danno che subisce raddoppia."],"rush":["Scarica di zucchero","I colpi ti danno un breve scatto di velocità."],"drain":["Risucchio vitale","I colpi curano te e i compagni vicini."],"echo":["Eco dell’anima","I colpi ricaricano la resistenza a te e ai compagni vicini."],"wisps":["Fuochi fatui","Fuochi fatui ti girano attorno e respingono i nemici che li toccano."],"bones":["Scia di ossa","Lasci spuntoni d’osso che feriscono chi ti insegue."],"moon":["Resistenza di luna piena","+1 resistenza massima."],"guard":["Scudo bara","Para i colpi per 1 s e respinge chi attacca. Calci, bolle e bombe lo rompono. Si combina con altri poteri gialli."],"kick":["Calcio teschio","Calcio volante che rompe ogni guardia e attiva i tuoi poteri rossi. Un attacco base può interromperlo."],"pounce":["Balzo lunare","Balza in avanti e colpisci un’ampia area, atterrando i nemici. Un colpo a mezz’aria lo annulla."],"shove":["Spinta zombi","Due spinte rapide in avanti. Pochi danni, nessun atterramento; utile per sfondare o fuggire."],"head":["Testata zucca","Breve carica quasi senza recupero; premi di nuovo entro 1 s per una seconda carica in un’altra direzione."],"choco":["Lancia cioccolato","Lancia al compagno più vicino: cura 2/5 dei suoi PV."],"pop":["Lancia ghiacciolo razzo","Il tuo lancio rende il compagno più veloce per un po’."],"charm":["Lancia amuleto","Il tuo lancio rende il compagno invulnerabile per 2 s."],"shriek":["Lancia barattolo urlante","Ferisce e interrompe i nemici attorno al compagno, attiva su di loro i tuoi poteri rossi, cura e velocizza un po’ il compagno, poi rimbalza una volta al successivo."]},"pt":{"sniffer":["Faro doce","Puxa doces de mais longe."],"snag":["Teia","Seus golpes puxam o alvo de volta à sua frente."],"spin":["Giro assombrado","Um acerto inicia um giro de 3 golpes ao seu redor (recarga 4 s)."],"bats":["Revoada de morcegos","Cada golpe também solta um morcego."],"hex":["Marca amaldiçoada","Seus golpes marcam o alvo: o próximo dano que ele sofrer dobra."],"rush":["Pico de açúcar","Seus golpes dão um curto impulso de velocidade."],"drain":["Dreno de vida","Seus golpes curam você e os aliados próximos."],"echo":["Eco da alma","Seus golpes recarregam energia para você e aliados próximos."],"wisps":["Fogos-fátuos","Fogos-fátuos giram ao seu redor e empurram inimigos que os tocam."],"bones":["Trilha de ossos","Deixa espinhos de osso que ferem quem te persegue."],"moon":["Energia de lua cheia","+1 energia máxima."],"guard":["Escudo caixão","Bloqueia golpes por 1 s e empurra os atacantes. Chutes, bolhas e bombas o quebram. Combina com outros poderes amarelos."],"kick":["Chute caveira","Chute voador que quebra qualquer guarda e ativa seus poderes vermelhos. Um ataque básico pode interrompê-lo."],"pounce":["Salto lunar","Salte para a frente e golpeie uma área grande, derrubando inimigos. Um acerto no ar o cancela."],"shove":["Empurrão zumbi","Dois empurrões rápidos para a frente. Pouco dano, não derruba; bom para furar ou fugir."],"head":["Cabeçada de abóbora","Investida curta quase sem recuperação; aperte de novo em 1 s para uma segunda investida em outra direção."],"choco":["Jogar chocolate","Joga para o aliado mais próximo: cura 2/5 da vida dele."],"pop":["Jogar picolé foguete","Seu arremesso deixa o aliado mais rápido por um tempo."],"charm":["Jogar amuleto","Seu arremesso deixa o aliado invulnerável por 2 s."],"shriek":["Jogar pote do grito","Fere e interrompe inimigos perto do aliado, ativa neles seus poderes vermelhos, cura e acelera um pouco o aliado e quica uma vez para o próximo."]},"tr":{"sniffer":["Şeker Burnu","Şekerleri daha uzaktan çeker."],"snag":["Ağ Tuzağı","Vuruşların hedefi önüne geri çeker."],"spin":["Hayalet Dönüşü","Bir vuruş etrafında 3 vuruşluk bir dönüş başlatır (4 sn bekleme)."],"bats":["Yarasa Sürüsü","Her savuruş bir yarasa da gönderir."],"hex":["Lanet İşareti","Vuruşlar hedefi işaretler; alacağı bir sonraki hasar iki katı olur."],"rush":["Şeker Coşkusu","Vuruşlar sana kısa bir hız patlaması verir."],"drain":["Can Emme","Vuruşlar seni ve yakındaki takım arkadaşlarını iyileştirir."],"echo":["Ruh Yankısı","Vuruşlar seninle yakındaki takım arkadaşlarının dayanıklılığını doldurur."],"wisps":["Cin Işıkları","Cin ışıkları etrafında döner ve dokunan düşmanları iter."],"bones":["Kemik İzi","Arkanda seni kovalayanlara zarar veren kemik dikenleri bırakır."],"moon":["Dolunay Dayanıklılığı","+1 maksimum dayanıklılık."],"guard":["Tabut Kalkanı","Vuruşları 1 sn engeller ve saldıranları iter. Tekme, baloncuk ve bombalar kırar. Diğer sarı güçlerle birleşir."],"kick":["Kafatası Tekmesi","Her savunmayı kıran ve kırmızı güçlerini tetikleyen uçan tekme. Normal saldırı onu kesebilir."],"pounce":["Ay Atlayışı","İleri atla ve geniş bir alana vurup düşmanları devir. Havada vurulursan iptal olur."],"shove":["Zombi İtişi","İleriye iki hızlı itiş. Az hasar, devirmez; yarıp geçmek ya da kaçmak için iyi."],"head":["Balkabağı Kafası","Neredeyse beklemesiz kısa hücum; 1 sn içinde tekrar bas, başka yöne ikinci hücum."],"choco":["Çikolata Fırlat","En yakın takım arkadaşına at: canının 2/5’ini iyileştirir."],"pop":["Roket Dondurma Fırlat","Fırlatman takım arkadaşını bir süre hızlandırır."],"charm":["Muska Fırlat","Fırlatman takım arkadaşını 2 sn ölümsüz yapar."],"shriek":["Çığlık Kavanozu Fırlat","Takım arkadaşının çevresindeki düşmanlara zarar verip keser, onlarda kırmızı güçlerini tetikler, arkadaşını biraz iyileştirip hızlandırır, sonra bir kez sonrakine seker."]},"ja":{"sniffer":["キャンディ嗅覚","もっと遠くのキャンディを吸い寄せる。"],"snag":["クモの糸","当てた敵を目の前に引き寄せる。"],"spin":["おばけスピン","当てるとその場で3回転攻撃（クールダウン4秒）。"],"bats":["コウモリの群れ","攻撃するたびにコウモリが1匹飛んでいく。"],"hex":["呪いの印","当てた敵に印をつけ、次に受けるダメージを2倍にする。"],"rush":["シュガーラッシュ","当てると少しの間スピードアップ。"],"drain":["ライフドレイン","当てると自分と近くの味方が回復。"],"echo":["たましいの響き","当てると自分と近くの味方のスタミナが回復。"],"wisps":["鬼火","鬼火がまわりを回り、触れた敵をはじき飛ばす。"],"bones":["骨のトゲ道","通った後に骨のトゲが生え、追ってくる敵を傷つける。"],"moon":["満月のスタミナ","スタミナ上限 +1。"],"guard":["棺桶ガード","1秒間攻撃を防ぎ、相手をはじき返す。キック・泡・爆弾で壊れる。ほかの黄色の力と合体できる。"],"kick":["ドクロキック","どんなガードも破る飛び蹴り。赤の力も発動する。通常攻撃で止められる。"],"pounce":["月下ダイブ","前に飛びかかって広い範囲をたたき、敵を倒す。空中で攻撃されると中断。"],"shove":["ゾンビ体当たり","前に2回すばやく体当たり。ダメージは低く倒さないが、突破や逃げに便利。"],"head":["カボチャ頭突き","すきの少ない短い突進。1秒以内にもう一度押すと別の方向にもう一回。"],"choco":["チョコを投げる","一番近い味方に投げて、HPを2/5回復。"],"pop":["ロケットアイスを投げる","投げると味方がしばらく速くなる。"],"charm":["お守りを投げる","投げると味方が2秒間無敵になる。"],"shriek":["悲鳴のビンを投げる","味方のまわりの敵にダメージを与えて止め、赤の力を発動。味方を少し回復・加速させ、次の味方へ1回はね返る。"]},"ko":{"sniffer":["사탕 냄새","더 멀리 있는 사탕을 끌어당겨요."],"snag":["거미줄","맞힌 적을 내 앞으로 끌어와요."],"spin":["유령 회전","적중하면 제자리에서 3번 회전 공격 (쿨타임 4초)."],"bats":["박쥐 떼","휘두를 때마다 박쥐가 한 마리씩 날아가요."],"hex":["저주 표식","맞힌 적에게 표식을 남겨 다음에 받는 피해를 두 배로."],"rush":["슈가 러시","적중하면 잠깐 빨라져요."],"drain":["생명 흡수","적중하면 나와 근처 팀원이 회복해요."],"echo":["영혼의 메아리","적중하면 나와 근처 팀원의 스태미나가 차요."],"wisps":["도깨비불","도깨비불이 주위를 돌며 닿은 적을 밀어내요."],"bones":["뼈 가시 길","지나간 자리에 뼈 가시가 솟아 쫓아오는 적에게 피해."],"moon":["보름달 스태미나","최대 스태미나 +1."],"guard":["관 방패","1초 동안 공격을 막고 공격자를 밀어내요. 발차기, 거품, 폭탄에 깨져요. 다른 노랑 능력과 합체 가능."],"kick":["해골 킥","모든 가드를 깨는 날아차기, 빨강 능력도 발동. 기본 공격에 끊길 수 있어요."],"pounce":["달빛 덮치기","앞으로 뛰어들어 넓은 범위를 내리쳐 적을 쓰러뜨려요. 공중에서 맞으면 취소."],"shove":["좀비 밀치기","앞으로 빠르게 두 번 밀치기. 피해는 적고 넘어뜨리지 않지만 돌파나 도망에 좋아요."],"head":["호박 박치기","후딜이 거의 없는 짧은 돌진. 1초 안에 다시 누르면 다른 방향으로 한 번 더."],"choco":["초콜릿 던지기","가장 가까운 팀원에게 던져 체력 2/5 회복."],"pop":["로켓 아이스 던지기","던지면 팀원이 한동안 빨라져요."],"charm":["부적 던지기","던지면 팀원이 2초 동안 무적."],"shriek":["비명 병 던지기","팀원 주변 적에게 피해를 주고 끊으며 빨강 능력도 발동, 팀원을 조금 회복·가속시키고 다음 팀원에게 한 번 튕겨요."]},"ru":{"sniffer":["Сладкий нюх","Притягивает конфеты издалека."],"snag":["Паутина","Удары подтягивают цель к тебе."],"spin":["Призрачный вихрь","Удар запускает вихрь из 3 ударов вокруг тебя (перезарядка 4 с)."],"bats":["Стая мышей","Каждый взмах выпускает летучую мышь."],"hex":["Метка проклятия","Удары помечают цель: следующий урон по ней удваивается."],"rush":["Сахарный рывок","Удары дают короткое ускорение."],"drain":["Похищение жизни","Удары лечат тебя и союзников рядом."],"echo":["Эхо души","Удары восполняют выносливость тебе и союзникам рядом."],"wisps":["Блуждающие огни","Огоньки кружат вокруг и отбрасывают врагов, которые их коснутся."],"bones":["Костяной след","Оставляет костяные шипы, ранящие преследователей."],"moon":["Выносливость полнолуния","+1 к макс. выносливости."],"guard":["Щит-гроб","Блокирует удары 1 с и отбрасывает нападающих. Пинки, пузыри и бомбы ломают его. Объединяется с другими жёлтыми силами."],"kick":["Пинок черепа","Удар ногой в прыжке, ломает любую защиту и запускает красные силы. Обычная атака может прервать."],"pounce":["Лунный прыжок","Прыгни вперёд и ударь по большой области, сбивая врагов. Удар в воздухе отменяет его."],"shove":["Толчок зомби","Два быстрых толчка вперёд. Мало урона, не сбивает; хорошо, чтобы прорваться или сбежать."],"head":["Тыквенный таран","Короткий рывок почти без задержки; нажми ещё раз в течение 1 с для второго в другую сторону."],"choco":["Бросок шоколада","Брось ближайшему союзнику: лечит 2/5 его здоровья."],"pop":["Бросок ракетного мороженого","Бросок на время ускоряет союзника."],"charm":["Бросок оберега","Бросок делает союзника неуязвимым на 2 с."],"shriek":["Бросок банки визга","Ранит и прерывает врагов вокруг союзника, запускает на них твои красные силы, немного лечит и ускоряет союзника и один раз отскакивает к следующему."]}}; for (const c in tr) for (const id in tr[c]) SKILLS[id][c] = tr[c][id]; }
+{ const tw = {"fr": ["Tornade hantée", "Chaque coup lance une petite tornade qui file droit devant et touche tous les ennemis sur son passage."], "de": ["Spukwirbel", "Jeder Treffer schickt einen kleinen Geisterwirbel nach vorn, der jeden Gegner auf seinem Weg trifft."], "es": ["Torbellino fantasmal", "Cada golpe lanza un pequeño torbellino hacia delante que golpea a todos los enemigos a su paso."], "it": ["Tromba spettrale", "Ogni colpo lancia in avanti un piccolo turbine che colpisce tutti i nemici sul suo percorso."], "pt": ["Redemoinho assombrado", "Cada acerto solta um pequeno redemoinho para a frente que atinge todos os inimigos no caminho."], "tr": ["Hayalet Hortumu", "Her vuruş ileriye küçük bir hortum gönderir; yolundaki her düşmana çarpar."], "ja": ["おばけ竜巻", "当てるたびに小さな竜巻が前に飛んでいき、通り道の敵みんなに当たる。"], "ko": ["유령 회오리", "적중할 때마다 작은 회오리가 앞으로 날아가 지나가는 길의 모든 적을 맞혀요."], "ru": ["Призрачный вихрь", "Каждый удар запускает вперёд маленький вихрь, который бьёт всех врагов на пути."]}; for (const c in tw) SKILLS.spin[c] = tw[c]; }
 // v27: powers unlocked with shards (lock = shard cost); they only show up for players who unlocked them
 Object.assign(SKILLS, {
   thorns: { type: 'passive', max: 3, w: 6, lock: 40 },
@@ -1963,6 +1964,7 @@ function heroPortrait(hero, team, skin = 'classic') {
 }
 
 // ======================= world state =======================
+let twisters = [];
 let units = [], pickups = [], buckets = [], bombs = [], bats = [], spikes = [], tosses = [], fxMeshes = [], shots = [], traps = [];
 let player = null, king = null, timeLeft = MATCH_TIME, running = false, over = false, hurryShown = false;
 let startTeam = 1, startSkill = 'sniffer', startHero = 'wolf';
@@ -2282,7 +2284,7 @@ function dealDamage(src, tgt, amount, o = {}) {
     }
   }
   let dmg = amount;
-  if (tgt.hexT > 0) { dmg *= 2; tgt.hexT = 0; popText(tgt, '×2', '#c79bff'); }
+  if (tgt.hexT > 0) { dmg *= 2; tgt.hexT = 0; popText(tgt, '×2', '#c79bff', true); burst(tgt.x, 1, tgt.z, 0xb36bff, 12); spawnRing(tgt.x, tgt.z, 1.3, 0xb36bff); }
   dmg = Math.round(dmg);
   tgt.hp -= dmg; tgt.flash = 0.12; tgt.revealT = Math.max(tgt.revealT, 1); tgt.lastHurt = clock; if (src && src !== tgt) tgt.hitBy.set(src, clock);
   if (tgt.bubbleT > 0) { tgt.bubbleT = 0; burst(tgt.x, 0.8, tgt.z, 0x9be7ff, 8); }
@@ -2295,7 +2297,7 @@ function dealDamage(src, tgt, amount, o = {}) {
   impact(src, tgt, dmg, !!o.launch || dmg >= 16);
   netEv(['i', src ? src.id : -1, tgt.id, dmg, (o.launch || dmg >= 16) ? 1 : 0, r2(tgt.kvx), r2(tgt.kvz), r2(tgt.stun), r2(tgt.air)]);
   if (tgt.isPlayer || src === player) popText(tgt, '-' + dmg, tgt.isPlayer ? '#ff4d6a' : (o.launch || dmg >= 16 ? '#ffe066' : '#ffffff'), dmg >= 16);
-  if (o.melee && src && src !== tgt && src.alive && tgt.skills.thorns) dealDamage(tgt, src, 3 + 3 * tgt.skills.thorns, {}); // Pumpkin Thorns
+  if (o.melee && src && src !== tgt && src.alive && tgt.skills.thorns) { tgt.thornHit = 0.25; burst(src.x, 0.8, src.z, 0xff8a1f, 6); dealDamage(tgt, src, 3 + 3 * tgt.skills.thorns, {}); } // Pumpkin Thorns
   if (tgt.hp <= 0) knockOut(tgt, src);
   return true;
 }
@@ -2313,14 +2315,14 @@ function onHit(u, t, fromSpin) {
     t.x += (tx - t.x) * 0.85; t.z += (tz - t.z) * 0.85; t.kvx = t.kvz = 0;
     if (t.remote) { t.rx = t.x; t.rz = t.z; t.rxHold = clock + 0.5; netEv(['tp', t.id, r2(t.x), r2(t.z)]); }
     dealDamage(u, t, 3 * S.snag * dmgMul(u), {});
-    spawnLine(u, t, 0xf4ecff); proc(u, 'snag', t);
+    spawnLine(u, t, 0xffffff, 0.14, 0.5); spawnLine(u, t, 0xf4ecff, 0.14, 0.5, 0.25); burst(t.x, 0.9, t.z, 0xffffff, 6); proc(u, 'snag', t);
     if (S.bats) bats.forEach(b => { if (b.u === u && b.left > 0) { b.home = t; b.left = Math.max(b.left, 4); } }); // Web Snag + Bat Swarm: your missed bats are pulled back onto the target
   }
   if (S.hex && t.alive) { if (!(t.hexT > 0)) proc(u, 'hex', t); t.hexT = 2 + S.hex; }
-  if (S.rush) { if (!(u.rushT > 0)) proc(u, 'rush'); u.rushT = 1.5; }
+  if (S.rush) { if (!(u.rushT > 0)) { proc(u, 'rush'); spawnRing(u.x, u.z, 1.1, 0xffc23d); } u.rushT = 1.5; }
   if (S.drain) { proc(u, 'drain'); units.forEach(m => { if (m.alive && m.team === u.team && d2(m, u) < 36) { m.hp = Math.min(m.maxHp, m.hp + 2 * S.drain); flyOrbs(t.x, t.z, m, 0xff4d6a, m === u ? 3 : 2); if (m === player && m !== u) popText(m, '+' + 2 * S.drain, '#9dff6a'); } }); }
   if (S.echo) { proc(u, 'echo'); units.forEach(m => { if (m.alive && m.team === u.team && d2(m, u) < 36) { m.stamina = Math.min(maxStamina(m), m.stamina + 0.12 * S.echo); flyOrbs(t.x, t.z, m, 0x5fd0ff, m === u ? 3 : 2); } }); }
-  if (S.spin && !fromSpin && u.spinCd <= 0) { u.spinT = 0.9; u.spinTick = 0; u.spinCd = 4; proc(u, 'spin'); }
+  if (S.spin && !fromSpin && !(clock - (u.twAt || -9) < 0.2)) { u.twAt = clock; proc(u, 'spin'); const a = d2(u, t) > 0.04 ? Math.atan2(t.x - u.x, t.z - u.z) : Math.atan2(u.fx, u.fz); fireTwister(u, u.x, u.z, Math.sin(a), Math.cos(a), S.spin); netEv(['tw', u.id, r2(u.x), r2(u.z), r2(Math.sin(a)), r2(Math.cos(a)), S.spin]); }
 }
 function inCone(u, t, range, cos) {
   const dx = t.x - u.x, dz = t.z - u.z, dd = Math.hypot(dx, dz);
@@ -2665,6 +2667,18 @@ function fireBat(u, ang = 0) {
   const c = Math.cos(ang), s = Math.sin(ang), dx = u.fx * c - u.fz * s, dz = u.fx * s + u.fz * c;
   bats.push({ u, x: u.x, z: u.z, dx, dz, left: 6.5, dmg: (4 + 3 * u.skills.bats) * dmgMul(u), mesh: g, home: null });
 }
+const TW_GEO = [0.32, 0.5, 0.72, 0.95].map((r, i) => new THREE.TorusGeometry(r, 0.07 + i * 0.015, 6, 18));
+const TW_MAT = new THREE.MeshBasicMaterial({ color: 0xb991ff, transparent: true, opacity: 0.8, depthWrite: false });
+const TW_CORE = new THREE.MeshBasicMaterial({ color: 0x9b6bff, transparent: true, opacity: 0.45, depthWrite: false });
+function fireTwister(u, x, z, dx, dz, lvl) {
+  const g = new THREE.Group(), rings = [];
+  TW_GEO.forEach((geo, i) => { const m = new THREE.Mesh(geo, TW_MAT); m.rotation.x = Math.PI / 2; m.position.y = 0.15 + i * 0.42; g.add(m); rings.push(m); });
+  const core = new THREE.Mesh(new THREE.ConeGeometry(0.85, 1.9, 12, 1, true), TW_CORE); core.rotation.x = Math.PI; core.position.y = 0.95; g.add(core);
+  const sc = 0.9 + 0.12 * (lvl - 1); g.scale.setScalar(sc);
+  g.position.set(x + dx * 0.6, 0, z + dz * 0.6); scene.add(g);
+  twisters.push({ u, x: x + dx * 0.6, z: z + dz * 0.6, dx, dz, left: 7.5 + lvl, r: 0.85 * sc, dmg: (5 + 2 * lvl) * dmgMul(u), mesh: g, rings, core, hit: new Set(), bat: 0, age: 0 });
+  SFX.play('twister', u);
+}
 function breakBucket(b) {
   if (NET.role === 'client') return;
   b.alive = false; b.respawn = 30; b.mesh.visible = false;
@@ -2760,11 +2774,11 @@ function spawnRing(x, z, r, col) {
   m.rotation.x = -Math.PI / 2; m.position.set(x, 0.07, z);
   scene.add(m); fxMeshes.push({ m, t: 0.35, max: 0.35, kind: 'grow' });
 }
-function spawnLine(a, b, col) { // a thick strand (WebGL lines are 1px and vanish)
+function spawnLine(a, b, col, w = 0.07, life = 0.35, yo = 0) { // a thick strand (WebGL lines are 1px and vanish)
   const dx = b.x - a.x, dz = b.z - a.z, len = Math.hypot(dx, dz) || 0.01;
-  const m = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, len), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.95 }));
-  m.position.set((a.x + b.x) / 2, 0.85, (a.z + b.z) / 2); m.rotation.y = Math.atan2(dx, dz);
-  scene.add(m); fxMeshes.push({ m, t: 0.35, max: 0.35, kind: 'fade' });
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, w, len), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.95 }));
+  m.position.set((a.x + b.x) / 2, 0.85 + yo, (a.z + b.z) / 2); m.rotation.y = Math.atan2(dx, dz);
+  scene.add(m); fxMeshes.push({ m, t: life, max: life, kind: 'fade' });
 }
 // ---------- music (synthesised, no files): bass, drums and a spooky arpeggio in A minor ----------
 const Music = (() => {
@@ -2865,6 +2879,7 @@ const SFX = (() => {
     witch: v => { tone(700, 1400, 0.18, 'sine', 0.2 * v); tone(1400, 2100, 0.12, 'sine', 0.1 * v, 0.08); },
     ghost: v => { tone(500, 260, 0.45, 'sine', 0.16 * v); tone(760, 380, 0.45, 'sine', 0.08 * v); },
     act: v => { swish(300, 1500, 0.22, 0.45 * v, 0.8); tone(140, 70, 0.2, 'sine', 0.3 * v, 0.03); },
+    twister: v => { swish(300, 1400, 0.5, 0.4 * v, 0.7); swish(1400, 500, 0.4, 0.2 * v, 1.2, 0.15); },
     toss: v => { swish(800, 3000, 0.25, 0.3 * v, 1.5); tone(500, 900, 0.2, 'triangle', 0.08 * v); },
     item: v => { tone(330, 660, 0.15, 'square', 0.08 * v); swish(1200, 3000, 0.15, 0.2 * v); },
     candy: () => { const now = actx.currentTime; candyStep = now - lastCandy < 0.4 ? Math.min(8, candyStep + 1) : 0; lastCandy = now; tone(880 * Math.pow(2, candyStep / 12), 0, 0.07, 'sine', 0.09); },
@@ -3332,7 +3347,7 @@ function updateUnit(u, dt) {
   }
   const wasAir = u.air > 0, wasKick = u.kickT > 0;
   const dec = k => { if (u[k] > 0) u[k] = Math.max(0, u[k] - dt); };
-  ['heroCd', 'boostT', 'punch', 'pounceCd', 'charmCd', 'kickVis', 'actCd', 'dashT', 'headWin', 'empowerT', 'bubbleT', 'trappedT', 'react', 'phaseCd', 'invuln', 'stun', 'air', 'flash', 'atkCd', 'comboT', 'swingT', 'rollT', 'hasteT', 'jumpReady', 'guardT', 'guardCd', 'kickT', 'kickCd', 'tossCd', 'spinCd', 'rushT', 'hexT', 'revealT', 'slowT', 'undyCd'].forEach(dec);
+  ['thornHit', 'heroCd', 'boostT', 'punch', 'pounceCd', 'charmCd', 'kickVis', 'actCd', 'dashT', 'headWin', 'empowerT', 'bubbleT', 'trappedT', 'react', 'phaseCd', 'invuln', 'stun', 'air', 'flash', 'atkCd', 'comboT', 'swingT', 'rollT', 'hasteT', 'jumpReady', 'guardT', 'guardCd', 'kickT', 'kickCd', 'tossCd', 'spinCd', 'rushT', 'hexT', 'revealT', 'slowT', 'undyCd'].forEach(dec);
   if (wasKick && u.kickT <= 0 && u.alive) { // kick combos: extra kicks, then the landing slam
     if (u.kickChain > 0) { u.kickChain--; u.kickT = 0.26; u.kickHit = false; }
     else if (u.kickLand) { u.kickLand = false; u.leap = { sx: u.x, sz: u.z, tx: clampX(u.x + u.fx), tz: clampX(u.z + u.fz), t: 0, dur: 0.22 }; }
@@ -3403,6 +3418,7 @@ function updateUnit(u, dt) {
     if (dd < pr * pr) {
       if (dd < 0.36 * scaleOf(u)) { collect(u, p); continue; }
       const l = Math.sqrt(dd); p.x += (u.x - p.x) / l * dt * 7; p.z += (u.z - p.z) / l * dt * 7;
+      if (u.skills.sniffer && l > 0.55 * scaleOf(u) && Math.random() < dt * 8) burst(p.x, 0.35, p.z, 0xff8fd0, 1);
     }
   }
 }
@@ -3419,7 +3435,7 @@ function collect(u, p) {
   if (NET.role === 'client') return;
   if (u.isPlayer) SFX.play('candy');
   let v = p.v;
-  if (u.skills.sweet) { u.sweetAcc += p.v * 0.15 * u.skills.sweet; const b = Math.floor(u.sweetAcc); u.sweetAcc -= b; v += b; } // Sweet Tooth
+  if (u.skills.sweet) { u.sweetAcc += p.v * 0.15 * u.skills.sweet; const b = Math.floor(u.sweetAcc); u.sweetAcc -= b; v += b; if (b > 0) { burst(u.x, 1.2 * scaleOf(u), u.z, 0xff7ac8, 5); if (u.isPlayer) popText(u, '+' + b + ' ♥', '#ff7ac8'); } } // Sweet Tooth
   addXp(u, v);
   if (p.field) { p.alive = false; p.respawn = p.home !== undefined ? -1 : rnd(14, 20); } // patch candy waits for its patch to move; loose candy is slow to come back
   else p.alive = false, p.dead = true;
@@ -3503,6 +3519,27 @@ function updateWorld(dt) {
     if (b.left <= 0) { scene.remove(b.mesh); b.gone = true; }
   }
   bats = bats.filter(b => !b.gone);
+  // twisters
+  for (const w of twisters) {
+    const step = 10 * dt; w.age += dt;
+    w.x += w.dx * step; w.z += w.dz * step; w.left -= step;
+    w.mesh.position.set(w.x, 0, w.z); w.mesh.rotation.y += dt * 18;
+    w.rings.forEach((m, i) => { m.position.x = Math.sin(w.age * 14 + i * 1.4) * 0.12 * i; m.position.z = Math.cos(w.age * 14 + i * 1.4) * 0.12 * i; });
+    const fade = Math.min(1, w.left / 1.5, w.age / 0.12); w.mesh.scale.y = w.mesh.scale.x * (0.4 + 0.6 * fade);
+    if (Math.random() < dt * 25) burst(w.x + (Math.random() - 0.5) * 0.8, 0.15, w.z + (Math.random() - 0.5) * 0.8, 0xc9b0ff, 1);
+    if (w.u.skills.bats && w.bat < 3 && w.age > 0.12 + w.bat * 0.22) { // Spooky Twister + Bat Swarm: the twister flings three bats sideways
+      w.bat++; const side = w.bat % 2 ? 1 : -1, ox = w.u.x, oz = w.u.z, fx = w.u.fx, fz = w.u.fz;
+      w.u.x = w.x; w.u.z = w.z; w.u.fx = w.dx; w.u.fz = w.dz; fireBat(w.u, side * (w.bat === 3 ? 0 : 1.2)); w.u.x = ox; w.u.z = oz; w.u.fx = fx; w.u.fz = fz;
+    }
+    for (const t of units) {
+      if (!isEnemy(w.u, t) || !t.alive || w.hit.has(t) || (t.x - w.x) ** 2 + (t.z - w.z) ** 2 > (w.r + 0.35 * scaleOf(t)) ** 2) continue;
+      w.hit.add(t);
+      if (dealDamage(w.u, t, w.dmg, { kb: 7, dx: w.dx, dz: w.dz, stun: 0.45, blockable: true })) { t.kickT = 0; onHit(w.u, t, true); }
+    }
+    if (OBST.some(o => (o.x - w.x) ** 2 + (o.z - w.z) ** 2 < (o.r + 0.2) ** 2) || Math.abs(w.x) > HALF + 1 || Math.abs(w.z) > HALF + 1) w.left = 0;
+    if (w.left <= 0) { burst(w.x, 0.6, w.z, 0xd9c2ff, 8); scene.remove(w.mesh); w.gone = true; }
+  }
+  twisters = twisters.filter(w => !w.gone);
   // spikes
   for (const s of spikes) {
     s.t -= dt;
@@ -3575,6 +3612,75 @@ const bossAura = (() => {
   return g;
 })();
 
+// ---------- visible effects for passive / on-hit powers ----------
+const PFX_KEYS = ['wispM', 'snifM', 'moonM', 'hexM', 'thornM', 'haloM', 'frostM'];
+const pfxEach = (u, f) => PFX_KEYS.forEach(k => { const v = u[k]; if (!v) return; (Array.isArray(v) ? v : [v]).forEach(f); });
+const SNIF_MAT = new THREE.MeshBasicMaterial({ color: 0xff8fd0, transparent: true, opacity: 0.6, depthWrite: false });
+const MOON_MAT = new THREE.MeshBasicMaterial({ color: 0xffe066 });
+const MOON_GLOW = new THREE.MeshBasicMaterial({ color: 0xfff4b8, transparent: true, opacity: 0.45, depthWrite: false });
+const THORN_MAT = new THREE.MeshLambertMaterial({ color: 0xff8a1f });
+const HALO_MAT = new THREE.MeshBasicMaterial({ color: 0xffe9a8 });
+const FROST_MAT = new THREE.MeshBasicMaterial({ color: 0x8fdcff, transparent: true, opacity: 0.8, depthWrite: false });
+const HEX_MAT = new THREE.MeshBasicMaterial({ color: 0xb36bff, transparent: true, opacity: 0.85, depthWrite: false });
+function powerFx(u, t, sc, visible) {
+  // Candy Sniffer: a dotted pink ring on the ground showing how far you pull candy
+  if (u.skills.sniffer) {
+    if (!u.snifM) {
+      const g = new THREE.Group(), n = 28;
+      for (let i = 0; i < n; i++) { const d = new THREE.Mesh(G('snifD', () => new THREE.CircleGeometry(0.075, 6)), SNIF_MAT); const a = i / n * Math.PI * 2; d.position.set(Math.cos(a), 0, Math.sin(a)); d.rotation.x = -Math.PI / 2; g.add(d); }
+      scene.add(g); u.snifM = g;
+    }
+    const pr = 0.55 * sc + 0.75 * u.skills.sniffer;
+    u.snifM.visible = visible; u.snifM.position.set(u.x, 0.05, u.z); u.snifM.rotation.y = t * 0.6;
+    u.snifM.scale.set(pr, 1, pr); u.snifM.children.forEach(d => d.scale.set(1 / pr * 1.4, 1 / pr * 1.4, 1));
+  }
+  // Full Moon Stamina: a little glowing crescent moon floats over your shoulder
+  if (u.skills.moon) {
+    if (!u.moonM) {
+      const g = new THREE.Group();
+      const c = new THREE.Mesh(G('moonC', () => new THREE.TorusGeometry(0.3, 0.1, 6, 18, Math.PI * 1.25)), MOON_MAT); c.rotation.z = 0.9; g.add(c);
+      const h = new THREE.Mesh(G('moonH', () => new THREE.CircleGeometry(0.5, 18)), MOON_GLOW); h.position.z = -0.02; g.add(h);
+      scene.add(g); u.moonM = g;
+    }
+    const k = 0.9 + 0.2 * u.skills.moon, full = u.stamina >= maxStamina(u) - 0.01;
+    u.moonM.visible = visible; u.moonM.scale.setScalar(k * (full ? 1 + 0.08 * Math.sin(t * 5) : 0.85));
+    u.moonM.position.set(u.x + 0.85 * sc, 1.45 * sc + Math.sin(t * 2 + u.id) * 0.08, u.z); u.moonM.rotation.y = 0;
+  }
+  // Hex Mark: a spinning purple curse sigil under the marked enemy
+  if (u.hexT > 0) {
+    if (!u.hexM) {
+      const g = new THREE.Group();
+      const r = new THREE.Mesh(G('hexR', () => new THREE.RingGeometry(0.8, 0.92, 6)), HEX_MAT); r.rotation.x = -Math.PI / 2; g.add(r);
+      const r2 = new THREE.Mesh(G('hexR2', () => new THREE.RingGeometry(0.45, 0.53, 3)), HEX_MAT); r2.rotation.x = -Math.PI / 2; g.add(r2);
+      const gem = new THREE.Mesh(G('hexG', () => new THREE.OctahedronGeometry(0.16)), HEX_MAT); gem.position.y = 2.1; gem.userData.gem = 1; g.add(gem);
+      scene.add(g); u.hexM = g;
+    }
+    u.hexM.visible = visible; u.hexM.position.set(u.x, 0.06, u.z); u.hexM.scale.setScalar(sc); u.hexM.rotation.y = t * 2.5;
+    u.hexM.children[2].position.y = 2.15 + Math.sin(t * 6) * 0.1;
+  } else if (u.hexM) u.hexM.visible = false;
+  // Pumpkin Thorns: a ring of orange thorns around your feet
+  if (u.skills.thorns) {
+    if (!u.thornM) {
+      const g = new THREE.Group(), n = 10;
+      for (let i = 0; i < n; i++) { const c = new THREE.Mesh(G('thornC', () => new THREE.ConeGeometry(0.09, 0.32, 5)), THORN_MAT); const a = i / n * Math.PI * 2; c.position.set(Math.cos(a) * 0.62, 0.14, Math.sin(a) * 0.62); c.rotation.z = -Math.cos(a) * 0.5; c.rotation.x = Math.sin(a) * 0.5; g.add(c); }
+      scene.add(g); u.thornM = g;
+    }
+    const k = (0.9 + 0.12 * u.skills.thorns) * sc * (u.thornHit > 0 ? 1 + u.thornHit * 1.5 : 1);
+    u.thornM.visible = visible; u.thornM.position.set(u.x, 0, u.z); u.thornM.scale.set(k, k, k); u.thornM.rotation.y = -t * 0.8;
+  }
+  // Undying Soul: a golden halo floats over your head while it is ready
+  if (u.skills.undying) {
+    if (!u.haloM) { const h = new THREE.Mesh(G('haloT', () => new THREE.TorusGeometry(0.3, 0.05, 6, 20)), HALO_MAT); h.rotation.x = Math.PI / 2; scene.add(h); u.haloM = h; }
+    u.haloM.visible = visible && !(u.undyCd > 0); u.haloM.position.set(u.x, 2.05 * sc + Math.sin(t * 3) * 0.06, u.z); u.haloM.scale.setScalar(sc);
+  }
+  // Frost Bite: slowed enemies get an icy blue ring and frost flakes
+  if (u.slowT > 0) {
+    if (!u.frostM) { const r = new THREE.Mesh(G('frostR', () => new THREE.RingGeometry(0.55, 0.78, 6)), FROST_MAT); r.rotation.x = -Math.PI / 2; scene.add(r); u.frostM = r; }
+    u.frostM.visible = visible; u.frostM.position.set(u.x, 0.07, u.z); u.frostM.scale.setScalar(sc); u.frostM.rotation.z = t;
+    if (visible && Math.random() < 0.25) burst(u.x + rnd(-0.4, 0.4), 0.4 + rnd(0, 1.2) * sc, u.z + rnd(-0.4, 0.4), 0xbfeaff, 1);
+  } else if (u.frostM) u.frostM.visible = false;
+}
+
 // ======================= render sync =======================
 const v3 = new THREE.Vector3();
 const toScreen = (x, y, z) => { v3.set(x, y, z).project(camera); return [(v3.x + 1) / 2 * window.innerWidth, (1 - v3.y) / 2 * window.innerHeight, v3.z]; };
@@ -3582,7 +3688,7 @@ function syncVisuals(t) {
   const seeAll = !player;
   for (const u of units) {
     const V = u.vis;
-    if (!u.alive) { u.tag.style.display = 'none'; if (u.wispM) u.wispM.forEach(g => { g.visible = false; }); continue; }
+    if (!u.alive) { u.tag.style.display = 'none'; pfxEach(u, g => { g.visible = false; }); continue; }
     const visible = seeAll || canSee(player, u);
     V.root.visible = visible;
     const sc = scaleOf(u);
@@ -3616,16 +3722,17 @@ function syncVisuals(t) {
     if (u.kickT > 0 || u.kickVis > 0) V.legR.rotation.x = -1.4;
     V.lid.visible = u.guardT > 0;
     u.tag.classList.toggle('hexed', u.hexT > 0);
+    powerFx(u, t, sc, visible);
     if (u.skills.wisps) {
       if (!u.wispM) u.wispM = [0, 1, 2, 3, 4].map(() => { const g = new THREE.Group(); g.add(new THREE.Mesh(G('wispS', () => new THREE.SphereGeometry(0.16, 10, 8)), new THREE.MeshBasicMaterial({ color: 0x9dff6a }))); const c = new THREE.Mesh(G('wispC', () => new THREE.ConeGeometry(0.12, 0.3, 8)), new THREE.MeshBasicMaterial({ color: 0xd8ffb0 })); c.position.y = 0.18; g.add(c); scene.add(g); return g; });
       const n = Math.min(5, u.skills.wisps + 1), R = 1.05 * sc;
       u.wispM.forEach((g, i) => { g.visible = visible && i < n && u.wispCd[i] <= 0; if (!g.visible) return; const a = u.wispA + i / n * Math.PI * 2; g.position.set(u.x + Math.cos(a) * R, 0.7 + Math.sin(t * 6 + i) * 0.08, u.z + Math.sin(a) * R); });
     }
-    if (u.rushT > 0 && Math.hypot(u.mx, u.mz) > 0.1 && Math.random() < 0.5) { const col = [0xff5fa2, 0xffc23d, 0x5fd0ff, 0x9dff6a][(Math.random() * 4) | 0]; const m = new THREE.Mesh(burstGeo, new THREE.MeshBasicMaterial({ color: col, transparent: true })); m.position.set(u.x + rnd(-0.3, 0.3), 0.1, u.z + rnd(-0.3, 0.3)); m.scale.setScalar(0.6); scene.add(m); fxMeshes.push({ m, t: 0.5, max: 0.5, kind: 'part', vx: 0, vy: 1.5, vz: 0 }); }
+    if (u.rushT > 0 && Math.hypot(u.mx, u.mz) > 0.1 && Math.random() < 0.95) { const col = [0xff5fa2, 0xffc23d, 0x5fd0ff, 0x9dff6a][(Math.random() * 4) | 0]; const m = new THREE.Mesh(burstGeo, new THREE.MeshBasicMaterial({ color: col, transparent: true })); m.position.set(u.x - u.fx * 0.3 + rnd(-0.3, 0.3), 0.1 + rnd(0, 0.6), u.z - u.fz * 0.3 + rnd(-0.3, 0.3)); m.scale.set(0.8, 0.8, 1.8); m.rotation.y = Math.atan2(u.fx, u.fz); scene.add(m); fxMeshes.push({ m, t: 0.5, max: 0.5, kind: 'part', vx: 0, vy: 1.5, vz: 0 }); }
     if (u.boostT > 0 && Math.hypot(u.mx, u.mz) > 0.1 && Math.random() < 0.7) { const m = new THREE.Mesh(burstGeo, new THREE.MeshBasicMaterial({ color: 0x5ff2ff, transparent: true })); m.position.set(u.x - u.fx * 0.4 + rnd(-0.15, 0.15), 0.3 + rnd(0, 0.5), u.z - u.fz * 0.4 + rnd(-0.15, 0.15)); m.scale.set(0.5, 0.5, 1.6); m.rotation.y = Math.atan2(u.fx, u.fz); scene.add(m); fxMeshes.push({ m, t: 0.3, max: 0.3, kind: 'part', vx: -u.fx, vy: 0, vz: -u.fz }); }
     if (u.punch > 0) { const k = u.punch / 0.16; V.body.scale.set(1 + 0.22 * k, 1 - 0.2 * k, 1 + 0.22 * k); } else V.body.scale.set(1, 1, 1);
     const fl = u.flash > 0, blink = u.invuln > 0 && Math.sin(t * 30) > 0;
-    V.flashMats.forEach(m => m.emissive.setHex(fl ? 0xffffff : (blink ? 0x553366 : (u.hexT > 0 ? 0x3a1066 : (u.empowerT > 0 ? 0x551122 : (u.hero === 'ghost' && u.form ? 0x334466 : 0x000000))))));
+    V.flashMats.forEach(m => m.emissive.setHex(fl ? 0xffffff : (blink ? 0x553366 : (u.hexT > 0 ? 0x3a1066 : u.slowT > 0 ? 0x1e5a80 : (u.empowerT > 0 ? 0x551122 : (u.hero === 'ghost' && u.form ? 0x334466 : 0x000000))))));
     if (u === king && !fl && !blink) { const q = 0.5 + 0.5 * Math.sin(t * 6); V.flashMats.forEach(m => m.emissive.setRGB(0.32 + 0.22 * q, 0.0, 0.1 + 0.12 * q)); } // Big Boss: a pulsing crimson glow over the whole body
     // fog: own unit semi-visible inside
     const inFog = fogAt(u.x, u.z) >= 0;
@@ -3776,12 +3883,13 @@ function updateHud(dt) {
 
 // ======================= match flow =======================
 function clearWorld() {
-  units.forEach(u => { scene.remove(u.vis.root); u.tag.remove(); u.edge.remove(); if (u.wispM) u.wispM.forEach(g => scene.remove(g)); });
+  units.forEach(u => { scene.remove(u.vis.root); u.tag.remove(); u.edge.remove(); pfxEach(u, g => scene.remove(g)); });
   buckets.forEach(b => scene.remove(b.mesh));
   [bombs, bats, spikes, tosses, shots, traps].forEach(arr => arr.forEach(o => scene.remove(o.mesh)));
   units.forEach(u => removeAnchor(u));
   fxMeshes.forEach(f => scene.remove(f.m));
   nums.forEach(n => n.el.remove()); nums.length = 0;
+  twisters.forEach(w => scene.remove(w.mesh)); twisters = [];
   units = []; pickups = []; buckets = []; bombs = []; bats = []; spikes = []; tosses = []; fxMeshes = []; shots = []; traps = [];
   king = null; document.getElementById('feed').innerHTML = '';
 }
@@ -4088,7 +4196,7 @@ function netKing() {
 // ---- seats
 function replaceUnit(idx, team, hero, name, isPlayer, skin) {
   const old = units[idx];
-  if (old) { old.alive = false; scene.remove(old.vis.root); old.tag.remove(); old.edge.remove(); removeAnchor(old); if (old.wispM) old.wispM.forEach(g => scene.remove(g)); if (king === old) king = null; }
+  if (old) { old.alive = false; scene.remove(old.vis.root); old.tag.remove(); old.edge.remove(); removeAnchor(old); pfxEach(old, g => scene.remove(g)); if (king === old) king = null; }
   const u = newUnit(team, hero, name, isPlayer, skin);
   units.pop(); u.id = idx; units[idx] = u;
   return u;
@@ -4273,9 +4381,10 @@ function netApplyEvents(list) {
         break;
       }
       case 'k': if (u) koFx(u, e[2] >= 0 ? units[e[2]] : null); break;
-      case 'p': if (u && SKILLS[e[2]]) proc(u, e[2], e[3] >= 0 ? units[e[3]] : undefined); break;
+      case 'p': if (u && SKILLS[e[2]]) { proc(u, e[2], e[3] >= 0 ? units[e[3]] : undefined); if (e[2] === 'rush') u.rushT = 1.5; if (e[2] === 'frost' && e[3] >= 0 && units[e[3]]) units[e[3]].slowT = 1.5; } break;
       case 'sk': if (u) { u.skills = Object.assign({}, e[2]); if (u.isPlayer) renderSkillbar(); } break;
       case 'bb': spawnBomb(e[1], e[2]); break;
+      case 'tw': if (u) fireTwister(u, e[2], e[3], e[4], e[5], e[6]); break;
       case 'tp': if (u) { u.x = e[2]; u.z = e[3]; u.nx = e[2]; u.nz = e[3]; u.kvx = u.kvz = 0; } break;
       case 'nm': if (u) { u.name = e[2]; u.human = !!e[3]; if (!u.isPlayer) u.tagNm.textContent = e[2]; u.edge.querySelector('span').textContent = e[2]; } break;
       case 'rep': {
