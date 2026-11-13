@@ -497,6 +497,8 @@ body.touch .rkcard .rkgo { font-size: 0; } body.touch .rkcard .rkgo::after { con
 </style>
 
 
+<script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>
+<script>window.__pkInit = (async () => { const S = window.PokiSDK; if (!S) return null; try { await S.init(); } catch (e) {} return S; })();</script>
 </head>
 <body>
 
@@ -669,45 +671,47 @@ function cleanName(v, fallback) {
 }
 const T = k => { const t = STR[LANG] || STR.en; return t[k] !== undefined ? t[k] : STR.en[k]; };
 
-// ======================= CrazyGames SDK (v3) =======================
+// ======================= Poki SDK (v2) =======================
+// Same interface the game used before (CG.*), now backed by the Poki SDK. Off Poki, or with the SDK blocked, every call is a quiet no-op.
 const CG = (() => {
-  let sdk = null, playing = false, adBusy = false, adPlaying = false, platMute = false;
-  const call = f => { if (!sdk) return; try { f(sdk); } catch (e) {} };
+  let sdk = null, playing = false, adBusy = false, adPlaying = false, loaded = false, share = '';
+  const safe = f => { try { return f(); } catch (e) { return undefined; } };
   return {
     async init() {
       try {
-        if (!window.__cgInit) return false;
-        sdk = await Promise.race([window.__cgInit, new Promise(r => setTimeout(() => r(null), 3000))]);
-        if (!sdk) return false;
-        call(S => { platMute = !!(S.game.settings && S.game.settings.muteAudio); S.game.addSettingsChangeListener(st => { platMute = !!st.muteAudio; CG.applyMute(); }); });
-        return true;
+        if (!window.__pkInit) return false;
+        sdk = await Promise.race([window.__pkInit, new Promise(r => setTimeout(() => r(null), 3000))]);
+        return !!sdk;
       } catch (e) { sdk = null; return false; }
     },
     get on() { return !!sdk; },
     get adBusy() { return adBusy; },
-    get muted() { return adPlaying || platMute; },
-    locale() { let l = null; call(S => { l = S.user.systemInfo.locale; }); return l; },
-    deviceType() { let d = null; call(S => { d = S.user.systemInfo.device.type; }); return d; },
-    dataGet(k) { let v = null; call(S => { if (S.data && S.data.getItem) v = S.data.getItem(k); }); return v; },
-    dataSet(k, v) { call(S => { if (S.data && S.data.setItem) S.data.setItem(k, v); }); },
-    loadingStop() { call(S => S.game.loadingStop()); },
-    setPlaying(on) { if (on === playing) return; playing = on; call(S => on ? S.game.gameplayStart() : S.game.gameplayStop()); },
-    happy() { call(S => S.game.happytime()); },
+    get muted() { return adPlaying; },
+    locale() { return null; },          // Poki has no locale call: the browser language is used
+    deviceType() { return null; },
+    dataGet() { return null; },         // progress lives in localStorage on Poki
+    dataSet() {},
+    loadingStop() { if (sdk && !loaded) { loaded = true; safe(() => sdk.gameLoadingFinished()); } },
+    setPlaying(on) { if (on === playing) return; playing = on; if (sdk && !adBusy) safe(() => on ? sdk.gameplayStart() : sdk.gameplayStop()); },
+    happy() {},
     applyMute() { if (!actx) return; try { if (CG.muted) actx.suspend(); else if (actx.state === 'suspended') actx.resume(); } catch (e) {} },
-    room(code, joinable) { call(S => { if (S.game.updateRoom) S.game.updateRoom({ roomId: String(code), isJoinable: !!joinable, inviteParams: { room: String(code) } }); }); },
-    leftRoom() { call(S => { if (S.game.leftRoom) S.game.leftRoom(); }); },
-    inviteLink(code) { let l = null; call(S => { l = S.game.inviteLink({ room: String(code) }); }); if (l) return l; const u = new URL(location.href); u.searchParams.set('room', code); return u.href; },
-    inviteRoom() { let r = null; call(S => { const p = S.game.inviteParams; r = (p && p.room) || (S.game.getInviteParam && S.game.getInviteParam('room')) || null; }); return r; },
-    instant() { let v = false; call(S => { v = !!S.game.isInstantMultiplayer; }); return v; },
-    onJoinRoom(fn) { call(S => { if (S.game.addJoinRoomListener) S.game.addJoinRoomListener(p => { if (p && p.room) fn(String(p.room)); }); }); },
-    onAuth(fn) { call(S => { if (S.user.addAuthListener) S.user.addAuthListener(u => fn(u && u.username ? String(u.username) : null)); }); },
-    context(o) { call(S => { if (S.game.setGameContext) S.game.setGameContext(o); }); },
-    async userName() { if (!sdk) return null; try { if (!sdk.user.isUserAccountAvailable) return null; const u = await sdk.user.getUser(); return u && u.username ? String(u.username) : null; } catch (e) { return null; } },
-    midgame(done) { // interstitial between matches; input is blocked and sound is off while it plays
+    room(code) { if (!sdk || !code) return; safe(() => Promise.resolve(sdk.shareableURL({ room: String(code) })).then(u => { share = u || ''; }).catch(() => {})); },
+    leftRoom() { share = ''; },
+    inviteLink(code) { if (share) return share; const u = new URL(location.href); u.searchParams.set('room', code); return u.href; },
+    inviteRoom() { return sdk ? (safe(() => sdk.getURLParam('room')) || null) : null; },
+    instant() { return false; },
+    onJoinRoom() {},
+    onAuth() {},
+    context() {},
+    async userName() { return null; },
+    midgame(done) { // commercial break between matches; input is blocked and sound is off while it plays
       if (!sdk) { done(); return; }
+      const wasPlaying = playing; if (playing) { playing = false; safe(() => sdk.gameplayStop()); }
       let fin = false; const end = () => { if (fin) return; fin = true; adBusy = false; adPlaying = false; document.getElementById('adblock').hidden = true; CG.applyMute(); done(); };
-      adBusy = true; document.getElementById('adblock').hidden = false; // input is blocked while the request is pending; sound stays on until the ad really starts
-      try { sdk.ad.requestAd('midgame', { adStarted() { adPlaying = true; CG.applyMute(); }, adFinished: end, adError: end }); } catch (e) { end(); }
+      adBusy = true; document.getElementById('adblock').hidden = false;
+      const to = setTimeout(end, 90000);
+      try { Promise.resolve(sdk.commercialBreak(() => { adPlaying = true; CG.applyMute(); })).then(() => { clearTimeout(to); end(); }, () => { clearTimeout(to); end(); }); }
+      catch (e) { clearTimeout(to); end(); }
     },
   };
 })();
@@ -879,7 +883,7 @@ const itemName = t => ITEMS[t][LANG] || ITEMS[t].en;
 
 // ======================= v27: rank ladder (Honor of Kings style), shards, skins =======================
 // Stars move you up divisions (III → II → I) and tiers. Every new division pays shards; every new tier pays a skin
-// (and the first three also a new pedestal item). Shards unlock new powers. Saved with the CrazyGames Data module
+// (and the first three also a new pedestal item). Shards unlock new powers. Saved in localStorage
 // (synced to the player's account), localStorage everywhere else.
 const TIERS = [
   { id: 'bronze', div: 3, st: 2, c: ['#e7a06a', '#8a4b22'] },
@@ -2966,7 +2970,7 @@ let rebinding = null, paused = false;
 window.addEventListener('keydown', e => {
   if (CG.adBusy) { e.preventDefault(); return; }
   if (rebinding) { e.preventDefault(); if (e.code !== 'Escape') applyBind(rebinding, e.code); rebinding = null; refreshControlsUI(); return; }
-  if (e.code === 'Escape') { if (running && paused) toggleSettings(false); return; }
+  if (e.code === 'Escape') { if (running) toggleSettings(); return; } // Poki: Esc pauses and resumes
   if (e.code === 'KeyP' && running && !Object.values(CTRL.binds).includes('KeyP')) { toggleSettings(); return; }
   if (!running || paused) return;
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
@@ -4534,7 +4538,7 @@ function netTick(dt) {
   if (chip.hidden === showChip) chip.hidden = !showChip;
   if (showChip) { const tx = `${T('n_room')} ${NET.code}`; if (chip.dataset.t !== tx) { chip.dataset.t = tx; chip.innerHTML = `${esc(tx)} <span>${svgIcon('copy')}</span>`; } }
 }
-function netOnEnd() { // results screen in an online match: short break (with an ad on CrazyGames), then the next match
+function netOnEnd() { // results screen in an online match: short break (with a commercial break on Poki), then the next match
   const again = document.getElementById('again'), el = document.getElementById('endNet'), lv = document.getElementById('endLeave');
   lv.hidden = NET.role === 'solo'; el.hidden = NET.role === 'solo';
   if (NET.role === 'solo') { again.hidden = false; again.textContent = T('again'); return; }
