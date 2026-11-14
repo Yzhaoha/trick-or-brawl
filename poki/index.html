@@ -1134,6 +1134,52 @@ const box = (w, h, d, mat, x = 0, y = 0, z = 0) => {
   return m;
 };
 
+// ======================= voxel look (preview: ?style=voxel) =======================
+// Models are built from little cubes on a grid. One merged geometry per part: hidden faces are dropped and every cube
+// gets a slight colour jitter, so big flat areas still read as blocks. Colours live in the vertices; materials stay white.
+const VOXEL = (() => { try { return new URLSearchParams(location.search).get('style') === 'voxel'; } catch (e) { return false; } })();
+const VOX_FACES = [ // normal, 4 corners (counter-clockwise seen from outside)
+  [[1, 0, 0], [[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]]], [[-1, 0, 0], [[0, 0, 1], [0, 1, 1], [0, 1, 0], [0, 0, 0]]],
+  [[0, 1, 0], [[0, 1, 1], [1, 1, 1], [1, 1, 0], [0, 1, 0]]], [[0, -1, 0], [[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1]]],
+  [[0, 0, 1], [[1, 0, 1], [1, 1, 1], [0, 1, 1], [0, 0, 1]]], [[0, 0, -1], [[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0]]],
+];
+class Vox {
+  constructor(unit, seed = 7) { this.u = unit; this.v = new Map(); this.s = seed; }
+  rnd() { this.s = (this.s * 16807) % 2147483647; return this.s / 2147483647; }
+  set(x, y, z, c) { const k = x + ',' + y + ',' + z; if (c == null) this.v.delete(k); else this.v.set(k, [x, y, z, c]); return this; }
+  fill(x0, x1, y0, y1, z0, z1, c) { for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) this.set(x, y, z, c); return this; }
+  mirror(x0, x1, y0, y1, z0, z1, c) { this.fill(x0, x1, y0, y1, z0, z1, c); return this.fill(-x1, -x0, y0, y1, z0, z1, c); } // left/right pair
+  has(x, y, z) { return this.v.has(x + ',' + y + ',' + z); }
+  geo(jitter = 0.06) { // voxel (i,j,k) is centred on (i,j,k)*unit
+    const pos = [], nor = [], col = [], idx = [], u = this.u, c = new THREE.Color();
+    for (const [x, y, z, hex] of this.v.values()) {
+      c.setHex(hex); const j = 1 + (this.rnd() - 0.5) * 2 * jitter;
+      for (const [n, q] of VOX_FACES) {
+        if (this.has(x + n[0], y + n[1], z + n[2])) continue;
+        const b = pos.length / 3;
+        q.forEach(p => { pos.push((x + p[0] - 0.5) * u, (y + p[1] - 0.5) * u, (z + p[2] - 0.5) * u); nor.push(n[0], n[1], n[2]); col.push(c.r * j, c.g * j, c.b * j); });
+        idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    g.setIndex(idx); g.computeBoundingSphere();
+    return g;
+  }
+}
+const VOX_MAT = new THREE.MeshLambertMaterial({ vertexColors: true });
+// a rounded blob: a box of voxels with its corners (and optionally edges) trimmed
+function voxBlob(V, rx, ry, rz, c, o = {}) {
+  for (let x = -rx; x <= rx; x++) for (let y = (o.y0 ?? -ry); y <= ry; y++) for (let z = -rz; z <= rz; z++) {
+    const ex = Math.abs(x) === rx, ey = Math.abs(y) === ry || y === (o.y0 ?? -ry), ez = Math.abs(z) === rz;
+    if ((ex && ey) || (ex && ez) || (ey && ez && !o.keepYZ)) continue;
+    V.set(x + (o.x || 0), y + (o.y || 0), z + (o.z || 0), typeof c === 'function' ? c(x, y, z) : c);
+  }
+  return V;
+}
+
 // obstacles: gravestones (round colliders)
 const OBST = [
   [-6, -6], [6, -6], [-6, 6], [6, 6], [-11, 2], [11, 2], [0, -9], [-3, 11], [3, 11],
@@ -1141,8 +1187,17 @@ const OBST = [
 ].map(([x, z]) => [x * MAP_K, z * MAP_K]).concat([ // extra gravestones to fill the bigger arena
   [-4, -4], [4, 4], [-14, 0], [14, 0], [0, -20], [-22, -10], [22, -10], [-30, 4], [30, 4], [-8, 22], [8, 22], [-20, 30], [20, 30], [-32, -26], [32, -26], [0, 33], [-12, -32], [12, -32],
 ]).map(([x, z]) => ({ x, z, r: 0.75 }));
+const VOX_GRAVE = VOXEL ? (() => {
+  const V = new Vox(0.1, 3);
+  V.fill(-6, 6, 0, 0, -3, 4, 0x8a849e).fill(-5, 5, 1, 8, -2, 2, 0xb3adc8).fill(-4, 4, 9, 9, -2, 2, 0xb3adc8).fill(-3, 3, 10, 10, -2, 2, 0xb3adc8);
+  V.fill(0, 0, 4, 9, 2, 2, 0x6f6890).fill(-2, 2, 8, 8, 2, 2, 0x6f6890); // cross
+  V.fill(4, 6, 1, 1, 1, 4, 0x5d9a3c).set(5, 2, 2, 0x5d9a3c).set(-5, 1, 2, 0x5d9a3c).set(-4, 1, 3, 0x6fb048); // moss
+  V.set(-5, 6, 2, 0x9a94b0).set(-4, 5, 2, 0x9a94b0).set(3, 2, 2, 0x9a94b0); // cracks
+  return V.geo(0.08);
+})() : null;
 OBST.forEach(o => {
   const g = new THREE.Group();
+  if (VOX_GRAVE) { const m = new THREE.Mesh(VOX_GRAVE, VOX_MAT); m.position.y = 0.05; m.castShadow = m.receiveShadow = true; g.add(m); g.position.set(o.x, 0, o.z); scene.add(g); return; }
   g.add(box(1.3, 0.14, 0.7, M(0x8a849e), 0, 0.07, 0.05));
   g.add(box(1.0, 0.8, 0.4, M(0xb3adc8), 0, 0.48, 0));
   const arch = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.4, 18, 1, false, 0, Math.PI), M(0xb3adc8)); arch.rotation.set(Math.PI / 2, 0, Math.PI / 2); arch.position.y = 0.88; arch.castShadow = true; g.add(arch);
@@ -1162,8 +1217,8 @@ FOG.forEach(f => {
   for (let i = 0; i < 9; i++) {
     const a = i / 9 * Math.PI * 2 + 0.3, rr = f.r * (0.78 + (i % 2) * 0.12);
     const sz = 0.28 + (i % 3) * 0.08;
-    const puff = new THREE.Mesh(new THREE.SphereGeometry(sz * 1.3, 10, 6), M(0xf4f0ff, { transparent: true, opacity: 0.55, depthWrite: false })); puff.scale.y = 0.45;
-    puff.position.set(Math.cos(a) * rr, 0.1, Math.sin(a) * rr); puff.rotation.y = a; g.add(puff);
+    const puff = new THREE.Mesh(VOXEL ? new THREE.BoxGeometry(sz * 2, sz * 2, sz * 2) : new THREE.SphereGeometry(sz * 1.3, 10, 6), M(0xf4f0ff, { transparent: true, opacity: 0.55, depthWrite: false })); puff.scale.y = 0.45;
+    puff.position.set(Math.cos(a) * rr, 0.1, Math.sin(a) * rr); if (!VOXEL) puff.rotation.y = a; g.add(puff);
   }
   const trunk = box(0.16, 1.0, 0.16, M(0x4b3a2c), 0.9, 0.5, -0.9);
   trunk.add(box(0.5, 0.08, 0.08, M(0x4b3a2c), 0.2, 0.28, 0)); trunk.add(box(0.08, 0.36, 0.08, M(0x4b3a2c), -0.12, 0.6, 0.0));
@@ -1201,8 +1256,15 @@ function instMesh(geo, mat, list, shadow = true) { // list: [x, y, z, scale (num
     g.save(); g.translate(x, y); g.rotate((WRNG() - 0.5) * 0.6); g.fillRect(-1, -h, 2.2, h); g.restore();
   }
   for (let i = 0; i < 18; i++) { const x = WRNG() * N, y = WRNG() * N; g.fillStyle = ['#fff6d8', '#ffd84a', '#ff9ad0'][i % 3]; g.beginPath(); g.arc(x, y, 3, 0, 7); g.fill(); g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.arc(x + 1, y + 2, 3, 0, 7); g.fill(); }
-  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  let tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(S / 9, S / 9);
+  if (VOXEL) { // grass as a grid of square tiles (4 per metre), nearest-neighbour so every tile stays crisp
+    const n = 72, vc = document.createElement('canvas'); vc.width = vc.height = n; const vg = vc.getContext('2d');
+    const GR = ['#7fbd4f', '#78b54a', '#86c556', '#71ad45', '#8dca5c'];
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) { const r = WRNG(); vg.fillStyle = r < 0.004 ? ['#fff6d8', '#ffe27a'][(WRNG() * 2) | 0] : GR[(r * GR.length) | 0]; vg.fillRect(x, y, 1, 1); }
+    tex = new THREE.CanvasTexture(vc); tex.colorSpace = THREE.SRGBColorSpace; tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(S / 18, S / 18);
+  }
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(S, S), new THREE.MeshLambertMaterial({ map: tex }));
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
   const tex2 = tex.clone(); tex2.needsUpdate = true; tex2.repeat.set(260 / 9, 260 / 9);
@@ -1225,7 +1287,15 @@ function instMesh(geo, mat, list, shadow = true) { // list: [x, y, z, scale (num
   p.globalCompositeOperation = 'source-atop';
   for (let i = 0; i < 9000; i++) { const x = WRNG() * P, y = WRNG() * P, r = 0.6 + WRNG() * 1.8; p.fillStyle = WRNG() < 0.5 ? 'rgba(150,104,52,.5)' : 'rgba(240,200,140,.55)'; p.fillRect(x, y, r, r); }
   for (let i = 0; i < 500; i++) { const x = WRNG() * P, y = WRNG() * P; p.fillStyle = 'rgba(120,96,80,.6)'; p.beginPath(); p.ellipse(x, y, 2.5, 1.8, WRNG() * 3, 0, 7); p.fill(); }
-  const ptex = new THREE.CanvasTexture(pc); ptex.colorSpace = THREE.SRGBColorSpace; ptex.anisotropy = 4;
+  let ptex = new THREE.CanvasTexture(pc); ptex.colorSpace = THREE.SRGBColorSpace; ptex.anisotropy = 4;
+  if (VOXEL) { // dirt path in 0.25 m tiles with hard edges
+    const n = Math.round(S * 4), vc = document.createElement('canvas'); vc.width = vc.height = n; const vg = vc.getContext('2d');
+    vg.drawImage(pc, 0, 0, n, n); const id = vg.getImageData(0, 0, n, n), d = id.data;
+    const DIRT = [[216, 170, 102], [206, 160, 94], [226, 182, 116], [196, 150, 86]];
+    for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 110) { d[i + 3] = 0; continue; } const edge = d[i] < 190; const c = edge ? [167, 120, 63] : DIRT[(WRNG() * DIRT.length) | 0]; d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = 255; }
+    vg.putImageData(id, 0, 0);
+    ptex = new THREE.CanvasTexture(vc); ptex.colorSpace = THREE.SRGBColorSpace; ptex.magFilter = THREE.NearestFilter; ptex.minFilter = THREE.NearestFilter; ptex.generateMipmaps = false;
+  }
   const path = new THREE.Mesh(new THREE.PlaneGeometry(S, S), new THREE.MeshLambertMaterial({ map: ptex, transparent: true, depthWrite: false }));
   path.rotation.x = -Math.PI / 2; path.position.y = 0.012; path.receiveShadow = true; path.renderOrder = -1; scene.add(path);
 
@@ -1250,12 +1320,15 @@ function instMesh(geo, mat, list, shadow = true) { // list: [x, y, z, scale (num
       else { const col = AUT[(WRNG() * AUT.length) | 0]; trunks.push([x, 0.6 * sc, z, sc]); crowns.push([x, 1.9 * sc, z, sc * 1.35, ry, col]); tops.push([x + 0.3 * sc, 2.75 * sc, z - 0.2 * sc, sc * 0.85, ry + 1, col]); }
     }
   }
-  const leafM = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
-  instMesh(new THREE.CylinderGeometry(0.16, 0.26, 1.2, 6), M(0x6b4528), trunks);
-  instMesh(new THREE.IcosahedronGeometry(1, 0), leafM, crowns);
-  instMesh(new THREE.IcosahedronGeometry(1, 0), leafM, tops);
-  instMesh(new THREE.ConeGeometry(1.1, 2.0, 7), leafM, pines);
-  instMesh(new THREE.ConeGeometry(1.1, 1.8, 7), leafM, pines2);
+  const leafM = VOXEL ? new THREE.MeshLambertMaterial({ vertexColors: true }) : new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
+  const leafTone = (x, y, z) => (x * 3 + y * 5 + z * 7) % 4 === 0 ? 0xd0d0d0 : 0xffffff; // a few darker leaf blocks
+  const vCrown = VOXEL ? voxBlob(new Vox(0.4, 21), 2, 2, 2, leafTone).geo(0.08) : null;
+  const vPine = VOXEL ? (() => { const V = new Vox(0.4, 23); [[-2, 2], [-1, 2], [0, 1], [1, 1], [2, 0]].forEach(([y, r]) => { for (let x = -r; x <= r; x++) for (let z = -r; z <= r; z++) if (!(r > 1 && Math.abs(x) === r && Math.abs(z) === r)) V.set(x, y, z, leafTone(x, y, z)); }); return V.geo(0.08); })() : null;
+  instMesh(VOXEL ? new THREE.BoxGeometry(0.36, 1.2, 0.36) : new THREE.CylinderGeometry(0.16, 0.26, 1.2, 6), M(0x6b4528), trunks);
+  instMesh(vCrown || new THREE.IcosahedronGeometry(1, 0), leafM, crowns);
+  instMesh(vCrown || new THREE.IcosahedronGeometry(1, 0), leafM, tops);
+  instMesh(vPine || new THREE.ConeGeometry(1.1, 2.0, 7), leafM, pines);
+  instMesh(vPine || new THREE.ConeGeometry(1.1, 1.8, 7), leafM, pines2);
 
   // props inside: pumpkins and bushes hug the fence, lanterns line the paths (no colliders: they never block)
   const clear = (x, z, r) => Math.hypot(x, z) > 9 && BASES.every(b => Math.hypot(x - b[0], z - b[1]) > 5.5) && OBST.every(o => Math.hypot(x - o.x, z - o.z) > r) && FOG.every(f => Math.hypot(x - f.x, z - f.z) > f.r + 0.8);
@@ -1271,13 +1344,15 @@ function instMesh(geo, mat, list, shadow = true) { // list: [x, y, z, scale (num
     const x = (WRNG() * 2 - 1) * (HALF - 3), z = (WRNG() * 2 - 1) * (HALF - 3);
     if (!clear(x, z, 2)) continue; const s = 0.6 + WRNG() * 0.4; pumps.push([x, 0.3 * s, z, [s, s * 0.78, s], WRNG() * 6]); stems.push([x, 0.62 * s, z, s]);
   }
-  const pumpGeo = new THREE.SphereGeometry(0.42, 12, 8); { const pa = pumpGeo.attributes.position; for (let i = 0; i < pa.count; i++) { const x = pa.getX(i), z = pa.getZ(i), a = Math.atan2(z, x), f = 1 + 0.08 * Math.cos(a * 8); pa.setX(i, x * f); pa.setZ(i, z * f); } pumpGeo.computeVertexNormals(); }
-  instMesh(pumpGeo, M(0xff8a1e), pumps);
-  instMesh(new THREE.CylinderGeometry(0.05, 0.07, 0.2, 5), M(0x4d7a2a), stems);
-  instMesh(new THREE.IcosahedronGeometry(0.6, 1), leafM, bushes);
+  let pumpGeo = new THREE.SphereGeometry(0.42, 12, 8); { const pa = pumpGeo.attributes.position; for (let i = 0; i < pa.count; i++) { const x = pa.getX(i), z = pa.getZ(i), a = Math.atan2(z, x), f = 1 + 0.08 * Math.cos(a * 8); pa.setX(i, x * f); pa.setZ(i, z * f); } pumpGeo.computeVertexNormals(); }
+  if (VOXEL) pumpGeo = voxBlob(new Vox(0.12, 31), 3, 2, 3, (x, y, z) => (Math.abs(x) === 1 || Math.abs(z) === 1) ? 0xd6d6d6 : 0xffffff).geo(0.04);
+  const PUMP_M = c => VOXEL ? M(c, { vertexColors: true }) : M(c);
+  instMesh(pumpGeo, PUMP_M(0xff8a1e), pumps);
+  instMesh(VOXEL ? new THREE.BoxGeometry(0.1, 0.2, 0.1) : new THREE.CylinderGeometry(0.05, 0.07, 0.2, 5), M(0x4d7a2a), stems);
+  instMesh(VOXEL ? voxBlob(new Vox(0.24, 41), 2, 2, 2, leafTone).geo(0.08) : new THREE.IcosahedronGeometry(0.6, 1), leafM, bushes);
   const lampPost = [], lampHead = [];
   BASES.forEach(b => { for (const f of [0.42, 0.7]) for (const sgn of [-1, 1]) { const x = b[0] * f, z = b[1] * f, len = Math.hypot(b[0], b[1]), nx = -b[1] / len * 2.4 * sgn, nz = b[0] / len * 2.4 * sgn; lampPost.push([x + nx, 0.8, z + nz, 1]); lampHead.push([x + nx, 1.72, z + nz, 1]); } });
-  instMesh(new THREE.CylinderGeometry(0.07, 0.1, 1.6, 6), M(0x3a2f45), lampPost);
+  instMesh(VOXEL ? new THREE.BoxGeometry(0.16, 1.6, 0.16) : new THREE.CylinderGeometry(0.07, 0.1, 1.6, 6), M(0x3a2f45), lampPost);
   instMesh(new THREE.BoxGeometry(0.34, 0.34, 0.34), new THREE.MeshLambertMaterial({ color: 0xffd36a, emissive: 0xffa526, emissiveIntensity: 0.9 }), lampHead, false);
 
   // team base pads: coloured ring + two banners
@@ -1293,7 +1368,7 @@ function instMesh(geo, mat, list, shadow = true) { // list: [x, y, z, scale (num
   // pumpkin patch in the centre (boss arena later)
   for (let i = 0; i < 9; i++) {
     const a = i / 9 * Math.PI * 2, r = 2.8 + (i % 2) * 0.6, s = 1.25;
-    const pm = new THREE.Mesh(pumpGeo, M(0xff7a1a)); pm.scale.set(s, s * 0.8, s); pm.position.set(Math.cos(a) * r, 0.3 * s, Math.sin(a) * r); pm.castShadow = true; scene.add(pm);
+    const pm = new THREE.Mesh(pumpGeo, PUMP_M(0xff7a1a)); pm.scale.set(s, s * 0.8, s); pm.position.set(Math.cos(a) * r, 0.3 * s, Math.sin(a) * r); pm.castShadow = true; scene.add(pm);
     scene.add(box(0.08, 0.18, 0.08, M(0x3c6b2a), Math.cos(a) * r, 0.62 * s, Math.sin(a) * r));
   }
 })();
@@ -1830,6 +1905,68 @@ function buildRound(hero, body, tc, flashMats) {
   }
   return { legL, legR, torso, head, arm, crownY };
 }
+// ======================= voxel monsters (preview) =======================
+// Same rig as the other looks (legs, torso, head, swinging arm), every part a merged voxel mesh.
+// Heroes without a voxel model yet return null and fall back to the chibi model.
+const voxGeoCache = {};
+function buildVoxel(hero, body, tc, flashMats) {
+  if (hero !== 'wolf') return null;
+  const key = hero + tc + CUR_SKIN;
+  const C = c => skinCol(c);
+  const mat = new THREE.MeshLambertMaterial({ vertexColors: true }); flashMats.push(mat);
+  const part = (parent, name, make, x, y, z) => {
+    const k = key + name; const g = voxGeoCache[k] || (voxGeoCache[k] = make().geo());
+    const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m;
+  };
+  const U = 0.07;
+  // werewolf brawler: shaggy brown fur, cream muzzle and chest, torn purple shorts, team scarf, big bone club
+  const fur = C(0x9a6a46), furD = C(0x7a5236), light = C(0xf2d2aa), dark = C(0x4a2f22), pants = C(0x5b4a8a), pantsD = C(0x463870);
+  const bone = 0xefe5cc, boneD = 0xd2c4a2, ink = 0x1d1430, eye = 0xffe14a, pink = 0xf0a0b0;
+  const legOf = s => {
+    const g = new THREE.Group(); g.position.set(s * 0.12, 0.3, 0); body.add(g);
+    part(g, 'leg', () => new Vox(U).fill(-1, 1, -2, -1, -1, 1, fur).fill(-1, 1, -4, -3, -1, 2, dark).set(-1, -4, 3, light).set(1, -4, 3, light), 0, 0, 0);
+    return g;
+  };
+  const legL = legOf(-1), legR = legOf(1);
+  const torso = part(body, 'torso', () => {
+    const V = new Vox(U, 11);
+    V.fill(-4, 4, -5, -3, -3, 3, pants).fill(-4, 4, -3, -3, -3, 3, pantsD); // shorts + waistband
+    [-3, 0, 3].forEach(x => { V.set(x, -5, 3, null); V.set(x, -5, -3, null); }); // torn hem
+    V.set(2, -4, 3, C(0xe0c060)); // patch
+    V.fill(-4, 4, -2, 2, -3, 2, fur).fill(-2, 2, -1, 2, 2, 2, light); // chest
+    V.fill(-1, 1, -2, -2, 2, 2, furD); // belly fur
+    V.fill(-4, 4, 3, 3, -3, 3, tc).fill(1, 2, 0, 2, 3, 3, tc); // team scarf with a hanging end
+    V.fill(-1, 1, -3, -2, -5, -4, fur).fill(-1, 1, -2, -1, -7, -6, fur).fill(-1, 1, -1, 0, -8, -8, light); // tail
+    return V;
+  }, 0, 0.62, 0);
+  const head = part(body, 'head', () => {
+    const V = voxBlob(new Vox(U, 5), 4, 3, 3, fur);
+    V.fill(-2, 2, -3, -1, 3, 3, light).fill(-2, 2, -3, -1, 4, 5, light).set(-2, -1, 5, null).set(2, -1, 5, null); // muzzle
+    V.fill(-1, 1, -1, -1, 6, 6, ink).fill(-2, 2, -3, -3, 5, 5, C(0x3a1020)); // nose, mouth
+    V.set(-1, -4, 5, 0xffffff).set(1, -4, 5, 0xffffff); // fangs
+    V.mirror(2, 3, 0, 1, 3, 3, eye).set(-2, 0, 3, ink).set(2, 0, 3, ink); // eyes
+    V.mirror(1, 3, 2, 2, 3, 3, dark); // angry brows
+    V.mirror(3, 4, 4, 6, -1, 0, fur).set(-4, 6, -1, null).set(-4, 6, 0, null).set(4, 6, -1, null).set(4, 6, 0, null); // ears
+    V.set(-3, 4, 0, pink).set(-3, 5, 0, pink).set(3, 4, 0, pink).set(3, 5, 0, pink);
+    V.mirror(5, 5, -2, -1, 0, 2, furD); // cheek tufts
+    V.fill(-2, 2, 4, 4, -2, 1, furD).set(0, 5, -1, furD); // shaggy top
+    return V;
+  }, 0, 1.12, 0.02);
+  const armOf = s => {
+    const g = new THREE.Group(); g.position.set(s * 0.38, 0.8, 0); body.add(g);
+    part(g, 'arm', () => new Vox(U, 3).fill(-1, 1, -5, 0, -1, 1, fur).fill(-1, 1, -7, -6, -1, 1, dark).set(-1, -8, 1, bone).set(1, -8, 1, bone), 0, 0, 0);
+    return g;
+  };
+  const arm = armOf(1); armOf(-1);
+  const w = new THREE.Group(); w.position.set(0, -0.46, 0.04); w.rotation.set(0.6, 0, -0.3); arm.add(w);
+  part(w, 'club', () => {
+    const V = new Vox(0.08, 9);
+    V.fill(0, 1, -1, 7, 0, 1, bone).fill(0, 1, 3, 3, 0, 1, tc);
+    for (const y of [8, -2]) { const yy = y < 0 ? [y - 1, y] : [y, y + 1]; V.fill(-1, 2, yy[0], yy[1], 0, 1, bone).fill(0, 1, yy[0], yy[1], -1, 2, bone).fill(-1, -1, yy[0], yy[0], 0, 1, boneD).fill(2, 2, yy[0], yy[0], 0, 1, boneD); }
+    return V;
+  }, -0.04, 0, -0.04);
+  return { legL, legR, torso, head, arm, crownY: 1.62 };
+}
 function makeMonster(hero, team, target = scene, skin = 'classic') {
   const prevSkin = CUR_SKIN; CUR_SKIN = SKINS[skin] ? skin : 'classic';
   const root = new THREE.Group(), lean = new THREE.Group(), yaw = new THREE.Group();
@@ -1843,7 +1980,9 @@ function makeMonster(hero, team, target = scene, skin = 'classic') {
   const TM = M(tc, { emissive: new THREE.Color(tc).multiplyScalar(0.25).getHex() });
   const glow = (c, e) => M(c, { emissive: e });
   let legL, legR, torso, head, arm, armL, weapon, crownY = 1.55;
-  if (STYLE === 'round' || STYLE === 'chibi') ({ legL, legR, torso, head, arm, crownY } = (STYLE === 'chibi' ? buildChibi : buildRound)(hero, body, tc, flashMats));
+  const vox = VOXEL ? buildVoxel(hero, body, tc, flashMats) : null;
+  if (vox) ({ legL, legR, torso, head, arm, crownY } = vox);
+  else if (STYLE === 'round' || STYLE === 'chibi') ({ legL, legR, torso, head, arm, crownY } = (STYLE === 'chibi' ? buildChibi : buildRound)(hero, body, tc, flashMats));
   else {
   const mkArm = (x, y, w, h, c) => { const g = new THREE.Group(); g.position.set(x, y, 0); body.add(g); P(g, w, h, w, c, 0, -h / 2 + 0.04, 0); return g; };
   if (hero === 'wolf') { // bulky, hunched, tall pointed ears, long snout, bushy tail
@@ -1961,7 +2100,7 @@ function makeMonster(hero, team, target = scene, skin = 'classic') {
 let portraitR = null;
 const portraitCache = {};
 function heroPortrait(hero, team, skin = 'classic') {
-  const key = STYLE + hero + team + skin;
+  const key = STYLE + (VOXEL ? 'vox' : '') + hero + team + skin;
   if (portraitCache[key]) return portraitCache[key];
   try {
     if (!portraitR) { portraitR = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); portraitR.setPixelRatio(1); portraitR.setSize(168, 168); }
@@ -2002,10 +2141,10 @@ const candyTex = (draw, w, h) => { const cv = document.createElement('canvas'); 
 const stripeTex = candyTex((g, w, h) => { g.fillStyle = '#ffffff'; for (let i = -h; i < w; i += 16) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 7, 0); g.lineTo(i + 7 + h, h); g.lineTo(i + h, h); g.fill(); } g.fillStyle = 'rgba(255,255,255,.8)'; g.fillRect(0, h * 0.26, w, h * 0.12); }, 64, 32);
 // lollipop: white spiral over a tinted base
 const swirlTex = candyTex((g, w, h) => { g.strokeStyle = '#ffffff'; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); for (let a = 0; a < Math.PI * 7; a += 0.08) { const r = a / (Math.PI * 7) * w * 0.48; const x = w / 2 + Math.cos(a) * r, y = h / 2 + Math.sin(a) * r; a ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.ellipse(w * 0.34, h * 0.28, w * 0.1, h * 0.05, -0.6, 0, 7); g.fill(); }, 128, 128);
-const bonbonGeo = new THREE.SphereGeometry(0.13, 18, 12); bonbonGeo.scale(1.35, 1, 1);
-const twistGeo = new THREE.ConeGeometry(0.095, 0.13, 10, 1, true); twistGeo.rotateZ(Math.PI / 2); twistGeo.translate(0.06, 0, 0); // flares outward along +x
-const knotGeo = new THREE.SphereGeometry(0.045, 8, 6);
-const cornGeo = (() => { // candy corn: yellow base, orange middle, white tip
+const bonbonGeo = VOXEL ? new THREE.BoxGeometry(0.32, 0.22, 0.22) : new THREE.SphereGeometry(0.13, 18, 12); if (!VOXEL) bonbonGeo.scale(1.35, 1, 1);
+const twistGeo = VOXEL ? new THREE.BoxGeometry(0.11, 0.18, 0.18).translate(0.06, 0, 0) : new THREE.ConeGeometry(0.095, 0.13, 10, 1, true); if (!VOXEL) { twistGeo.rotateZ(Math.PI / 2); twistGeo.translate(0.06, 0, 0); } // flares outward along +x
+const knotGeo = VOXEL ? new THREE.BoxGeometry(0.08, 0.08, 0.08) : new THREE.SphereGeometry(0.045, 8, 6);
+const cornGeo = VOXEL ? new Vox(0.06).fill(-1, 1, -3, -2, -1, 1, 0xffb805).fill(-1, 1, -1, 0, -1, 1, 0xff6610).fill(-1, 1, 1, 1, 0, 0, 0xff6610).fill(0, 0, 2, 3, 0, 0, 0xffffff).set(0, 1, 0, 0xffffff).geo(0) : (() => { // candy corn: yellow base, orange middle, white tip
   const g = new THREE.ConeGeometry(0.12, 0.27, 14, 4); const pa = g.attributes.position, col = [];
   for (let i = 0; i < pa.count; i++) { const y = pa.getY(i); const c = y > 0.035 ? [1, 1, 1] : y > -0.05 ? [1, 0.4, 0.05] : [1, 0.72, 0.02]; col.push(...c); }
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); return g;
