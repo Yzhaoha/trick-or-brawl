@@ -1104,7 +1104,7 @@ const CAM_DIST = 40;
 const camOff = new THREE.Vector3(0, Math.sin(CAM_PITCH) * CAM_DIST, Math.cos(CAM_PITCH) * CAM_DIST);
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;
-  const viewW = h > w ? 15.5 : 26; // two sizes smaller than v8: a monster is well under a tenth of the screen height
+  const viewW = h > w ? 19 : 30; // two sizes smaller than v8: a monster is well under a tenth of the screen height
   const viewH = viewW * h / w * Math.sin(CAM_PITCH); // squeezing the frustum makes the ground read square and heights true
   camera.left = -viewW / 2; camera.right = viewW / 2; camera.top = viewH / 2; camera.bottom = -viewH / 2;
   camera.updateProjectionMatrix();
@@ -1911,23 +1911,40 @@ function voxMonMat() { // matcap + an emissive term so the hit flash still works
   m.onBeforeCompile = sh => { sh.uniforms.emissive = { value: m.emissive }; sh.fragmentShader = 'uniform vec3 emissive;\n' + sh.fragmentShader.replace('#include <opaque_fragment>', 'outgoingLight = outgoingLight * 1.15 + emissive;\n#include <opaque_fragment>'); };
   return m;
 }
+const VOX_GLOW = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,0.9)'); g.addColorStop(0.4, 'rgba(255,255,255,.35)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+// bandage wrap texture for the mummy: overlapping strips in two creams, each edged with a thin brown line, a few loose ends
+const BANDAGE_TEX = (() => {
+  const n = 128, cv = document.createElement('canvas'); cv.width = cv.height = n; const g = cv.getContext('2d');
+  g.fillStyle = '#efe0bb'; g.fillRect(0, 0, n, n);
+  let r = 7; const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  for (let y = -10, k = 0; y < n + 10; y += 17, k++) {
+    const tilt = (rnd() - 0.5) * 18, h = 15;
+    g.fillStyle = k % 2 ? '#e3cf9c' : '#f6ead0';
+    g.beginPath(); g.moveTo(-4, y); g.lineTo(n + 4, y + tilt); g.lineTo(n + 4, y + tilt + h); g.lineTo(-4, y + h); g.closePath(); g.fill();
+    g.strokeStyle = '#8a6e42'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(-4, y); g.lineTo(n + 4, y + tilt); g.stroke();
+    g.strokeStyle = 'rgba(138,110,66,0.45)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-4, y + 7); g.lineTo(n + 4, y + tilt + 7); g.stroke(); // weave
+  }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+})();
 function buildVoxel(hero, body, tc, flashMats) {
   // toy-block look: each part one solid block in a flat colour, a dark outline round every block, and the face drawn on as lines
-  const ghost = hero === 'ghost', golden = CUR_SKIN === 'golden', key = hero + CUR_SKIN;
-  const mat = voxMonMat(); if (ghost) mat.transparent = true; flashMats.push(mat);
+  const ghost = hero === 'ghost', golden = CUR_SKIN === 'golden';
+  const plain = voxMonMat(); if (ghost) plain.transparent = true; flashMats.push(plain);
+  let mat = plain;
   const OUT = ghost ? new THREE.MeshBasicMaterial({ color: golden ? 0xffc23d : 0x2a1838, side: THREE.BackSide, transparent: true }) : golden ? GOLD_OUT : CHIBI_OUT;
   const T = 0.022; // outline thickness
   const outline = (m, w, hh, d) => { const ko = 'tbo' + [w, hh, d].join(','), go = voxGeoCache[ko] || (voxGeoCache[ko] = new THREE.BoxGeometry(w + 2 * T, hh + 2 * T, d + 2 * T)); const o = new THREE.Mesh(go, OUT); o.userData.noOutline = true; m.add(o); };
-  const tb = (parent, w, hh, d, c, x, y, z) => { // a block in a flat colour (skin recolours apply; team colours stay)
+  const tb = (parent, w, hh, d, c, x, y, z, noLine) => { // a block in a flat colour (skin recolours apply; team colours stay)
     const col = skinCol(c), k = 'tb' + [w, hh, d, col].join(',');
     let g = voxGeoCache[k];
     if (!g) { g = voxGeoCache[k] = new THREE.BoxGeometry(w, hh, d); const cc = new THREE.Color(col), n = g.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) cc.toArray(a, i * 3); g.setAttribute('color', new THREE.BufferAttribute(a, 3)); }
-    const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); outline(m, w, hh, d); return m;
+    const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); if (!noLine) outline(m, w, hh, d); return m;
   };
-  const glow = (parent, w, hh, d, c, x, y, z) => { // a block that shines on its own (orbs, lantern, scarab eye)
+  const glow = (parent, w, hh, d, c, x, y, z) => { // a block that shines on its own (orbs, lantern, eyes)
     const km = 'glow' + c, gm = voxGeoCache[km] || (voxGeoCache[km] = new THREE.MeshBasicMaterial({ color: c }));
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), gm); m.position.set(x, y, z); parent.add(m); outline(m, w, hh, d); return m;
   };
+  const halo = (parent, r, c, x, y, z) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(r, r), new THREE.MeshBasicMaterial({ map: VOX_GLOW, color: c, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); m.position.set(x, y, z); m.renderOrder = 3; parent.add(m); return m; };
   const decal = (parent, name, w, hh, draw, x, y, z) => { // a drawn-on face: a canvas texture on a plane just in front of a block
     let mtl = voxGeoCache['face' + name];
     if (!mtl) {
@@ -1941,7 +1958,7 @@ function buildVoxel(hero, body, tc, flashMats) {
   };
   // drawing kit for faces (all in canvas pixels)
   const INK = '#2a1838';
-  const eye = (g, cx, cy, w, h, col = INK) => { g.fillStyle = col; g.beginPath(); g.roundRect(cx - w / 2, cy - h / 2, w, h, w * 0.45); g.fill(); if (col !== INK) { g.strokeStyle = INK; g.lineWidth = w * 0.18; g.stroke(); } g.fillStyle = '#fff'; g.beginPath(); g.arc(cx - w * 0.15, cy - h * 0.22, w * 0.21, 0, Math.PI * 2); g.fill(); };
+  const eye = (g, cx, cy, w, h, col = INK) => { g.fillStyle = col; g.beginPath(); g.roundRect(cx - w / 2, cy - h / 2, w, h, w * 0.45); g.fill(); if (col !== INK) { g.strokeStyle = INK; g.lineWidth = w * 0.18; g.stroke(); g.fillStyle = INK; g.beginPath(); g.roundRect(cx - w * 0.17, cy - h * 0.2, w * 0.34, h * 0.5, w * 0.17); g.fill(); } g.fillStyle = '#fff'; g.beginPath(); g.arc(cx - w * 0.15, cy - h * 0.22, w * 0.21, 0, Math.PI * 2); g.fill(); };
   const line = (g, lw, ...p) => { g.strokeStyle = INK; g.lineWidth = lw; g.beginPath(); g.moveTo(p[0], p[1]); for (let i = 2; i < p.length; i += 2) g.lineTo(p[i], p[i + 1]); g.stroke(); };
   const blush = (g, cx, cy, rx, ry, col = 'rgba(240,120,150,0.55)') => { g.fillStyle = col; g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.fill(); };
   const fang = (g, x, y, w, h) => { g.fillStyle = '#fff'; g.strokeStyle = INK; g.lineWidth = w * 0.3; g.beginPath(); g.moveTo(x - w / 2, y); g.lineTo(x, y + h); g.lineTo(x + w / 2, y); g.closePath(); g.fill(); g.stroke(); };
@@ -1954,161 +1971,218 @@ function buildVoxel(hero, body, tc, flashMats) {
   const HW = 0.62, HH = 0.5, HD = 0.5, FZ = HD / 2 + 0.003; // head block; faces are drawn just in front of it
   let legL, legR, arm, crownY = 1.6;
 
-  if (hero === 'wolf') { // werewolf brawler: brown fur, cream muzzle and chest, purple shorts, team scarf, bone club
-    const fur = 0x9a6a46, light = 0xf2d2aa, dark = 0x5a3a28, pants = 0x5b4a8a, pink = 0xf08aa0, bone = 0xf2ead6;
+  if (hero === 'wolf') { // werewolf brawler: shaggy brown fur, cream muzzle and chest, torn purple shorts with a belt, claws, team scarf, bone club
+    const fur = 0x9a6a46, shag = 0x7e5436, light = 0xf2d2aa, dark = 0x5a3a28, pants = 0x5b4a8a, pink = 0xf08aa0, bone = 0xf2ead6, claw = 0xfff4e0;
     [legL, legR] = legs(fur, dark);
+    [legL, legR].forEach(L => [-0.06, 0, 0.06].forEach(x => tb(L, 0.035, 0.035, 0.05, claw, x, -0.31, 0.17, true))); // toe claws
     tb(torso, 0.5, 0.14, 0.34, pants, 0, 0.06, 0);           // shorts
-    tb(torso, 0.48, 0.3, 0.32, fur, 0, 0.28, 0);             // body
-    tb(torso, 0.26, 0.2, 0.03, light, 0, 0.27, 0.17);        // cream chest
-    tb(torso, 0.54, 0.09, 0.36, tc, 0, 0.45, 0);             // team scarf
-    tb(torso, 0.12, 0.12, 0.2, fur, 0, 0.14, -0.24);         // tail
+    tb(torso, 0.1, 0.06, 0.02, 0x3e3166, 0.14, 0.0, 0.175, true); // torn notch
+    tb(torso, 0.52, 0.05, 0.36, 0x4a2c1c, 0, 0.14, 0);       // belt
+    tb(torso, 0.08, 0.07, 0.02, 0xffc23d, 0, 0.14, 0.19);    // buckle
+    tb(torso, 0.48, 0.3, 0.32, fur, 0, 0.32, 0);             // body
+    tb(torso, 0.26, 0.2, 0.03, light, 0, 0.3, 0.17);         // cream chest
+    [-0.07, 0.02, 0.09].forEach((x, i) => tb(torso, 0.05, 0.05, 0.02, light, x, 0.18 - (i % 2) * 0.02, 0.17, true)); // chest tuft
+    tb(torso, 0.54, 0.09, 0.36, tc, 0, 0.49, 0);             // team scarf
+    tb(torso, 0.1, 0.16, 0.05, tc, 0.16, 0.39, 0.17);        // scarf tail
+    const tail = tb(torso, 0.13, 0.13, 0.22, fur, 0, 0.18, -0.25); tail.rotation.x = 0.5; tb(tail, 0.1, 0.1, 0.08, light, 0, 0.02, -0.13); // tail, pale tip
     tb(head, HW, HH, HD, fur, 0, 0, 0);
-    [-1, 1].forEach(s => { const e = tb(head, 0.17, 0.2, 0.1, fur, s * 0.22, 0.34, -0.02); e.rotation.z = -s * 0.12; tb(e, 0.08, 0.13, 0.08, fur, s * 0.03, 0.15, 0); tb(e, 0.08, 0.14, 0.02, pink, 0, 0.01, 0.06); }); // tall pointed ears
+    tb(head, 0.3, 0.08, 0.2, shag, 0.0, 0.27, 0.08);         // shaggy tuft on top
+    [-1, 1].forEach(s => {
+      const e = tb(head, 0.17, 0.2, 0.1, fur, s * 0.22, 0.34, -0.02); e.rotation.z = -s * 0.12; tb(e, 0.08, 0.13, 0.08, fur, s * 0.03, 0.15, 0); tb(e, 0.08, 0.14, 0.02, pink, 0, 0.01, 0.06); // tall pointed ears
+      tb(head, 0.06, 0.16, 0.18, shag, s * 0.33, -0.06, 0.06); // cheek fluff
+    });
     tb(head, 0.32, 0.18, 0.13, light, 0, -0.13, 0.31);       // muzzle
     decal(head, 'wolfEyes', HW, HH, (g, W, H) => [-1, 1].forEach(s => {
       const cx = W / 2 + s * W * 0.21, cy = H * 0.42;
       blush(g, cx + s * W * 0.04, H * 0.6, W * 0.06, H * 0.035);
-      eye(g, cx, cy, W * 0.09, H * 0.22);
-      line(g, W * 0.05, cx + s * W * 0.09, cy - H * 0.25, cx - s * W * 0.07, cy - H * 0.16); // angry brow
+      eye(g, cx, cy, W * 0.1, H * 0.22, '#ffd23a');
+      line(g, W * 0.055, cx + s * W * 0.1, cy - H * 0.26, cx - s * W * 0.07, cy - H * 0.16); // angry brow
+      line(g, W * 0.012, cx + s * W * 0.13, cy + H * 0.02, cx + s * W * 0.16, cy - H * 0.02); // fur nick
     }), 0, 0, FZ);
     decal(head, 'wolfMouth', 0.32, 0.18, (g, W, H) => {
       g.fillStyle = INK; g.beginPath(); g.roundRect(W * 0.36, H * 0.1, W * 0.28, H * 0.24, H * 0.1); g.fill(); // nose
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(W * 0.43, H * 0.16, W * 0.025, 0, Math.PI * 2); g.fill();
       g.strokeStyle = INK; g.lineWidth = W * 0.035; g.beginPath(); g.moveTo(W * 0.5, H * 0.34); g.lineTo(W * 0.5, H * 0.5);
       g.moveTo(W * 0.3, H * 0.62); g.quadraticCurveTo(W * 0.4, H * 0.78, W * 0.5, H * 0.52); g.quadraticCurveTo(W * 0.6, H * 0.78, W * 0.7, H * 0.62); g.stroke(); // w mouth
       [0.39, 0.61].forEach(f => fang(g, W * f, H * 0.68, W * 0.08, H * 0.2));
     }, 0, -0.13, 0.378);
-    [arm] = arms(fur, dark);
+    const am = arms(fur, dark); arm = am[0];
+    am.forEach((A, i) => [-0.05, 0.01, 0.07].forEach(x => tb(A, 0.035, 0.05, 0.035, claw, (i ? -1 : 1) * 0.02 + x - 0.01, -0.39, 0.07, true))); // knuckle claws
+    am.forEach((A, i) => tb(A, 0.17, 0.05, 0.19, shag, (i ? -1 : 1) * 0.02, -0.02, 0)); // shaggy shoulder
     const w = weapon(arm);
     tb(w, 0.09, 0.56, 0.09, bone, 0, 0.26, 0);              // bone club
     [-1, 1].forEach(s => { tb(w, 0.12, 0.12, 0.12, bone, s * 0.07, 0.6, 0); tb(w, 0.1, 0.1, 0.1, bone, s * 0.06, -0.04, 0); });
     tb(w, 0.11, 0.07, 0.11, tc, 0, 0.08, 0);                 // team grip
+    tb(w, 0.095, 0.02, 0.095, 0xc9bfa6, 0, 0.36, 0, true); tb(w, 0.095, 0.02, 0.095, 0xc9bfa6, 0, 0.44, 0, true); // cracks
   } else if (hero === 'vamp') { // count: slicked hair with a widow's peak, pointed ears, tall red collar, cape, wine waistcoat, cane with a glowing orb
-    const suit = 0x2a1d3d, red = 0xc0163f, wine = 0x6a1430, skin = 0xeadff6, hair = 0x2a1f44, gold = 0xffc23d;
+    const suit = 0x2a1d3d, lapel = 0x3a2a55, red = 0xc0163f, wine = 0x6a1430, skin = 0xeadff6, hair = 0x2a1f44, gold = 0xffc23d;
     [legL, legR] = legs(suit, 0x14101e);
+    [legL, legR].forEach(L => tb(L, 0.1, 0.03, 0.05, 0x8a7aa8, 0, -0.25, 0.15, true)); // shoe shine
     tb(torso, 0.48, 0.44, 0.32, suit, 0, 0.22, 0);           // tailcoat
-    tb(torso, 0.24, 0.32, 0.03, wine, 0, 0.2, 0.17);         // waistcoat
-    tb(torso, 0.1, 0.14, 0.03, 0xffffff, 0, 0.36, 0.18);     // shirt
-    [0.26, 0.16, 0.06].forEach(y => tb(torso, 0.04, 0.04, 0.02, gold, 0, y, 0.195));
-    tb(torso, 0.09, 0.09, 0.03, tc, 0.16, 0.32, 0.18);       // team medallion
+    [-1, 1].forEach(s => { const l = tb(torso, 0.08, 0.3, 0.03, lapel, s * 0.15, 0.27, 0.165); l.rotation.z = s * 0.25; }); // lapels
+    tb(torso, 0.22, 0.32, 0.03, wine, 0, 0.2, 0.17);         // waistcoat
+    tb(torso, 0.1, 0.12, 0.03, 0xffffff, 0, 0.37, 0.18);     // shirt
+    [-1, 1].forEach(s => tb(torso, 0.07, 0.06, 0.03, red, s * 0.045, 0.42, 0.195)); tb(torso, 0.04, 0.04, 0.03, 0x8a0f2c, 0, 0.42, 0.2); // bow tie
+    [0.28, 0.18, 0.08].forEach(y => tb(torso, 0.04, 0.04, 0.02, gold, 0, y, 0.195, true));
+    tb(torso, 0.1, 0.1, 0.03, gold, 0.17, 0.32, 0.18); tb(torso, 0.06, 0.06, 0.03, tc, 0.17, 0.32, 0.195, true); // team medallion in gold
+    const chain = tb(torso, 0.2, 0.02, 0.02, gold, 0.06, 0.24, 0.19, true); chain.rotation.z = 0.5;
     tb(body, 0.6, 0.62, 0.05, suit, 0, 0.56, -0.2);          // cape
-    tb(body, 0.52, 0.56, 0.02, red, 0, 0.56, -0.165);        // red lining
+    [-0.2, 0, 0.2].forEach(x => tb(body, 0.14, 0.1, 0.05, suit, x, 0.22, -0.2)); // cape points
+    tb(body, 0.52, 0.56, 0.02, red, 0, 0.58, -0.165);        // red lining
     tb(body, 0.66, 0.26, 0.05, red, 0, 0.92, -0.2);          // tall collar
+    [-1, 1].forEach(s => { const c = tb(body, 0.05, 0.24, 0.16, red, s * 0.33, 0.92, -0.12); c.rotation.y = s * 0.3; }); // collar wings
     [-1, 1].forEach(s => tb(body, 0.05, 0.05, 0.03, gold, s * 0.21, 0.79, 0.16)); // cape clasps
     tb(head, HW, HH, HD, skin, 0, 0, 0);
     tb(head, HW + 0.04, 0.12, HD + 0.04, hair, 0, 0.24, 0);  // slicked hair
+    tb(head, 0.3, 0.03, 0.2, 0x6a5a9a, -0.08, 0.31, 0.04, true); // hair shine
     tb(head, HW + 0.04, 0.36, 0.1, hair, 0, 0.06, -0.22);    // back of the hair
     tb(head, 0.14, 0.1, 0.04, hair, 0, 0.17, 0.25);          // widow's peak
     [-1, 1].forEach(s => { tb(head, 0.08, 0.36, 0.06, hair, s * 0.32, 0.03, -0.12); const e = tb(head, 0.06, 0.2, 0.1, skin, s * 0.36, 0.06, 0.02); e.rotation.z = -s * 0.5; }); // sideburns, pointed ears
     decal(head, 'vampFace', HW, HH, (g, W, H) => {
-      [-1, 1].forEach(s => { const cx = W / 2 + s * W * 0.2; eye(g, cx, H * 0.5, W * 0.1, H * 0.18, '#e8203a'); blush(g, cx + s * W * 0.05, H * 0.68, W * 0.06, H * 0.035, 'rgba(240,150,200,0.55)'); });
-      line(g, W * 0.04, W * 0.22, H * 0.33, W * 0.36, H * 0.31); line(g, W * 0.04, W * 0.62, H * 0.27, W * 0.78, H * 0.31); // one brow raised: smug
-      line(g, W * 0.03, W * 0.4, H * 0.8, W * 0.5, H * 0.82, W * 0.62, H * 0.76); // smirk
-      fang(g, W * 0.555, H * 0.795, W * 0.04, H * 0.08);
+      [-1, 1].forEach(s => { const cx = W / 2 + s * W * 0.2; eye(g, cx, H * 0.5, W * 0.11, H * 0.19, '#e8203a'); blush(g, cx + s * W * 0.05, H * 0.68, W * 0.06, H * 0.035, 'rgba(240,150,200,0.55)'); line(g, W * 0.012, cx - W * 0.04, H * 0.62, cx + W * 0.04, H * 0.62); }); // under-eye lines
+      line(g, W * 0.045, W * 0.2, H * 0.34, W * 0.37, H * 0.31); line(g, W * 0.045, W * 0.62, H * 0.26, W * 0.8, H * 0.32); // one brow raised: smug
+      line(g, W * 0.012, W * 0.5, H * 0.58, W * 0.48, H * 0.66, W * 0.52, H * 0.66); // nose
+      line(g, W * 0.03, W * 0.38, H * 0.79, W * 0.5, H * 0.82, W * 0.63, H * 0.75); // smirk
+      fang(g, W * 0.565, H * 0.79, W * 0.045, H * 0.09);
     }, 0, 0, FZ);
-    [arm] = arms(suit, 0xf6f2ff);
+    const am = arms(suit, 0xf6f2ff); arm = am[0];
+    am.forEach((A, i) => tb(A, 0.17, 0.04, 0.19, 0xffffff, (i ? -1 : 1) * 0.02, -0.21, 0, true)); // shirt cuffs
     const w = weapon(arm);
     tb(w, 0.06, 0.9, 0.06, 0x1a1226, 0, 0.36, 0);            // cane
     tb(w, 0.1, 0.06, 0.1, gold, 0, 0.82, 0); tb(w, 0.08, 0.06, 0.08, gold, 0, -0.1, 0);
-    glow(w, 0.17, 0.17, 0.17, 0xff2a55, 0, 0.94, 0);         // glowing orb
-  } else if (hero === 'mummy') { // wrapped head to toe, one big glowing eye, one arm reaching forward, bandaged staff with a scarab
-    const wrap = 0xead9b0, dark = 0xb8a272, mid = 0xd8c592;
-    [legL, legR] = legs(wrap, dark, 0.24);
+    [-1, 1].forEach(s => tb(w, 0.04, 0.12, 0.04, gold, s * 0.08, 0.9, 0, true)); // claws holding the orb
+    glow(w, 0.17, 0.17, 0.17, 0xff2a55, 0, 0.95, 0);         // glowing orb
+    halo(w, 0.6, 0xff2a55, 0, 0.95, 0.1);
+  } else if (hero === 'mummy') { // wrapped head to toe in lined bandages, loose strips, one big glowing eye, one arm reaching out, staff with a scarab
+    const wrap = 0xffffff, dark = 0xb8a272;
+    const wrapMat = voxMonMat(); wrapMat.map = BANDAGE_TEX; flashMats.push(wrapMat);
+    const strip = (parent, w, l, x, y, z, rx, rz) => { const s = tb(parent, w, l, 0.025, 0xead9b0, x, y, z, true); s.rotation.set(rx || 0, 0, rz || 0); return s; };
+    mat = wrapMat;
+    [legL, legR] = legs(wrap, wrap, 0.24);
     tb(torso, 0.5, 0.48, 0.34, wrap, 0, 0.22, 0);
-    [[0.06, dark], [0.2, mid], [0.36, dark]].forEach(([y, c]) => tb(torso, 0.52, 0.04, 0.36, c, 0, y, 0)); // bandage wraps
-    tb(torso, 0.1, 0.1, 0.02, 0x8a6a40, -0.12, 0.13, 0.18);  // stitched patch
-    const sash = tb(torso, 0.66, 0.08, 0.37, tc, 0, 0.24, 0); sash.rotation.z = 0.6; // team sash
     tb(head, HW, HH, HD, wrap, 0, 0, 0);
-    [[0.16, dark], [-0.2, mid]].forEach(([y, c]) => tb(head, HW + 0.02, 0.04, HD - 0.04, c, 0, y, -0.02)); // wraps round the sides and back
-    const strip = tb(head, 0.07, 0.3, 0.03, wrap, 0.24, -0.3, -0.2); strip.rotation.x = 0.3; // loose strip
-    decal(head, 'mummyFace', HW, HH, (g, W, H) => {
-      g.strokeStyle = 'rgba(150,120,70,0.55)'; g.lineWidth = H * 0.025; [0.14, 0.3, 0.72, 0.88].forEach((f, i) => { g.beginPath(); g.moveTo(0, H * f); g.lineTo(W, H * (f + (i % 2 ? 0.05 : -0.04))); g.stroke(); }); // bandage lines
+    const am = arms(wrap, wrap); arm = am[0]; am[1].rotation.x = -1.3; // left arm reaches forward
+    mat = plain;
+    [legL, legR].forEach((L, i) => strip(L, 0.05, 0.16, (i ? 1 : -1) * 0.1, -0.12, 0.08, 0, (i ? -1 : 1) * 0.5)); // loose ends on the legs
+    strip(am[1], 0.05, 0.24, 0.0, -0.42, 0.06, 0.3); strip(am[1], 0.04, 0.16, -0.06, -0.38, 0.0, 0.1, 0.4); // dangling from the reaching arm
+    strip(am[0], 0.05, 0.18, 0.08, -0.2, 0.0, 0, -0.4);
+    const sash = tb(torso, 0.66, 0.08, 0.37, tc, 0, 0.24, 0); sash.rotation.z = 0.6; // team sash
+    tb(torso, 0.1, 0.1, 0.02, 0x8a6a40, -0.13, 0.08, 0.18);  // stitched patch
+    strip(head, 0.06, 0.3, 0.26, -0.3, -0.2, 0.3); strip(head, 0.05, 0.22, -0.3, -0.25, -0.14, 0.2, 0.3); // loose strips off the head
+    const knot = tb(head, 0.1, 0.08, 0.06, 0xd8c592, 0.2, 0.22, -0.26); knot.rotation.z = 0.4; // tied-off end at the back
+    decal(head, 'mummyFace2', HW, HH, (g, W, H) => {
       const cx = W * 0.33, cy = H * 0.5;
-      g.fillStyle = INK; g.beginPath(); g.roundRect(cx - W * 0.1, cy - H * 0.15, W * 0.2, H * 0.3, W * 0.06); g.fill(); // dark gap in the wraps
-      g.fillStyle = '#7dfcff'; g.beginPath(); g.roundRect(cx - W * 0.055, cy - H * 0.1, W * 0.11, H * 0.2, W * 0.05); g.fill(); // glowing eye
-      g.fillStyle = '#fff'; g.beginPath(); g.arc(cx - W * 0.02, cy - H * 0.05, W * 0.018, 0, Math.PI * 2); g.fill();
-      line(g, W * 0.04, W * 0.6, H * 0.5, W * 0.76, H * 0.5); // other eye wrapped shut
-      line(g, W * 0.03, W * 0.44, H * 0.78, W * 0.5, H * 0.74, W * 0.56, H * 0.78); // wobbly mouth
+      g.fillStyle = INK; g.beginPath(); g.moveTo(W * 0.12, H * 0.36); g.lineTo(W * 0.92, H * 0.33); g.lineTo(W * 0.92, H * 0.6); g.lineTo(W * 0.12, H * 0.65); g.closePath(); g.fill(); // dark gap between the wraps
+      g.fillStyle = '#efe0bb'; g.strokeStyle = '#8a6e42'; g.lineWidth = H * 0.02; g.beginPath(); g.moveTo(W * 0.48, H * 0.3); g.lineTo(W * 0.96, H * 0.28); g.lineTo(W * 0.96, H * 0.62); g.lineTo(W * 0.5, H * 0.64); g.closePath(); g.fill(); g.stroke(); // a wrap pulled over the right eye
+      line(g, W * 0.012, W * 0.5, H * 0.47, W * 0.96, H * 0.45);
+      g.fillStyle = '#7dfcff'; g.beginPath(); g.roundRect(cx - W * 0.07, cy - H * 0.11, W * 0.14, H * 0.22, W * 0.06); g.fill(); // glowing eye
+      g.fillStyle = '#1a6a70'; g.beginPath(); g.roundRect(cx - W * 0.025, cy - H * 0.06, W * 0.05, H * 0.13, W * 0.02); g.fill();
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(cx - W * 0.03, cy - H * 0.06, W * 0.02, 0, Math.PI * 2); g.fill();
+      g.fillStyle = INK; g.beginPath(); g.moveTo(W * 0.4, H * 0.8); g.lineTo(W * 0.62, H * 0.78); g.lineTo(W * 0.6, H * 0.86); g.lineTo(W * 0.42, H * 0.87); g.closePath(); g.fill(); // mouth slot
+      [0.46, 0.53].forEach(x => { g.fillStyle = '#efe0bb'; g.fillRect(W * x, H * 0.79, W * 0.04, H * 0.04); }); // two teeth
     }, 0, 0, FZ);
-    const [a, l] = arms(wrap, mid); arm = a; l.rotation.x = -1.3; // left arm reaches forward
+    halo(head, 0.36, 0x7dfcff, -0.1, 0.0, FZ + 0.01);        // eye glow
     const w = weapon(arm);
     tb(w, 0.08, 1.0, 0.08, 0xc9b58a, 0, 0.4, 0);             // staff
-    [0.08, 0.32, 0.56].forEach((y, k) => tb(w, 0.1, 0.05, 0.1, k % 2 ? mid : wrap, 0, y, 0));
+    [0.08, 0.32, 0.56].forEach((y, k) => tb(w, 0.1, 0.05, 0.1, k % 2 ? 0xd8c592 : 0xead9b0, 0, y, 0));
+    strip(w, 0.04, 0.2, 0.07, 0.6, 0.02, 0, -0.4);
     tb(w, 0.2, 0.14, 0.16, 0xffc23d, 0, 0.96, 0);             // golden scarab
+    tb(w, 0.1, 0.06, 0.1, 0xd99a1a, 0, 1.05, 0.02);           // scarab head
     [-1, 1].forEach(s => { const wing = tb(w, 0.14, 0.06, 0.1, 0x3fa0a8, s * 0.15, 0.99, 0); wing.rotation.z = s * 0.35; });
     glow(w, 0.06, 0.06, 0.03, 0x7dfcff, 0, 0.97, 0.09);
-  } else if (hero === 'witch') { // little green witch: tall patched hat with a team band, orange braids, white collar, striped stockings, broom
+    halo(w, 0.4, 0x7dfcff, 0, 0.97, 0.12);
+  } else if (hero === 'witch') { // little green witch: tall crooked patched hat with a team band, orange braids, white collar, striped stockings, pointy boots, broom
     const dress = 0x4a2f88, hat = 0x2e2150, skin = 0xb4e690, hair = 0xff7a1e, gold = 0xffc23d, boot = 0x5a3a28;
     [legL, legR] = legs(0xfff6ea, boot, 0.3);
-    [legL, legR].forEach(L => [-0.05, -0.15].forEach(y => tb(L, 0.2, 0.04, 0.23, 0x2a1d3d, 0, y, 0))); // stripes
+    [legL, legR].forEach(L => { [-0.05, -0.15].forEach(y => tb(L, 0.2, 0.04, 0.23, 0x2a1d3d, 0, y, 0, true)); const toe = tb(L, 0.1, 0.07, 0.1, boot, 0, -0.27, 0.2); toe.rotation.x = -0.6; tb(L, 0.22, 0.03, 0.25, gold, 0, -0.23, 0.02, true); }); // stripes, curled toes, boot trim
     tb(torso, 0.44, 0.32, 0.3, dress, 0, 0.3, 0);             // bodice
     tb(torso, 0.6, 0.24, 0.44, dress, 0, 0.08, 0);            // skirt
+    [-0.2, 0, 0.2].forEach(x => tb(torso, 0.03, 0.22, 0.02, 0x3a2470, x, 0.08, 0.225, true)); // skirt pleats
     tb(torso, 0.62, 0.05, 0.46, hair, 0, -0.03, 0);           // orange hem
+    tb(torso, 0.46, 0.05, 0.32, 0x2a1d3d, 0, 0.17, 0); tb(torso, 0.07, 0.07, 0.02, gold, 0, 0.17, 0.17); // belt
     tb(torso, 0.48, 0.06, 0.34, 0xffffff, 0, 0.47, 0);        // white collar
-    [0.36, 0.26].forEach(y => tb(torso, 0.04, 0.04, 0.02, gold, 0, y, 0.16));
+    [-1, 1].forEach(s => { const c = tb(torso, 0.12, 0.05, 0.08, 0xffffff, s * 0.08, 0.44, 0.16); c.rotation.z = s * 0.3; }); // collar points
+    [0.36, 0.27].forEach(y => tb(torso, 0.04, 0.04, 0.02, gold, 0, y, 0.16, true));
     tb(torso, 0.1, 0.1, 0.02, 0x6a4aa8, -0.18, 0.1, 0.23);    // patch
     tb(head, HW, HH, HD, skin, 0, 0, 0);
     tb(head, HW + 0.06, 0.5, 0.12, hair, 0, 0.0, -0.22);      // hair at the back
-    tb(head, HW + 0.04, 0.1, 0.08, hair, 0, 0.21, 0.22);      // fringe
+    [-0.2, 0, 0.2].forEach((x, i) => tb(head, 0.22, 0.1 + (i % 2) * 0.04, 0.08, hair, x, 0.2 - (i % 2) * 0.02, 0.22)); // jagged fringe
     [-1, 1].forEach(s => {
       tb(head, 0.08, 0.36, 0.42, hair, s * 0.33, 0.04, -0.03); // side hair
-      [0, 1, 2].forEach(k => tb(head, 0.13 - k * 0.015, 0.12, 0.13 - k * 0.015, hair, s * (0.42 + k * 0.03), -0.12 - k * 0.13, -0.06)); // braid
+      [0, 1, 2].forEach(k => tb(head, 0.13 - k * 0.015, 0.12, 0.13 - k * 0.015, k % 2 ? 0xe86a10 : hair, s * (0.42 + k * 0.03), -0.12 - k * 0.13, -0.06)); // braid
       tb(head, 0.08, 0.05, 0.08, tc, s * 0.48, -0.44, -0.06);  // team hair tie
+      tb(head, 0.06, 0.1, 0.06, hair, s * 0.48, -0.52, -0.06); // braid tuft
     });
+    tb(head, 0.08, 0.06, 0.05, 0x8fcc70, 0, -0.04, 0.27);     // little nose
     decal(head, 'witchFace', HW, HH, (g, W, H) => {
       [-1, 1].forEach(s => {
         const cx = W / 2 + s * W * 0.19, cy = H * 0.5;
-        eye(g, cx, cy, W * 0.11, H * 0.22, '#8a4cff');
-        line(g, W * 0.02, cx + s * W * 0.055, cy - H * 0.07, cx + s * W * 0.1, cy - H * 0.13); // lash
+        eye(g, cx, cy, W * 0.12, H * 0.24, '#8a4cff');
+        [[0.06, -0.08, 0.11, -0.15], [0.04, -0.11, 0.07, -0.19]].forEach(([a, b, c2, d]) => line(g, W * 0.02, cx + s * W * a, cy + H * b, cx + s * W * c2, cy + H * d)); // lashes
+        line(g, W * 0.03, cx - s * W * 0.06, cy - H * 0.2, cx + s * W * 0.06, cy - H * 0.24); // brows
         blush(g, cx + s * W * 0.05, H * 0.72, W * 0.06, H * 0.035, 'rgba(255,130,170,0.55)');
-        g.fillStyle = 'rgba(90,140,70,0.8)'; [[0.08, 0.66], [0.13, 0.7], [0.03, 0.7]].forEach(([dx, y]) => { g.beginPath(); g.arc(cx + s * W * dx, H * y, W * 0.012, 0, Math.PI * 2); g.fill(); }); // freckles
+        g.fillStyle = 'rgba(90,140,70,0.85)'; [[0.08, 0.66], [0.13, 0.7], [0.03, 0.7]].forEach(([dx, y]) => { g.beginPath(); g.arc(cx + s * W * dx, H * y, W * 0.013, 0, Math.PI * 2); g.fill(); }); // freckles
       });
-      g.fillStyle = INK; g.beginPath(); g.moveTo(W * 0.43, H * 0.76); g.quadraticCurveTo(W * 0.5, H * 0.9, W * 0.57, H * 0.76); g.closePath(); g.fill(); // open smile
+      g.fillStyle = INK; g.beginPath(); g.moveTo(W * 0.42, H * 0.77); g.quadraticCurveTo(W * 0.5, H * 0.93, W * 0.58, H * 0.77); g.closePath(); g.fill(); // open smile
+      g.fillStyle = '#ff7a9a'; g.beginPath(); g.arc(W * 0.5, H * 0.85, W * 0.03, 0, Math.PI); g.fill();
     }, 0, 0, FZ);
     const hatG = new THREE.Group(); hatG.position.set(0, 0.28, -0.02); hatG.rotation.z = -0.08; head.add(hatG);
     tb(hatG, 0.92, 0.05, 0.82, hat, 0, 0, 0);                 // brim
     tb(hatG, 0.5, 0.12, 0.46, tc, 0, 0.08, 0);                // team band
-    tb(hatG, 0.12, 0.1, 0.03, gold, 0, 0.08, 0.245);          // buckle
+    tb(hatG, 0.14, 0.12, 0.03, gold, 0, 0.08, 0.245); tb(hatG, 0.06, 0.05, 0.03, tc, 0, 0.08, 0.255, true); // buckle
     tb(hatG, 0.46, 0.2, 0.42, hat, 0, 0.24, 0);
     tb(hatG, 0.34, 0.2, 0.32, hat, 0.03, 0.44, -0.01);
     tb(hatG, 0.11, 0.1, 0.02, 0x6a4aa8, -0.06, 0.44, 0.17);   // patch
+    [[-0.1, 0.48], [-0.02, 0.4]].forEach(([x, y]) => tb(hatG, 0.03, 0.03, 0.02, 0xe0d0ff, x, y, 0.18, true)); // patch stitches
     tb(hatG, 0.22, 0.18, 0.2, hat, 0.08, 0.62, -0.02);
     const tip = tb(hatG, 0.13, 0.16, 0.12, hat, 0.17, 0.74, -0.02); tip.rotation.z = -0.7; // crooked tip
-    [arm] = arms(dress, skin);
+    glow(hatG, 0.08, 0.08, 0.08, 0xffd23a, 0.28, 0.8, -0.02); // star bead on the tip
+    const am = arms(dress, skin); arm = am[0];
+    am.forEach((A, i) => tb(A, 0.19, 0.05, 0.21, 0xffffff, (i ? -1 : 1) * 0.02, -0.2, 0, true)); // lace cuffs
     const w = weapon(arm);
     tb(w, 0.05, 0.9, 0.05, 0x8a5a36, 0, 0.2, 0);              // broom
     tb(w, 0.09, 0.05, 0.09, tc, 0, -0.24, 0);
     tb(w, 0.24, 0.3, 0.12, 0xe0b24a, 0, -0.42, 0);            // straw
+    [-0.07, 0, 0.07].forEach(x => tb(w, 0.02, 0.28, 0.13, 0xb8862a, x, -0.43, 0, true)); // straw lines
+    tb(w, 0.26, 0.04, 0.14, 0x8a5a36, 0, -0.32, 0);           // binding
     crownY = 2.2;
-  } else { // ghost: one big sheet block, wavy hem, big shiny eyes, blush, team bow, little lantern
-    const sheet = 0xf6f2ff, fold = 0xdcd4f0;
+  } else { // ghost: a sheet thrown over a little spirit; rounded dome top, the sheet flares out to a ragged hem, flappy arms up, team bow, lantern
+    const sheet = 0xf6f2ff, shade = 0xe0d8f4, fold = 0xcfc4ec;
     legL = new THREE.Group(); legR = new THREE.Group(); body.add(legL, legR);
-    torso.position.y = 0.2;
-    tb(torso, 0.78, 0.56, 0.62, sheet, 0, 0.32, 0);
-    [-0.3, -0.1, 0.1, 0.3].forEach((x, k) => tb(torso, 0.18, k % 2 ? 0.14 : 0.2, 0.6, k % 2 ? fold : sheet, x, k % 2 ? 0.0 : -0.03, 0)); // wavy hem
-    tb(torso, 0.18, 0.18, 0.24, sheet, 0, 0.18, -0.38);       // wisp
+    torso.position.y = 0.22;
+    tb(torso, 0.84, 0.42, 0.7, sheet, 0, 0.27, 0);            // lower sheet, flared
+    [[-0.34, 0.2], [-0.17, 0.12], [0, 0.2], [0.17, 0.12], [0.34, 0.2]].forEach(([x, h], k) => { tb(torso, 0.16, h, 0.2, k % 2 ? shade : sheet, x, 0.06 - h / 2, 0.25); tb(torso, 0.16, 0.32 - h, 0.2, k % 2 ? sheet : shade, x, 0.06 - (0.32 - h) / 2, -0.25); }); // ragged hem, front and back
+    [-1, 1].forEach(s => [-0.15, 0.15].forEach((z, k) => tb(torso, 0.18, k ? 0.12 : 0.18, 0.17, k ? shade : sheet, s * 0.33, 0.06 - (k ? 0.06 : 0.09), z)));
+    [-0.22, 0.18].forEach((x, i) => tb(torso, 0.03, 0.34, 0.02, fold, x, 0.24, 0.355, true)); // sheet folds
+    const wisp = tb(torso, 0.2, 0.18, 0.24, sheet, 0, 0.18, -0.42); wisp.rotation.x = -0.4; const w2 = tb(wisp, 0.12, 0.12, 0.16, shade, 0, 0.08, -0.16); w2.rotation.x = -0.5; // curling tail
     head.position.y = 1.0;
-    tb(head, 0.74, 0.56, 0.6, sheet, 0, 0, 0);
-    const bw = new THREE.Group(); bw.position.set(-0.24, 0.32, 0.12); bw.rotation.z = 0.35; head.add(bw);
+    tb(head, 0.74, 0.52, 0.62, sheet, 0, 0, 0);               // head
+    tb(head, 0.56, 0.12, 0.48, sheet, 0, 0.31, 0);            // dome
+    tb(head, 0.3, 0.07, 0.26, sheet, 0, 0.4, 0);              // dome top
+    const bw = new THREE.Group(); bw.position.set(-0.2, 0.38, 0.1); bw.rotation.z = 0.35; head.add(bw);
     tb(bw, 0.16, 0.14, 0.08, tc, -0.1, 0, 0); tb(bw, 0.16, 0.14, 0.08, tc, 0.1, 0, 0); tb(bw, 0.07, 0.08, 0.1, tc, 0, 0, 0); // team bow
-    decal(head, 'ghostFace', 0.74, 0.56, (g, W, H) => {
+    [-1, 1].forEach(s => { const t = tb(bw, 0.05, 0.12, 0.04, tc, s * 0.04, -0.1, 0); t.rotation.z = s * 0.35; });
+    decal(head, 'ghostFace2', 0.74, 0.52, (g, W, H) => {
       [-1, 1].forEach(s => {
-        const cx = W / 2 + s * W * 0.17, cy = H * 0.45;
-        eye(g, cx, cy, W * 0.12, H * 0.27);
-        g.fillStyle = '#fff'; g.beginPath(); g.arc(cx + W * 0.025, cy + H * 0.07, W * 0.012, 0, Math.PI * 2); g.fill();
-        line(g, W * 0.025, cx - s * W * 0.06, cy - H * 0.22, cx + s * W * 0.04, cy - H * 0.27); // worried brows
-        blush(g, cx + s * W * 0.06, H * 0.66, W * 0.06, H * 0.04, 'rgba(255,150,190,0.6)');
+        const cx = W / 2 + s * W * 0.17, cy = H * 0.46;
+        g.fillStyle = INK; g.beginPath(); g.ellipse(cx, cy, W * 0.07, H * 0.17, 0, 0, Math.PI * 2); g.fill(); // big oval eyes
+        g.fillStyle = '#5a3a9a'; g.beginPath(); g.ellipse(cx, cy + H * 0.07, W * 0.05, H * 0.07, 0, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#fff'; g.beginPath(); g.arc(cx - W * 0.025, cy - H * 0.07, W * 0.028, 0, Math.PI * 2); g.fill(); g.beginPath(); g.arc(cx + W * 0.03, cy + H * 0.06, W * 0.012, 0, Math.PI * 2); g.fill();
+        blush(g, cx + s * W * 0.07, H * 0.7, W * 0.07, H * 0.045, 'rgba(255,150,190,0.65)');
       });
-      g.fillStyle = INK; g.beginPath(); g.roundRect(W * 0.45, H * 0.66, W * 0.1, H * 0.12, W * 0.04); g.fill(); // little open mouth
-      g.fillStyle = '#ff7a9a'; g.beginPath(); g.roundRect(W * 0.47, H * 0.72, W * 0.06, H * 0.05, W * 0.02); g.fill(); // tongue
-    }, 0, 0, 0.303);
-    const armG = s => { const g = new THREE.Group(); g.position.set(s * 0.42, 0.66, 0); body.add(g); tb(g, 0.14, 0.2, 0.16, sheet, s * 0.02, -0.08, 0); return g; };
+      g.fillStyle = INK; g.beginPath(); g.ellipse(W * 0.5, H * 0.75, W * 0.05, H * 0.08, 0, 0, Math.PI * 2); g.fill(); // "ooo" mouth
+      g.fillStyle = '#ff7a9a'; g.beginPath(); g.ellipse(W * 0.5, H * 0.79, W * 0.03, H * 0.035, 0, 0, Math.PI * 2); g.fill();
+    }, 0, 0, 0.313);
+    const armG = s => { const g = new THREE.Group(); g.position.set(s * 0.44, 0.72, 0); body.add(g); const f = tb(g, 0.22, 0.13, 0.18, sheet, s * 0.07, 0.02, 0); f.rotation.z = s * 0.5; tb(f, 0.08, 0.1, 0.16, shade, s * 0.1, -0.04, 0); return g; }; // flappy sleeves raised: "boo!"
     arm = armG(1); armG(-1);
-    const lan = new THREE.Group(); lan.position.set(0.02, -0.2, 0.06); arm.add(lan);
+    const lan = new THREE.Group(); lan.position.set(0.16, -0.08, 0.06); arm.add(lan);
     tb(lan, 0.03, 0.08, 0.03, 0x2a2040, 0, -0.02, 0);
     tb(lan, 0.18, 0.04, 0.18, 0x2a2040, 0, -0.08, 0);
     glow(lan, 0.14, 0.16, 0.14, 0xffc24a, 0, -0.18, 0);       // lantern light
+    [-1, 1].forEach(s => tb(lan, 0.02, 0.16, 0.16, 0x2a2040, s * 0.075, -0.18, 0, true));
     tb(lan, 0.18, 0.04, 0.18, 0x2a2040, 0, -0.28, 0);
-    crownY = 1.5;
+    halo(lan, 0.6, 0xffc24a, 0, -0.18, 0.1);
+    crownY = 1.6;
   }
   return { legL, legR, torso, head, arm, crownY, outline: OUT };
 }
@@ -2664,7 +2738,7 @@ function meleeHit(u) {
   const third = u.combo === 3;
   u.empowerT = 0;
   u.kvx += u.fx * 2.2; u.kvz += u.fz * 2.2; // small lunge into the swing
-  spawnArc(u, range, third || heavy ? 0xffc23d : 0xffffff);
+  spawnArc(u, range, third || heavy ? 0xffc23d : 0xffffff, third);
   for (const t of units) {
     if (!t.alive || t === u || !inCone(u, t, range, 0.35)) continue;
     if (t.team === u.team) { if (t.trappedT > 0) freeTrap(t); continue; }
@@ -2690,7 +2764,8 @@ function fireShot(u, type) {
   else if (type === 'band') mesh = box(0.22, 0.22, 0.22, M(0xe6d8b4));
   else if (type === 'broom') mesh = itemModel('broom');
   else mesh = box(0.28, 0.28, 0.28, M(0xc8f4ff, { emissive: 0x3a8aa0 }));
-  mesh.position.set(u.x, 0.8, u.z); scene.add(mesh);
+  mesh.scale.multiplyScalar(1.35); { const h = new THREE.Mesh(powGeo, new THREE.MeshBasicMaterial({ map: SKILL_GLOW, color: type === 'bubble' ? 0xff9be0 : type === 'band' ? 0xfff0c0 : type === 'broom' ? 0xffd23a : 0x9be7ff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); h.scale.setScalar(1.4); h.rotation.x = -Math.PI / 2; h.position.y = -0.55; mesh.add(h); }
+  mesh.position.set(u.x, 0.8, u.z); scene.add(mesh); skillFx(u, type === 'bubble' ? 0xff9be0 : type === 'band' ? 0xead9b0 : type === 'broom' ? 0xffd23a : 0x9be7ff, true);
   const sp = type === 'band' ? 16 : type === 'bubble' ? 10 : type === 'broom' ? 13 : 12, range = type === 'bubble' ? 8 : type === 'broom' ? 12 : 7.5;
   shots.push({ u, type, x: u.x + u.fx * 0.4, z: u.z + u.fz * 0.4, dx: u.fx, dz: u.fz, sp, left: range, mesh, bounce: type === 'broom' ? 1 : 0 });
 }
@@ -2751,7 +2826,7 @@ function roll(u) {
   u.stamina -= 1;
   let dx = u.mx, dz = u.mz; if (Math.hypot(dx, dz) < 0.1) { dx = u.fx; dz = u.fz; }
   const l = Math.hypot(dx, dz); dx /= l; dz /= l; u.fx = dx; u.fz = dz;
-  u.rollT = 0.22; u.rollDx = dx; u.rollDz = dz; u.sprint = true; u.guardT = 0;
+  u.rollT = 0.22; u.rollDx = dx; u.rollDz = dz; u.sprint = true; u.guardT = 0; skillFx(u, 0xffb347, true);
 }
 function ghostRevert(u) { // spirit -> solid: a burst that interrupts nearby enemies
   u.form = 0; u.phaseCd = 0.4;
@@ -2768,7 +2843,7 @@ function heroSkill(u) {
     if (u.phaseCd > 0 || u.leap) return;
     if (u.form === 1) { ghostRevert(u); return; }
     if (u.stamina < 1) return;
-    u.stamina -= 1; u.phaseCd = 0.5; u.form = 1;
+    u.stamina -= 1; u.phaseCd = 0.5; u.form = 1; skillFx(u, 0xc9b8ff);
     u.stun = 0; u.air = 0; u.trappedT = 0; u.spinT = 0; u.kvx = u.kvz = 0; u.getup = false; u.guardT = 0;
     burst(u.x, 0.9, u.z, 0xf4f0ff, 8); return;
   }
@@ -2777,13 +2852,13 @@ function heroSkill(u) {
     if (!u.alive || u.stun > 0 || u.leap || u.phaseCd > 0 || u.stamina < 1) return;
     let dx = u.mx, dz = u.mz; if (Math.hypot(dx, dz) < 0.1) { dx = u.fx; dz = u.fz; }
     const l = Math.hypot(dx, dz); dx /= l; dz /= l;
-    u.stamina -= 1; u.phaseCd = 0.3; u.invuln = Math.max(u.invuln, 0.12); u.empowerT = 2.5; burst(u.x, 0.8, u.z, 0x2a1640, 10); // next swing is an empowered strike
+    u.stamina -= 1; u.phaseCd = 0.3; u.invuln = Math.max(u.invuln, 0.12); u.empowerT = 2.5; burst(u.x, 0.8, u.z, 0x2a1640, 10); skillFx(u, 0x8a1a4a, true); // next swing is an empowered strike
     for (let k = 0; k < 9; k++) {
       const nx = clampX(u.x + dx * 0.3), nz = clampX(u.z + dz * 0.3);
       if (OBST.some(o => (o.x - nx) ** 2 + (o.z - nz) ** 2 < (o.r + 0.3) ** 2)) break;
       u.x = nx; u.z = nz;
     }
-    burst(u.x, 0.8, u.z, 0x2a1640, 10);
+    burst(u.x, 0.8, u.z, 0x2a1640, 10); skillFx(u, 0xff2a55);
     return;
   }
   if (u.hero === 'mummy') {
@@ -3060,17 +3135,33 @@ function extraPowers(u, dt) {
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // ======================= fx =======================
-function spawnArc(u, range, col) {
-  const geo = new THREE.RingGeometry(range * 0.55, range, 18, 1, -0.95, 1.9);
-  const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.75, side: THREE.DoubleSide, depthWrite: false }));
-  m.rotation.x = -Math.PI / 2; m.rotation.z = Math.atan2(-u.fz, u.fx); // the plane is laid flat, which flips z: use -fz so the arc faces the attack
-  m.position.set(u.x, 0.06, u.z);
-  scene.add(m); fxMeshes.push({ m, t: 0.2, max: 0.2, kind: 'fade' });
+// big crescent swoosh round the attacker (shows the reach); the third hit of a combo is a full gold spin
+const SLASH_TEX = (() => {
+  const mk = full => {
+    const n = 256, c = document.createElement('canvas'); c.width = c.height = n; const g = c.getContext('2d'), m = n / 2, R = n * 0.48;
+    const a0 = full ? -Math.PI : -1.25, a1 = full ? Math.PI : 1.25, steps = 48;
+    g.fillStyle = 'rgba(255,255,255,0.16)'; g.beginPath(); g.moveTo(m, m); g.arc(m, m, R, -a1, -a0); g.closePath(); g.fill(); // faint reach area
+    g.beginPath();
+    for (let i = 0; i <= steps; i++) { const a = a0 + (a1 - a0) * i / steps; g.lineTo(m + Math.cos(a) * R, m - Math.sin(a) * R); }
+    for (let i = steps; i >= 0; i--) { const q = i / steps, a = a0 + (a1 - a0) * q, t = (full ? 0.1 + 0.2 * q : Math.sin(q * Math.PI) * 0.36) * R; g.lineTo(m + Math.cos(a) * (R - t), m - Math.sin(a) * (R - t)); }
+    g.closePath(); g.fillStyle = 'rgba(255,255,255,0.95)'; g.fill();
+    g.lineWidth = n * 0.018; g.strokeStyle = '#ffffff'; g.beginPath(); g.arc(m, m, R - n * 0.006, -a1, -a0); g.stroke();
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  };
+  return { half: mk(false), full: mk(true) };
+})();
+const slashGeo = new THREE.PlaneGeometry(2, 2);
+function spawnArc(u, range, col, full) {
+  const m = new THREE.Mesh(slashGeo, new THREE.MeshBasicMaterial({ map: full ? SLASH_TEX.full : SLASH_TEX.half, color: col, transparent: true, opacity: 0.95, depthWrite: false, depthTest: false }));
+  m.rotation.x = -Math.PI / 2; const r0 = Math.atan2(-u.fz, u.fx); m.rotation.z = r0; // the plane is laid flat, which flips z: use -fz so the arc faces the attack
+  m.position.set(u.x, 0.35, u.z); m.scale.setScalar(range * 1.05); m.renderOrder = 5;
+  const dir = u.combo === 2 ? -1 : 1;
+  scene.add(m); fxMeshes.push({ m, t: full ? 0.3 : 0.2, max: full ? 0.3 : 0.2, kind: 'slash', r0, sweep: full ? 2.6 * dir : 0.7 * dir, s0: range * 1.05, shared: true });
 }
 function spawnRing(x, z, r, col) {
-  const m = new THREE.Mesh(new THREE.RingGeometry(r * 0.85, r, 32), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false }));
+  const m = new THREE.Mesh(new THREE.RingGeometry(r * 0.72, r, 40), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false }));
   m.rotation.x = -Math.PI / 2; m.position.set(x, 0.07, z);
-  scene.add(m); fxMeshes.push({ m, t: 0.35, max: 0.35, kind: 'grow' });
+  scene.add(m); fxMeshes.push({ m, t: 0.45, max: 0.45, kind: 'grow' });
 }
 function spawnLine(a, b, col, w = 0.07, life = 0.35, yo = 0) { // a thick strand (WebGL lines are 1px and vanish)
   const dx = b.x - a.x, dz = b.z - a.z, len = Math.hypot(dx, dz) || 0.01;
@@ -3141,7 +3232,8 @@ function impact(src, tgt, dmg, big) {
   const x = tgt.x - (src ? (tgt.x - src.x) : 0) * 0.15, z = tgt.z - y * Math.tan(LEAN) * 0.6 - (src ? (tgt.z - src.z) : 0) * 0.15;
   const m = new THREE.Mesh(flashGeo, new THREE.MeshBasicMaterial({ color: big ? 0xffe066 : 0xffffff, transparent: true, depthWrite: false }));
   m.position.set(x, y, z); scene.add(m); fxMeshes.push({ m, t: 0.13, max: 0.13, kind: 'flash', shared: true, s0: big ? 1.6 : 1.1 });
-  burst(x, y, z, big ? 0xffc23d : 0xffffff, big ? 10 : 6);
+  burst(x, y, z, big ? 0xffc23d : 0xffffff, big ? 12 : 8);
+  pow(x, y + 0.15, z, big ? 0xffd23a : 0xffffff, big ? 1.9 : 1.3);
   tgt.punch = 0.16;
   if (!mine) return;
   hitStop = Math.max(hitStop, big ? 0.11 : 0.06);
@@ -3204,7 +3296,29 @@ function proc(u, id, at) {
   const k = u.id + id, now = clock; if (now - (procT.get(k) || -9) < 0.9) return; procT.set(k, now);
   popText(at || u, skName(id), TYPE_COL[SKILLS[id].type], false, 'tag');
 }
-const burstGeo = new THREE.BoxGeometry(0.14, 0.14, 0.14);
+const burstGeo = new THREE.BoxGeometry(0.17, 0.17, 0.17);
+// a spiky comic "pow" star that faces the camera, for hits; and a light pillar for monster skills
+const POW_TEX = (() => {
+  const n = 128, c = document.createElement('canvas'); c.width = c.height = n; const g = c.getContext('2d'), m = n / 2;
+  const star = (R, r, col, lw) => { g.beginPath(); for (let i = 0; i < 20; i++) { const a = i / 20 * Math.PI * 2, rr = i % 2 ? r : R * (i % 4 ? 0.85 : 1); g.lineTo(m + Math.cos(a) * rr, m + Math.sin(a) * rr); } g.closePath(); g.fillStyle = col; g.fill(); if (lw) { g.lineWidth = lw; g.strokeStyle = '#2a1838'; g.stroke(); } };
+  star(n * 0.47, n * 0.24, '#ffffff', n * 0.035); star(n * 0.3, n * 0.15, 'rgba(255,240,160,0.9)');
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+const powGeo = new THREE.PlaneGeometry(1, 1);
+const SKILL_GLOW = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,0.9)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+function pow(x, y, z, col, size) {
+  const m = new THREE.Mesh(powGeo, new THREE.MeshBasicMaterial({ map: POW_TEX, color: col, transparent: true, depthWrite: false, depthTest: false }));
+  m.position.set(x, y, z); m.renderOrder = 6; scene.add(m);
+  fxMeshes.push({ m, t: 0.2, max: 0.2, kind: 'pow', s0: size, rz: Math.random() * Math.PI, shared: true });
+}
+const pillarGeo = new THREE.CylinderGeometry(0.75, 0.75, 2.4, 20, 1, true);
+function skillFx(u, col, small) { // a monster skill fired: ring on the ground, a light pillar, a puff of chunks
+  spawnRing(u.x, u.z, small ? 1.2 : 1.9, col);
+  burst(u.x, 0.8, u.z, col, small ? 6 : 12);
+  if (small) return;
+  const m = new THREE.Mesh(pillarGeo, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.75, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+  m.position.set(u.x, 1.2, u.z); scene.add(m); fxMeshes.push({ m, t: 0.35, max: 0.35, kind: 'pillar', shared: true });
+}
 function burst(x, y, z, col, n) {
   for (let i = 0; i < n; i++) {
     const m = new THREE.Mesh(burstGeo, new THREE.MeshBasicMaterial({ color: col, transparent: true }));
@@ -3874,7 +3988,10 @@ function updateWorld(dt) {
     else if (f.kind === 'flash') { const s = f.s0 * (1 + (1 - k) * 1.2); f.m.scale.set(s, s, s); f.m.material.opacity = k; }
     else if (f.kind === 'orb') { const q = 1 - k, tx = f.to.x, tz = f.to.z; f.m.position.set(f.sx + (tx - f.sx) * q, 0.9 + Math.sin(q * Math.PI) * f.h, f.sz + (tz - f.sz) * q); f.m.material.opacity = Math.min(1, k * 4); }
     else if (f.kind === 'fall') { f.m.position.y = 0.3 + 7 * k; }
-    else if (f.kind === 'grow') { const s = 0.6 + (1 - k) * 0.5; f.m.scale.set(s, s, s); f.m.material.opacity = k * 0.7; }
+    else if (f.kind === 'slash') { const q = 1 - k; f.m.rotation.z = f.r0 - f.sweep * (q - 0.5); f.m.scale.setScalar(f.s0 * (0.88 + 0.16 * q)); f.m.material.opacity = Math.min(1, k * 2.2); }
+    else if (f.kind === 'pow') { const q = 1 - k; f.m.scale.setScalar(f.s0 * (0.6 + 0.6 * Math.min(1, q * 3))); f.m.material.opacity = Math.min(1, k * 2); f.m.quaternion.copy(camera.quaternion); f.m.rotateZ(f.rz); }
+    else if (f.kind === 'pillar') { const q = 1 - k; f.m.scale.set(1 + q * 0.5, 0.6 + q * 0.8, 1 + q * 0.5); f.m.material.opacity = k * 0.75; }
+    else if (f.kind === 'grow') { const s = 0.55 + (1 - k) * 0.6; f.m.scale.set(s, s, s); f.m.material.opacity = Math.min(1, k * 1.4); }
     else f.m.material.opacity = k * 0.6;
     if (f.t <= 0) { scene.remove(f.m); if (f.m.geometry !== burstGeo && !f.shared) f.m.geometry.dispose(); f.m.material.dispose(); f.gone = true; }
   }
