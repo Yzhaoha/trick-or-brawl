@@ -1254,15 +1254,8 @@ function instMesh(geo, mat, list, shadow = true) { // list: [x, y, z, scale (num
     g.save(); g.translate(x, y); g.rotate((WRNG() - 0.5) * 0.6); g.fillRect(-1, -h, 2.2, h); g.restore();
   }
   for (let i = 0; i < 18; i++) { const x = WRNG() * N, y = WRNG() * N; g.fillStyle = ['#fff6d8', '#ffd84a', '#ff9ad0'][i % 3]; g.beginPath(); g.arc(x, y, 3, 0, 7); g.fill(); g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.arc(x + 1, y + 2, 3, 0, 7); g.fill(); }
-  let tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(S / 9, S / 9);
-  if (VOXEL) { // grass as a grid of square tiles (4 per metre), nearest-neighbour so every tile stays crisp
-    const n = 72, vc = document.createElement('canvas'); vc.width = vc.height = n; const vg = vc.getContext('2d');
-    const GR = ['#7fbd4f', '#78b54a', '#86c556', '#71ad45', '#8dca5c'];
-    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) { const r = WRNG(); vg.fillStyle = r < 0.004 ? ['#fff6d8', '#ffe27a'][(WRNG() * 2) | 0] : GR[(r * GR.length) | 0]; vg.fillRect(x, y, 1, 1); }
-    tex = new THREE.CanvasTexture(vc); tex.colorSpace = THREE.SRGBColorSpace; tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(S / 18, S / 18);
-  }
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(S, S), new THREE.MeshLambertMaterial({ map: tex }));
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
   const tex2 = tex.clone(); tex2.needsUpdate = true; tex2.repeat.set(260 / 9, 260 / 9);
@@ -1285,15 +1278,7 @@ function instMesh(geo, mat, list, shadow = true) { // list: [x, y, z, scale (num
   p.globalCompositeOperation = 'source-atop';
   for (let i = 0; i < 9000; i++) { const x = WRNG() * P, y = WRNG() * P, r = 0.6 + WRNG() * 1.8; p.fillStyle = WRNG() < 0.5 ? 'rgba(150,104,52,.5)' : 'rgba(240,200,140,.55)'; p.fillRect(x, y, r, r); }
   for (let i = 0; i < 500; i++) { const x = WRNG() * P, y = WRNG() * P; p.fillStyle = 'rgba(120,96,80,.6)'; p.beginPath(); p.ellipse(x, y, 2.5, 1.8, WRNG() * 3, 0, 7); p.fill(); }
-  let ptex = new THREE.CanvasTexture(pc); ptex.colorSpace = THREE.SRGBColorSpace; ptex.anisotropy = 4;
-  if (VOXEL) { // dirt path in 0.25 m tiles with hard edges
-    const n = Math.round(S * 4), vc = document.createElement('canvas'); vc.width = vc.height = n; const vg = vc.getContext('2d');
-    vg.drawImage(pc, 0, 0, n, n); const id = vg.getImageData(0, 0, n, n), d = id.data;
-    const DIRT = [[216, 170, 102], [206, 160, 94], [226, 182, 116], [196, 150, 86]];
-    for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 110) { d[i + 3] = 0; continue; } const edge = d[i] < 190; const c = edge ? [167, 120, 63] : DIRT[(WRNG() * DIRT.length) | 0]; d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = 255; }
-    vg.putImageData(id, 0, 0);
-    ptex = new THREE.CanvasTexture(vc); ptex.colorSpace = THREE.SRGBColorSpace; ptex.magFilter = THREE.NearestFilter; ptex.minFilter = THREE.NearestFilter; ptex.generateMipmaps = false;
-  }
+  const ptex = new THREE.CanvasTexture(pc); ptex.colorSpace = THREE.SRGBColorSpace; ptex.anisotropy = 4;
   const path = new THREE.Mesh(new THREE.PlaneGeometry(S, S), new THREE.MeshLambertMaterial({ map: ptex, transparent: true, depthWrite: false }));
   path.rotation.x = -Math.PI / 2; path.position.y = 0.012; path.receiveShadow = true; path.renderOrder = -1; scene.add(path);
 
