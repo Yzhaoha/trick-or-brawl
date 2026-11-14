@@ -2146,34 +2146,33 @@ function buildVoxel(hero, body, tc, flashMats) {
     [-0.07, 0, 0.07].forEach(x => tb(w, 0.02, 0.28, 0.13, 0xb8862a, x, -0.43, 0, true)); // straw lines
     tb(w, 0.26, 0.04, 0.14, 0x8a5a36, 0, -0.32, 0);           // binding
     crownY = 2.2;
-  } else { // ghost: a sheet thrown over a little spirit; rounded dome top, the sheet flares out to a ragged hem, flappy arms up, team bow, lantern
+  } else { // ghost: one sheet body, head and body the same block: rounded dome on top, face high on the front, wavy hem below, curling tail, team bow, lantern
     const sheet = 0xf6f2ff, shade = 0xe0d8f4, fold = 0xcfc4ec;
     legL = new THREE.Group(); legR = new THREE.Group(); body.add(legL, legR);
-    torso.position.y = 0.22;
-    tb(torso, 0.84, 0.42, 0.7, sheet, 0, 0.27, 0);            // lower sheet, flared
-    [[-0.34, 0.2], [-0.17, 0.12], [0, 0.2], [0.17, 0.12], [0.34, 0.2]].forEach(([x, h], k) => { tb(torso, 0.16, h, 0.2, k % 2 ? shade : sheet, x, 0.06 - h / 2, 0.25); tb(torso, 0.16, 0.32 - h, 0.2, k % 2 ? sheet : shade, x, 0.06 - (0.32 - h) / 2, -0.25); }); // ragged hem, front and back
-    [-1, 1].forEach(s => [-0.15, 0.15].forEach((z, k) => tb(torso, 0.18, k ? 0.12 : 0.18, 0.17, k ? shade : sheet, s * 0.33, 0.06 - (k ? 0.06 : 0.09), z)));
-    [-0.22, 0.18].forEach((x, i) => tb(torso, 0.03, 0.34, 0.02, fold, x, 0.24, 0.355, true)); // sheet folds
-    const wisp = tb(torso, 0.2, 0.18, 0.24, sheet, 0, 0.18, -0.42); wisp.rotation.x = -0.4; const w2 = tb(wisp, 0.12, 0.12, 0.16, shade, 0, 0.08, -0.16); w2.rotation.x = -0.5; // curling tail
-    head.position.y = 1.0;
-    tb(head, 0.74, 0.52, 0.62, sheet, 0, 0, 0);               // head
-    tb(head, 0.56, 0.12, 0.48, sheet, 0, 0.31, 0);            // dome
-    tb(head, 0.3, 0.07, 0.26, sheet, 0, 0.4, 0);              // dome top
-    const bw = new THREE.Group(); bw.position.set(-0.2, 0.38, 0.1); bw.rotation.z = 0.35; head.add(bw);
+    torso.position.y = 0.24; // floats
+    const BW = 0.8, BH = 0.88, BD = 0.66, top = 0.1 + BH;     // the one main block
+    tb(torso, BW, BH, BD, sheet, 0, 0.1 + BH / 2, 0);
+    [[0.66, 0.52, 0.1], [0.5, 0.38, 0.09], [0.28, 0.2, 0.07]].reduce((y, [w, d, h]) => { tb(torso, w, h, d, sheet, 0, y + h / 2, 0); return y + h; }, top); // rounded dome in steps
+    const tabs = [[-0.32, 0.24], [-0.16, 0.12], [0, 0.24], [0.16, 0.12], [0.32, 0.24]];
+    tabs.forEach(([x, h], k) => { tb(torso, 0.16, h, BD * 0.48, k % 2 ? shade : sheet, x, 0.1 - h / 2, BD * 0.26); tb(torso, 0.16, 0.36 - h, BD * 0.48, k % 2 ? sheet : shade, x, 0.1 - (0.36 - h) / 2, -BD * 0.26); }); // wavy hem, front row and back row out of step
+    [-0.24, 0.2].forEach(x => tb(torso, 0.03, 0.3, 0.02, fold, x, 0.27, BD / 2 + 0.01, true)); // sheet folds low on the front
+    const wisp = tb(torso, 0.2, 0.18, 0.22, sheet, 0, 0.16, -BD / 2 - 0.08); wisp.rotation.x = -0.4; const w2 = tb(wisp, 0.12, 0.12, 0.16, shade, 0, 0.08, -0.15); w2.rotation.x = -0.5; // curling tail
+    const bw = new THREE.Group(); bw.position.set(-0.18, top + 0.2, 0.1); bw.rotation.z = 0.35; torso.add(bw);
     tb(bw, 0.16, 0.14, 0.08, tc, -0.1, 0, 0); tb(bw, 0.16, 0.14, 0.08, tc, 0.1, 0, 0); tb(bw, 0.07, 0.08, 0.1, tc, 0, 0, 0); // team bow
     [-1, 1].forEach(s => { const t = tb(bw, 0.05, 0.12, 0.04, tc, s * 0.04, -0.1, 0); t.rotation.z = s * 0.35; });
-    decal(head, 'ghostFace2', 0.74, 0.52, (g, W, H) => {
+    decal(torso, 'ghostFace3', BW, 0.56, (g, W, H) => {
       [-1, 1].forEach(s => {
-        const cx = W / 2 + s * W * 0.17, cy = H * 0.46;
-        g.fillStyle = INK; g.beginPath(); g.ellipse(cx, cy, W * 0.07, H * 0.17, 0, 0, Math.PI * 2); g.fill(); // big oval eyes
-        g.fillStyle = '#5a3a9a'; g.beginPath(); g.ellipse(cx, cy + H * 0.07, W * 0.05, H * 0.07, 0, 0, Math.PI * 2); g.fill();
-        g.fillStyle = '#fff'; g.beginPath(); g.arc(cx - W * 0.025, cy - H * 0.07, W * 0.028, 0, Math.PI * 2); g.fill(); g.beginPath(); g.arc(cx + W * 0.03, cy + H * 0.06, W * 0.012, 0, Math.PI * 2); g.fill();
-        blush(g, cx + s * W * 0.07, H * 0.7, W * 0.07, H * 0.045, 'rgba(255,150,190,0.65)');
+        const cx = W / 2 + s * W * 0.17, cy = H * 0.44;
+        g.fillStyle = INK; g.beginPath(); g.ellipse(cx, cy, W * 0.075, H * 0.19, 0, 0, Math.PI * 2); g.fill(); // big oval eyes
+        g.fillStyle = '#5a3a9a'; g.beginPath(); g.ellipse(cx, cy + H * 0.08, W * 0.05, H * 0.08, 0, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#fff'; g.beginPath(); g.arc(cx - W * 0.025, cy - H * 0.08, W * 0.03, 0, Math.PI * 2); g.fill(); g.beginPath(); g.arc(cx + W * 0.03, cy + H * 0.07, W * 0.013, 0, Math.PI * 2); g.fill();
+        blush(g, cx + s * W * 0.07, H * 0.72, W * 0.07, H * 0.045, 'rgba(255,150,190,0.65)');
       });
-      g.fillStyle = INK; g.beginPath(); g.ellipse(W * 0.5, H * 0.75, W * 0.05, H * 0.08, 0, 0, Math.PI * 2); g.fill(); // "ooo" mouth
-      g.fillStyle = '#ff7a9a'; g.beginPath(); g.ellipse(W * 0.5, H * 0.79, W * 0.03, H * 0.035, 0, 0, Math.PI * 2); g.fill();
-    }, 0, 0, 0.313);
-    const armG = s => { const g = new THREE.Group(); g.position.set(s * 0.44, 0.72, 0); body.add(g); const f = tb(g, 0.22, 0.13, 0.18, sheet, s * 0.07, 0.02, 0); f.rotation.z = s * 0.5; tb(f, 0.08, 0.1, 0.16, shade, s * 0.1, -0.04, 0); return g; }; // flappy sleeves raised: "boo!"
+      g.fillStyle = INK; g.beginPath(); g.ellipse(W * 0.5, H * 0.76, W * 0.05, H * 0.085, 0, 0, Math.PI * 2); g.fill(); // "ooo" mouth
+      g.fillStyle = '#ff7a9a'; g.beginPath(); g.ellipse(W * 0.5, H * 0.8, W * 0.03, H * 0.035, 0, 0, Math.PI * 2); g.fill();
+    }, 0, top - 0.32, BD / 2 + 0.004);
+    head.position.y = 1.2; // empty: the ghost's head is its body
+    const armG = s => { const g = new THREE.Group(); g.position.set(s * 0.43, 0.78, 0); body.add(g); const f = tb(g, 0.22, 0.13, 0.18, sheet, s * 0.07, 0.02, 0); f.rotation.z = s * 0.5; tb(f, 0.08, 0.1, 0.16, shade, s * 0.1, -0.04, 0); return g; }; // flappy sleeves raised: "boo!"
     arm = armG(1); armG(-1);
     const lan = new THREE.Group(); lan.position.set(0.16, -0.08, 0.06); arm.add(lan);
     tb(lan, 0.03, 0.08, 0.03, 0x2a2040, 0, -0.02, 0);
@@ -2182,7 +2181,7 @@ function buildVoxel(hero, body, tc, flashMats) {
     [-1, 1].forEach(s => tb(lan, 0.02, 0.16, 0.16, 0x2a2040, s * 0.075, -0.18, 0, true));
     tb(lan, 0.18, 0.04, 0.18, 0x2a2040, 0, -0.28, 0);
     halo(lan, 0.6, 0xffc24a, 0, -0.18, 0.1);
-    crownY = 1.6;
+    crownY = 1.75;
   }
   return { legL, legR, torso, head, arm, crownY, outline: OUT };
 }
