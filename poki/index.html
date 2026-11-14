@@ -1920,48 +1920,40 @@ function buildVoxel(hero, body, tc, flashMats) {
     const k = key + name; const g = voxGeoCache[k] || (voxGeoCache[k] = make().geo());
     const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m;
   };
-  const U = 0.12, h = U / 2; // chunky blocks: about 13 cubes from feet to ear tips, like a toy built from bricks
+  const U = 0.18, h = U / 2; // big plain blocks (18 cm): about 9 cubes from feet to ear tips, flat colours, no noise
   // werewolf brawler: brown fur, cream face and chest, purple shorts, team scarf, bone club
-  const fur = C(0x9a6a46), furD = C(0x7a5236), light = C(0xf2d2aa), dark = C(0x4a2f22), pants = C(0x5b4a8a);
-  const bone = 0xefe5cc, boneD = 0xd2c4a2, ink = 0x1d1430, eye = 0xfff06a, pink = 0xf08aa0;
-  const J = 0.035; // light colour jitter only, so the blocks stay crisp
-  // even-width parts use x = -n..n-1 and are shifted by half a block; M2 fills a left/right mirrored pair
-  const M2 = (V, x0, x1, y0, y1, z0, z1, c) => V.fill(x0, x1, y0, y1, z0, z1, c).fill(-1 - x1, -1 - x0, y0, y1, z0, z1, c);
-  const partJ = (parent, name, make, x, y, z) => { const k = key + name; const g = voxGeoCache[k] || (voxGeoCache[k] = make().geo(J)); const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
+  const fur = C(0x9a6a46), light = C(0xf2d2aa), dark = C(0x4a2f22), pants = C(0x5b4a8a);
+  const bone = 0xf2ead6, ink = 0x1d1430, eye = 0xfff06a, pink = 0xf08aa0;
+  const partJ = (parent, name, make, x, y, z) => { const k = key + name; const g = voxGeoCache[k] || (voxGeoCache[k] = make().geo(0)); const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
   const legOf = s => {
-    const g = new THREE.Group(); g.position.set(s * 0.12, 0.3, 0); body.add(g);
-    partJ(g, 'leg', () => new Vox(U).fill(-1, 0, -1, -1, -1, 0, fur).fill(-1, 0, -2, -2, -1, 1, dark), h, 0, h);
+    const g = new THREE.Group(); g.position.set(s * 0.12, 0.27, 0); body.add(g);
+    partJ(g, 'leg', () => new Vox(U).set(0, 0, 0, fur).set(0, -1, 0, dark), 0, 0, 0);
     return g;
   };
   const legL = legOf(-1), legR = legOf(1);
-  const torso = partJ(body, 'torso', () => {
-    const V = new Vox(U, 11);
-    V.fill(-2, 1, 0, 0, -1, 1, pants).set(1, 0, 1, C(0xe0c060)); // shorts with a patch
-    V.fill(-2, 1, 1, 2, -1, 1, fur).fill(-1, 0, 1, 2, 1, 1, light); // body, cream chest
-    V.fill(-2, 1, 3, 3, -1, 1, tc).set(0, 2, 2, tc).set(0, 1, 2, tc); // team scarf, end hanging in front
-    V.fill(-1, 0, 1, 1, -2, -3, fur).fill(-1, 0, 2, 2, -3, -3, light); // tail
-    return V;
-  }, h, 0.3, 0);
-  const head = partJ(body, 'head', () => {
-    const V = new Vox(U, 5);
-    V.fill(-3, 2, -2, 2, -2, 2, fur).fill(-2, 1, -2, -1, 2, 2, light); // big block head, cream lower face
-    V.fill(-1, 0, -2, -1, 3, 3, light).fill(-1, 0, -1, -1, 4, 4, ink); // snout sticking out, nose on the tip
-    V.set(-2, -2, 2, C(0x3a1020)).set(1, -2, 2, C(0x3a1020)); // grin corners
-    V.fill(-2, -2, 0, 1, 2, 2, eye).fill(1, 1, 0, 1, 2, 2, eye); M2(V, 1, 2, 2, 2, 2, 2, dark); // tall yellow eyes, heavy brow
-    M2(V, 1, 2, 3, 3, 0, 1, fur); M2(V, 2, 2, 4, 4, 0, 1, fur); M2(V, 1, 1, 3, 3, 2, 2, pink); // ears with pink inside
-    M2(V, 3, 3, -1, 0, -1, 1, furD); // cheek tufts
-    V.fill(-1, 0, 3, 3, -1, 0, furD); // tuft on top
-    return V;
-  }, h, 1.02, 0);
+  const torso = partJ(body, 'torso', () => new Vox(U)
+    .fill(-1, 1, 0, 0, -1, 0, pants)            // shorts
+    .fill(-1, 1, 1, 1, -1, 0, fur).set(0, 1, 0, light) // body, cream chest
+    .fill(-1, 1, 2, 2, -1, 0, tc)               // team scarf
+    .set(0, 0, -2, fur), 0, 0.45, h);           // tail
+  const head = partJ(body, 'head', () => new Vox(U)
+    .fill(-2, 1, -1, 1, -1, 1, fur)             // head block 4 x 3 x 3
+    .fill(-1, 0, -1, -1, 1, 1, light)           // cream lower face
+    .fill(-1, 0, -1, -1, 2, 2, light)           // snout
+    .set(-2, 0, 1, eye).set(1, 0, 1, eye)       // yellow eyes
+    .set(-2, 1, 1, dark).set(1, 1, 1, dark)     // heavy brows
+    .set(-2, 2, 0, fur).set(1, 2, 0, fur).set(-2, 2, 1, pink).set(1, 2, 1, pink), // ears with pink inside
+    h, 1.17, 0);
+  partJ(head, 'nose', () => new Vox(0.09).fill(-1, 0, 0, 0, 0, 0, ink), -0.045, -0.07, 0.42); // small nose on the snout tip
   const armOf = s => {
-    const g = new THREE.Group(); g.position.set(s * 0.3, 0.66, 0); body.add(g);
-    partJ(g, 'arm', () => new Vox(U, 3).fill(0, 0, -2, 0, -1, 0, fur).fill(0, 0, -3, -3, -1, 0, dark), 0, 0, h);
+    const g = new THREE.Group(); g.position.set(s * 0.36, 0.81, 0); body.add(g);
+    partJ(g, 'arm', () => new Vox(U).set(0, -1, 0, fur).set(0, -2, 0, dark), 0, 0, 0);
     return g;
   };
   const arm = armOf(1); armOf(-1);
-  const w = new THREE.Group(); w.position.set(0, -0.36, 0.06); w.rotation.set(0.6, 0, -0.3); arm.add(w);
-  partJ(w, 'club', () => new Vox(U, 9).fill(0, 0, 0, 5, 0, 0, bone).set(0, 2, 0, tc).fill(-1, 1, 6, 6, 0, 0, bone).fill(-1, 1, 7, 7, 0, 0, boneD).set(0, 7, 0, bone).fill(-1, 1, -1, -1, 0, 0, boneD), 0, 0, 0);
-  return { legL, legR, torso, head, arm, crownY: 1.66 };
+  const w = new THREE.Group(); w.position.set(0, -0.36, 0.08); w.rotation.set(0.6, 0, -0.3); arm.add(w);
+  partJ(w, 'club', () => new Vox(0.13).fill(0, 0, 0, 4, 0, 0, bone).set(0, 1, 0, tc).fill(-1, 1, 5, 5, 0, 0, bone).fill(-1, 1, -1, -1, 0, 0, bone), 0, 0, 0);
+  return { legL, legR, torso, head, arm, crownY: 1.72 };
 }
 function makeMonster(hero, team, target = scene, skin = 'classic') {
   const prevSkin = CUR_SKIN; CUR_SKIN = SKINS[skin] ? skin : 'classic';
