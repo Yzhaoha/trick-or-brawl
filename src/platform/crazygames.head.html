@@ -1,0 +1,8 @@
+<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
+<script>
+// CrazyGames SDK v3: init only once document.body exists (init can hang when it runs from <head>).
+window.__cgInit = new Promise(res => {
+  const go = async () => { const S = window.CrazyGames && window.CrazyGames.SDK; if (!S) { res(null); return; } try { await S.init(); res(S); } catch (e) { res(null); } };
+  if (document.body) go(); else document.addEventListener('DOMContentLoaded', go, { once: true });
+});
+</script>

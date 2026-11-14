@@ -1,0 +1,10 @@
+<script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>
+<script>window.__pkInit = (async () => { const S = window.PokiSDK; if (!S) return null; try { await S.init(); } catch (e) {} return S; })();</script>
+<style>
+/* Poki: keep the top-centre strip clear for the Poki pill on phones and tablets */
+body.touch #hudTC { top: calc(env(safe-area-inset-top, 0px) + 54px); }
+body.touch #feed { top: calc(env(safe-area-inset-top, 0px) + 102px); }
+body.touch #kb { top: calc(env(safe-area-inset-top, 0px) + 136px); }
+body.touch #tut { top: calc(env(safe-area-inset-top, 0px) + 240px); }
+@media (orientation: landscape) { body.touch #tut { top: calc(env(safe-area-inset-top, 0px) + 102px); } }
+</style>
