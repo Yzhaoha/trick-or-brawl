@@ -13,8 +13,8 @@
 ## Voxel / toy-block art (in progress)
 - Preview behind `?style=voxel` (default look unchanged). Test links: add `&v=<commit>` so phones skip the GitHub Pages cache.
 - Approved direction: flat-colour solid blocks, a dark outline round every block (CHIBI_OUT backface box), camera-lit stepped matcap (voxMonMat, keeps the hit-flash emissive), and the face drawn on a canvas-texture plane (eyes with a highlight, brows, blush, mouth). The ground stays smooth.
-- Done: the wolf (`buildVoxel` in src/index.html, helpers `tb()` and `decal()`).
-- To do: vamp, mummy, witch and ghost in the same style (the ghost stays transparent); then maybe campfires, pedestals and buckets; then switch the default look.
+- Done: all five heroes (`buildVoxel` in src/index.html, helpers `tb()`, `glow()` and `decal()`).
+- To do: user sign-off on the four new heroes; then maybe campfires, pedestals and buckets; then switch the default look.
 
 ## Other to-dos
 - Poki profanity word list for online names; Poki static and animated thumbnails; new covers and video for the new look.
