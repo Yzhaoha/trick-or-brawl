@@ -1918,40 +1918,75 @@ function buildVoxel(hero, body, tc, flashMats) {
     const k = key + name; const g = voxGeoCache[k] || (voxGeoCache[k] = make().geo());
     const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m;
   };
-  const U = 0.18, h = U / 2; // big plain blocks (18 cm): about 9 cubes from feet to ear tips, flat colours, no noise
-  // werewolf brawler: brown fur, cream face and chest, purple shorts, team scarf, bone club
-  const fur = C(0x9a6a46), light = C(0xf2d2aa), dark = C(0x4a2f22), pants = C(0x5b4a8a);
-  const bone = 0xf2ead6, ink = 0x1d1430, eye = 0xfff06a, pink = 0xf08aa0;
-  const partJ = (parent, name, make, x, y, z) => { const k = key + name; const g = voxGeoCache[k] || (voxGeoCache[k] = make().geo(0)); const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
+  // toy-block look: each part one solid block in a flat colour, a dark outline round every block, and the face drawn on as lines
+  const OUT = CUR_SKIN === 'golden' ? GOLD_OUT : CHIBI_OUT, T = 0.022; // outline thickness
+  const tb = (parent, w, hh, d, c, x, y, z) => {
+    const k = 'tb' + [w, hh, d, c].join(',');
+    let g = voxGeoCache[k];
+    if (!g) { g = voxGeoCache[k] = new THREE.BoxGeometry(w, hh, d); const col = new THREE.Color(c), n = g.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) col.toArray(a, i * 3); g.setAttribute('color', new THREE.BufferAttribute(a, 3)); }
+    const ko = 'tbo' + [w, hh, d].join(','), go = voxGeoCache[ko] || (voxGeoCache[ko] = new THREE.BoxGeometry(w + 2 * T, hh + 2 * T, d + 2 * T));
+    const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m);
+    const o = new THREE.Mesh(go, OUT); o.userData.noOutline = true; m.add(o);
+    return m;
+  };
+  const decal = (parent, name, w, hh, draw, x, y, z) => { // a drawn-on face: a canvas texture on a plane just in front of a block
+    let mtl = voxGeoCache['face' + name];
+    if (!mtl) {
+      const cv = document.createElement('canvas'); cv.width = Math.round(w * 400); cv.height = Math.round(hh * 400);
+      const g = cv.getContext('2d'); g.lineCap = g.lineJoin = 'round'; draw(g, cv.width, cv.height);
+      const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+      mtl = voxGeoCache['face' + name] = new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false });
+    }
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, hh), mtl); m.position.set(x, y, z); m.renderOrder = 2; m.userData.noOutline = true; parent.add(m); return m;
+  };
+  const INK = '#2a1838';
+  // werewolf brawler: brown fur, cream muzzle and chest, purple shorts, team scarf, bone club
+  const fur = C(0x9a6a46), light = C(0xf2d2aa), dark = C(0x5a3a28), pants = C(0x5b4a8a), pink = C(0xf08aa0), bone = 0xf2ead6;
   const legOf = s => {
-    const g = new THREE.Group(); g.position.set(s * 0.12, 0.27, 0); body.add(g);
-    partJ(g, 'leg', () => new Vox(U).set(0, 0, 0, fur).set(0, -1, 0, dark), 0, 0, 0);
+    const g = new THREE.Group(); g.position.set(s * 0.13, 0.36, 0); body.add(g);
+    tb(g, 0.19, 0.24, 0.22, fur, 0, -0.12, 0);
+    tb(g, 0.21, 0.12, 0.27, dark, 0, -0.29, 0.025); // big furry foot
     return g;
   };
   const legL = legOf(-1), legR = legOf(1);
-  const torso = partJ(body, 'torso', () => new Vox(U)
-    .fill(-1, 1, 0, 0, -1, 0, pants)            // shorts
-    .fill(-1, 1, 1, 1, -1, 0, fur).set(0, 1, 0, light) // body, cream chest
-    .fill(-1, 1, 2, 2, -1, 0, tc)               // team scarf
-    .set(0, 0, -2, fur), 0, 0.45, h);           // tail
-  const head = partJ(body, 'head', () => new Vox(U)
-    .fill(-2, 1, -1, 1, -1, 1, fur)             // head block 4 x 3 x 3
-    .fill(-1, 0, -1, -1, 1, 1, light)           // cream lower face
-    .fill(-1, 0, -1, -1, 2, 2, light)           // snout
-    .set(-2, 0, 1, eye).set(1, 0, 1, eye)       // yellow eyes
-    .set(-2, 1, 1, dark).set(1, 1, 1, dark)     // heavy brows
-    .set(-2, 2, 0, fur).set(1, 2, 0, fur).set(-2, 2, 1, pink).set(1, 2, 1, pink), // ears with pink inside
-    h, 1.17, 0);
-  partJ(head, 'nose', () => new Vox(0.09).fill(-1, 0, 0, 0, 0, 0, ink), -0.045, -0.07, 0.42); // small nose on the snout tip
+  const torso = new THREE.Group(); torso.position.set(0, 0.36, 0); body.add(torso);
+  tb(torso, 0.5, 0.14, 0.34, pants, 0, 0.06, 0);           // shorts
+  tb(torso, 0.48, 0.3, 0.32, fur, 0, 0.28, 0);             // body
+  tb(torso, 0.26, 0.2, 0.03, light, 0, 0.27, 0.17);        // cream chest
+  tb(torso, 0.54, 0.09, 0.36, tc, 0, 0.45, 0);             // team scarf
+  tb(torso, 0.12, 0.12, 0.2, fur, 0, 0.14, -0.24);         // tail
+  const head = new THREE.Group(); head.position.set(0, 1.13, 0); body.add(head);
+  tb(head, 0.62, 0.5, 0.5, fur, 0, 0, 0);
+  [-1, 1].forEach(s => { const e = tb(head, 0.17, 0.2, 0.1, fur, s * 0.22, 0.34, -0.02); e.rotation.z = -s * 0.12; tb(e, 0.08, 0.13, 0.08, fur, s * 0.03, 0.15, 0); tb(e, 0.08, 0.14, 0.02, pink, 0, 0.01, 0.06); }); // tall pointed ears
+  tb(head, 0.32, 0.18, 0.13, light, 0, -0.13, 0.31);       // muzzle
+  decal(head, 'wolfEyes', 0.62, 0.5, (g, W, H) => {
+    [-1, 1].forEach(s => {
+      const cx = W / 2 + s * W * 0.21, cy = H * 0.42;
+      g.fillStyle = 'rgba(240,120,150,0.55)'; g.beginPath(); g.ellipse(cx + s * W * 0.04, H * 0.6, W * 0.06, H * 0.035, 0, 0, Math.PI * 2); g.fill(); // blush
+      g.fillStyle = INK; g.beginPath(); g.roundRect(cx - W * 0.045, cy - H * 0.11, W * 0.09, H * 0.22, W * 0.04); g.fill(); // eye
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(cx - W * 0.013, cy - H * 0.055, W * 0.019, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = INK; g.lineWidth = W * 0.05; g.beginPath(); g.moveTo(cx + s * W * 0.09, cy - H * 0.25); g.lineTo(cx - s * W * 0.07, cy - H * 0.16); g.stroke(); // angry brow
+    });
+  }, 0, 0, 0.253);
+  decal(head, 'wolfMouth', 0.32, 0.18, (g, W, H) => {
+    g.fillStyle = INK; g.beginPath(); g.roundRect(W * 0.36, H * 0.1, W * 0.28, H * 0.24, H * 0.1); g.fill(); // nose
+    g.strokeStyle = INK; g.lineWidth = W * 0.035; g.beginPath(); g.moveTo(W * 0.5, H * 0.34); g.lineTo(W * 0.5, H * 0.5);
+    g.moveTo(W * 0.3, H * 0.62); g.quadraticCurveTo(W * 0.4, H * 0.78, W * 0.5, H * 0.52); g.quadraticCurveTo(W * 0.6, H * 0.78, W * 0.7, H * 0.62); g.stroke(); // w mouth
+    g.fillStyle = '#fff'; g.strokeStyle = INK; g.lineWidth = W * 0.015;
+    [0.39, 0.61].forEach(f => { g.beginPath(); g.moveTo(W * (f - 0.04), H * 0.68); g.lineTo(W * f, H * 0.88); g.lineTo(W * (f + 0.04), H * 0.68); g.closePath(); g.fill(); g.stroke(); }); // fangs
+  }, 0, -0.13, 0.378);
   const armOf = s => {
-    const g = new THREE.Group(); g.position.set(s * 0.36, 0.81, 0); body.add(g);
-    partJ(g, 'arm', () => new Vox(U).set(0, -1, 0, fur).set(0, -2, 0, dark), 0, 0, 0);
+    const g = new THREE.Group(); g.position.set(s * 0.33, 0.8, 0); body.add(g);
+    tb(g, 0.15, 0.24, 0.17, fur, s * 0.02, -0.1, 0);
+    tb(g, 0.2, 0.18, 0.2, dark, s * 0.02, -0.3, 0); // fist
     return g;
   };
   const arm = armOf(1); armOf(-1);
-  const w = new THREE.Group(); w.position.set(0, -0.36, 0.08); w.rotation.set(0.6, 0, -0.3); arm.add(w);
-  partJ(w, 'club', () => new Vox(0.13).fill(0, 0, 0, 4, 0, 0, bone).set(0, 1, 0, tc).fill(-1, 1, 5, 5, 0, 0, bone).fill(-1, 1, -1, -1, 0, 0, bone), 0, 0, 0);
-  return { legL, legR, torso, head, arm, crownY: 1.72 };
+  const w = new THREE.Group(); w.position.set(0.02, -0.32, 0.06); w.rotation.set(0.6, 0, -0.3); arm.add(w);
+  tb(w, 0.09, 0.56, 0.09, bone, 0, 0.26, 0);              // bone club
+  [-1, 1].forEach(s => { tb(w, 0.12, 0.12, 0.12, bone, s * 0.07, 0.6, 0); tb(w, 0.1, 0.1, 0.1, bone, s * 0.06, -0.04, 0); });
+  tb(w, 0.11, 0.07, 0.11, tc, 0, 0.08, 0);                 // team grip
+  return { legL, legR, torso, head, arm, crownY: 1.6 };
 }
 function makeMonster(hero, team, target = scene, skin = 'classic') {
   const prevSkin = CUR_SKIN; CUR_SKIN = SKINS[skin] ? skin : 'classic';
