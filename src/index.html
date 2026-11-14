@@ -3059,7 +3059,7 @@ let rebinding = null, paused = false;
 window.addEventListener('keydown', e => {
   if (CG.adBusy) { e.preventDefault(); return; }
   if (rebinding) { e.preventDefault(); if (e.code !== 'Escape') applyBind(rebinding, e.code); rebinding = null; refreshControlsUI(); return; }
-  if (e.code === 'Escape') { if (running) toggleSettings(); return; } // Poki: Esc pauses and resumes
+  if (e.code === 'Escape') { if (running && CG.escPause) toggleSettings(); else if (running && paused) toggleSettings(false); return; } // Poki: Esc pauses and resumes; CrazyGames reserves Esc, so there it only closes the pause menu
   if (e.code === 'KeyP' && running && !Object.values(CTRL.binds).includes('KeyP')) { toggleSettings(); return; }
   if (!running || paused) return;
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();

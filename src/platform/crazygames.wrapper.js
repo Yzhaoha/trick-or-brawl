@@ -17,6 +17,7 @@ const CG = (() => {
     },
     get on() { return !!sdk; },
     get adBusy() { return adBusy; },
+    escPause: false,                     // Esc toggles pause only on Poki: CrazyGames reserves Esc
     get muted() { return adPlaying || platMute; },
     locale() { let l = null; call(S => { l = S.user.systemInfo.locale; }); return l; },
     deviceType() { let d = null; call(S => { d = S.user.systemInfo.device.type; }); return d; },

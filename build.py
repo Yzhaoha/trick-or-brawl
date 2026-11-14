@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Build the Poki and CrazyGames variants of Trick or Brawl from src/.
 
-Output:  poki/ and crazygames/ (served on GitHub Pages)
+Output:  poki/ and crazygames/ (served on GitHub Pages); the Poki build is also copied to the repo root,
+         because https://yzhaoha.github.io/trick-or-brawl/ is the playable link given to Poki
          dist/trick-or-brawl-poki.zip, dist/trick-or-brawl-crazygames.zip (index.html at the zip root)
 Run:     python3 build.py
 """
@@ -35,6 +36,15 @@ def build(name):
     print(f'{name}: {os.path.getsize(zpath) // 1024} KB -> {os.path.relpath(zpath, ROOT)}')
 
 
+def root_from(name):
+    src = os.path.join(ROOT, name)
+    shutil.copyfile(os.path.join(src, 'index.html'), os.path.join(ROOT, 'index.html'))
+    shutil.rmtree(os.path.join(ROOT, 'vendor'), ignore_errors=True)
+    shutil.copytree(os.path.join(src, 'vendor'), os.path.join(ROOT, 'vendor'))
+    print(f'root: {name} build')
+
+
 if __name__ == '__main__':
     for p in PLATFORMS:
         build(p)
+    root_from('poki')

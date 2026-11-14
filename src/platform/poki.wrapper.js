@@ -23,6 +23,7 @@ const CG = (() => {
     },
     get on() { return !!sdk; },
     get adBusy() { return adBusy; },
+    escPause: true,                     // Esc toggles pause (Poki asks for Esc or Space)
     get muted() { return adPlaying; },
     locale() { return null; },          // Poki has no locale call: the browser language is used
     deviceType() { return null; },
