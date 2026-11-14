@@ -1894,63 +1894,73 @@ function buildRound(hero, body, tc, flashMats) {
 // Same rig as the other looks (legs, torso, head, swinging arm), every part a merged voxel mesh.
 // Heroes without a voxel model yet return null and fall back to the chibi model.
 const voxGeoCache = {};
+// lit from the camera (like the chibi matcap), in three flat steps so every block face reads: front bright, top a touch darker, sides darker
+const VOX_MATCAP = (() => {
+  const n = 64, cv = document.createElement('canvas'); cv.width = cv.height = n; const g = cv.getContext('2d'), id = g.createImageData(n, n);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const nx = (x + 0.5) / n * 2 - 1, ny = 1 - (y + 0.5) / n * 2, r2 = nx * nx + ny * ny, nz = Math.sqrt(Math.max(0, 1 - r2));
+    const b = Math.min(1, 0.62 + 0.34 * nz + 0.1 * ny), v = Math.round(b * 255), i = (y * n + x) * 4;
+    id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255;
+  }
+  g.putImageData(id, 0, 0); const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+function voxMonMat() { // matcap + an emissive term so the hit flash still works
+  const m = new THREE.MeshMatcapMaterial({ vertexColors: true, matcap: VOX_MATCAP });
+  m.emissive = new THREE.Color(0); m.emissiveIntensity = 1;
+  m.onBeforeCompile = sh => { sh.uniforms.emissive = { value: m.emissive }; sh.fragmentShader = 'uniform vec3 emissive;\n' + sh.fragmentShader.replace('#include <opaque_fragment>', 'outgoingLight = outgoingLight * 1.15 + emissive;\n#include <opaque_fragment>'); };
+  return m;
+}
 function buildVoxel(hero, body, tc, flashMats) {
   if (hero !== 'wolf') return null;
   const key = hero + tc + CUR_SKIN;
   const C = c => skinCol(c);
-  const mat = new THREE.MeshLambertMaterial({ vertexColors: true }); flashMats.push(mat);
+  const mat = voxMonMat(); flashMats.push(mat);
   const part = (parent, name, make, x, y, z) => {
     const k = key + name; const g = voxGeoCache[k] || (voxGeoCache[k] = make().geo());
     const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m;
   };
-  const U = 0.07;
-  // werewolf brawler: shaggy brown fur, cream muzzle and chest, torn purple shorts, team scarf, big bone club
-  const fur = C(0x9a6a46), furD = C(0x7a5236), light = C(0xf2d2aa), dark = C(0x4a2f22), pants = C(0x5b4a8a), pantsD = C(0x463870);
-  const bone = 0xefe5cc, boneD = 0xd2c4a2, ink = 0x1d1430, eye = 0xffe14a, pink = 0xf0a0b0;
+  const U = 0.12, h = U / 2; // chunky blocks: about 13 cubes from feet to ear tips, like a toy built from bricks
+  // werewolf brawler: brown fur, cream face and chest, purple shorts, team scarf, bone club
+  const fur = C(0x9a6a46), furD = C(0x7a5236), light = C(0xf2d2aa), dark = C(0x4a2f22), pants = C(0x5b4a8a);
+  const bone = 0xefe5cc, boneD = 0xd2c4a2, ink = 0x1d1430, eye = 0xfff06a, pink = 0xf08aa0;
+  const J = 0.035; // light colour jitter only, so the blocks stay crisp
+  // even-width parts use x = -n..n-1 and are shifted by half a block; M2 fills a left/right mirrored pair
+  const M2 = (V, x0, x1, y0, y1, z0, z1, c) => V.fill(x0, x1, y0, y1, z0, z1, c).fill(-1 - x1, -1 - x0, y0, y1, z0, z1, c);
+  const partJ = (parent, name, make, x, y, z) => { const k = key + name; const g = voxGeoCache[k] || (voxGeoCache[k] = make().geo(J)); const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
   const legOf = s => {
     const g = new THREE.Group(); g.position.set(s * 0.12, 0.3, 0); body.add(g);
-    part(g, 'leg', () => new Vox(U).fill(-1, 1, -2, -1, -1, 1, fur).fill(-1, 1, -4, -3, -1, 2, dark).set(-1, -4, 3, light).set(1, -4, 3, light), 0, 0, 0);
+    partJ(g, 'leg', () => new Vox(U).fill(-1, 0, -1, -1, -1, 0, fur).fill(-1, 0, -2, -2, -1, 1, dark), h, 0, h);
     return g;
   };
   const legL = legOf(-1), legR = legOf(1);
-  const torso = part(body, 'torso', () => {
+  const torso = partJ(body, 'torso', () => {
     const V = new Vox(U, 11);
-    V.fill(-4, 4, -5, -3, -3, 3, pants).fill(-4, 4, -3, -3, -3, 3, pantsD); // shorts + waistband
-    [-3, 0, 3].forEach(x => { V.set(x, -5, 3, null); V.set(x, -5, -3, null); }); // torn hem
-    V.set(2, -4, 3, C(0xe0c060)); // patch
-    V.fill(-4, 4, -2, 2, -3, 2, fur).fill(-2, 2, -1, 2, 2, 2, light); // chest
-    V.fill(-1, 1, -2, -2, 2, 2, furD); // belly fur
-    V.fill(-4, 4, 3, 3, -3, 3, tc).fill(1, 2, 0, 2, 3, 3, tc); // team scarf with a hanging end
-    V.fill(-1, 1, -3, -2, -5, -4, fur).fill(-1, 1, -2, -1, -7, -6, fur).fill(-1, 1, -1, 0, -8, -8, light); // tail
+    V.fill(-2, 1, 0, 0, -1, 1, pants).set(1, 0, 1, C(0xe0c060)); // shorts with a patch
+    V.fill(-2, 1, 1, 2, -1, 1, fur).fill(-1, 0, 1, 2, 1, 1, light); // body, cream chest
+    V.fill(-2, 1, 3, 3, -1, 1, tc).set(0, 2, 2, tc).set(0, 1, 2, tc); // team scarf, end hanging in front
+    V.fill(-1, 0, 1, 1, -2, -3, fur).fill(-1, 0, 2, 2, -3, -3, light); // tail
     return V;
-  }, 0, 0.62, 0);
-  const head = part(body, 'head', () => {
-    const V = voxBlob(new Vox(U, 5), 4, 3, 3, fur);
-    V.fill(-2, 2, -3, -1, 3, 3, light).fill(-2, 2, -3, -1, 4, 5, light).set(-2, -1, 5, null).set(2, -1, 5, null); // muzzle
-    V.fill(-1, 1, -1, -1, 6, 6, ink).fill(-2, 2, -3, -3, 5, 5, C(0x3a1020)); // nose, mouth
-    V.set(-1, -4, 5, 0xffffff).set(1, -4, 5, 0xffffff); // fangs
-    V.mirror(2, 3, 0, 1, 3, 3, eye).set(-2, 0, 3, ink).set(2, 0, 3, ink); // eyes
-    V.mirror(1, 3, 2, 2, 3, 3, dark); // angry brows
-    V.mirror(3, 4, 4, 6, -1, 0, fur).set(-4, 6, -1, null).set(-4, 6, 0, null).set(4, 6, -1, null).set(4, 6, 0, null); // ears
-    V.set(-3, 4, 0, pink).set(-3, 5, 0, pink).set(3, 4, 0, pink).set(3, 5, 0, pink);
-    V.mirror(5, 5, -2, -1, 0, 2, furD); // cheek tufts
-    V.fill(-2, 2, 4, 4, -2, 1, furD).set(0, 5, -1, furD); // shaggy top
+  }, h, 0.3, 0);
+  const head = partJ(body, 'head', () => {
+    const V = new Vox(U, 5);
+    V.fill(-3, 2, -2, 2, -2, 2, fur).fill(-2, 1, -2, -1, 2, 2, light); // big block head, cream lower face
+    V.fill(-1, 0, -2, -1, 3, 3, light).fill(-1, 0, -1, -1, 4, 4, ink); // snout sticking out, nose on the tip
+    V.set(-2, -2, 2, C(0x3a1020)).set(1, -2, 2, C(0x3a1020)); // grin corners
+    V.fill(-2, -2, 0, 1, 2, 2, eye).fill(1, 1, 0, 1, 2, 2, eye); M2(V, 1, 2, 2, 2, 2, 2, dark); // tall yellow eyes, heavy brow
+    M2(V, 1, 2, 3, 3, 0, 1, fur); M2(V, 2, 2, 4, 4, 0, 1, fur); M2(V, 1, 1, 3, 3, 2, 2, pink); // ears with pink inside
+    M2(V, 3, 3, -1, 0, -1, 1, furD); // cheek tufts
+    V.fill(-1, 0, 3, 3, -1, 0, furD); // tuft on top
     return V;
-  }, 0, 1.12, 0.02);
+  }, h, 1.02, 0);
   const armOf = s => {
-    const g = new THREE.Group(); g.position.set(s * 0.38, 0.8, 0); body.add(g);
-    part(g, 'arm', () => new Vox(U, 3).fill(-1, 1, -5, 0, -1, 1, fur).fill(-1, 1, -7, -6, -1, 1, dark).set(-1, -8, 1, bone).set(1, -8, 1, bone), 0, 0, 0);
+    const g = new THREE.Group(); g.position.set(s * 0.3, 0.66, 0); body.add(g);
+    partJ(g, 'arm', () => new Vox(U, 3).fill(0, 0, -2, 0, -1, 0, fur).fill(0, 0, -3, -3, -1, 0, dark), 0, 0, h);
     return g;
   };
   const arm = armOf(1); armOf(-1);
-  const w = new THREE.Group(); w.position.set(0, -0.46, 0.04); w.rotation.set(0.6, 0, -0.3); arm.add(w);
-  part(w, 'club', () => {
-    const V = new Vox(0.08, 9);
-    V.fill(0, 1, -1, 7, 0, 1, bone).fill(0, 1, 3, 3, 0, 1, tc);
-    for (const y of [8, -2]) { const yy = y < 0 ? [y - 1, y] : [y, y + 1]; V.fill(-1, 2, yy[0], yy[1], 0, 1, bone).fill(0, 1, yy[0], yy[1], -1, 2, bone).fill(-1, -1, yy[0], yy[0], 0, 1, boneD).fill(2, 2, yy[0], yy[0], 0, 1, boneD); }
-    return V;
-  }, -0.04, 0, -0.04);
-  return { legL, legR, torso, head, arm, crownY: 1.62 };
+  const w = new THREE.Group(); w.position.set(0, -0.36, 0.06); w.rotation.set(0.6, 0, -0.3); arm.add(w);
+  partJ(w, 'club', () => new Vox(U, 9).fill(0, 0, 0, 5, 0, 0, bone).set(0, 2, 0, tc).fill(-1, 1, 6, 6, 0, 0, bone).fill(-1, 1, 7, 7, 0, 0, boneD).set(0, 7, 0, bone).fill(-1, 1, -1, -1, 0, 0, boneD), 0, 0, 0);
+  return { legL, legR, torso, head, arm, crownY: 1.66 };
 }
 function makeMonster(hero, team, target = scene, skin = 'classic') {
   const prevSkin = CUR_SKIN; CUR_SKIN = SKINS[skin] ? skin : 'classic';
