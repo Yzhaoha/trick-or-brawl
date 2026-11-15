@@ -2179,6 +2179,55 @@ function buildVoxel(hero, body, tc, flashMats) {
     halo(lan, 0.6, 0xffc24a, 0, -0.18, 0.1);
     crownY = 1.75;
   }
+  // skin extras: besides the colour shift, each unlockable skin adds its own pieces (shoulders, back, behind the head) so it reads as a different outfit
+  if (CUR_SKIN !== 'classic' && SKINS[CUR_SKIN]) {
+    const par = body.parent; if (par) par.remove(body); body.updateMatrixWorld(true);
+    const H = ghost ? torso : head, hb = new THREE.Box3().setFromObject(H), V3 = THREE.Vector3;
+    const onPart = part => { const g = new THREE.Group(); g.position.copy(part.worldToLocal(new V3())); part.add(g); return g; }; // a group whose frame is the body's, riding on that part
+    const hg = onPart(H), sg = onPart(torso);
+    if (par) par.add(body);
+    const hx = (hb.min.x + hb.max.x) / 2, hTop = ghost ? 1.56 : Math.min(hb.max.y, hb.min.y + 0.7), hy = ghost ? 1.1 : (hb.min.y + hTop) / 2, hz = (hb.min.z + hb.max.z) / 2, hf = ghost ? 0.36 : hb.max.z, hw = Math.min(0.4, (hb.max.x - hb.min.x) / 2);
+    const top = hero === 'witch' ? hb.max.y : hTop, back = ghost ? -0.36 : -0.2, sides = f => [-1, 1].forEach(f);
+    const scarf = (c, c2, tail) => { if (ghost) return; const y = hb.min.y + 0.03, w = Math.min(0.66, hw * 2 + 0.02); // a scarf round the neck, just under the chin
+      tb(sg, w, 0.11, 0.44, c, hx, y, hz - 0.02); if (c2) [-0.3, 0.3].forEach(f => tb(sg, 0.07, 0.115, 0.445, c2, hx + f * w, y, hz - 0.02, true));
+      if (tail) { const t = tb(sg, 0.13, 0.3, 0.05, c, hx + w * 0.22, y - 0.17, hz + 0.24); t.rotation.z = 0.25; if (c2) tb(t, 0.135, 0.06, 0.055, c2, 0, -0.08, 0, true); } };
+    const orbit = (n, c, r, y, sz, glowC) => { for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2; glow(hg, sz, sz, sz, c, hx + Math.cos(a) * r, y, hz + Math.sin(a) * r * 0.8); } if (glowC) halo(hg, r * 2.6, glowC, hx, y, hz); };
+    const KIT = {
+      candy() { // a big swirl lollipop on the back, a candy-stripe scarf, pink glow
+        const lp = new THREE.Group(); lp.position.set(-0.2, ghost ? 0.75 : hb.min.y - 0.15, back); lp.rotation.z = 0.45; sg.add(lp);
+        tb(lp, 0.05, 0.8, 0.05, 0xfff4f8, 0, 0.25, 0);
+        tb(lp, 0.46, 0.46, 0.08, 0xff8fd0, 0, 0.78, 0); tb(lp, 0.3, 0.3, 0.1, 0xffffff, 0, 0.78, 0, true); tb(lp, 0.16, 0.16, 0.12, 0xff4fa8, 0, 0.78, 0, true);
+        scarf(0xffffff, 0xff6fb8, true);
+        halo(sg, 1.6, 0xff8fd0, 0, 0.8, back - 0.1);
+      },
+      frost() { // ice shards floating round the head, a frosty scarf, cold glow
+        sides(s => [[0.2, 0.16], [0.02, 0.1]].forEach(([dy, h], i) => { const c = glow(hg, 0.08 - i * 0.02, h + 0.06, 0.08 - i * 0.02, i ? 0xe8f8ff : 0x9fe0ff, hx + s * (hw + 0.14 + i * 0.07), hy + dy, hz + 0.12); c.rotation.z = s * 0.35; }));
+        scarf(0x8fd8ff, 0xffffff, true);
+        halo(sg, 1.7, 0x8fd8ff, 0, 0.8, back - 0.1);
+      },
+      toxic() { // glowing slime collar, bubbles floating up over the head
+        scarf(0x5fc040, null, false); if (!ghost) [-0.2, 0.05, 0.22].forEach((x, k) => glow(sg, 0.06, 0.1 + k % 2 * 0.06, 0.06, 0x8eff5a, hx + x, hb.min.y - 0.06 - k % 2 * 0.03, hz + 0.22));
+        [[0.26, 0.12, 0.08], [-0.3, 0.28, 0.06], [0.12, 0.42, 0.05], [-0.08, 0.58, 0.04]].forEach(([x, y, r]) => glow(hg, r, r, r, 0xb8ff7a, hx + x, top + y, hz));
+        halo(sg, 1.7, 0x7ee05a, 0, 0.8, back - 0.1);
+      },
+      inferno() { // little flame horns, embers rising, hot glow
+        sides(s => { const fx = hx + s * (hw - 0.04), fy = hTop - 0.02; glow(hg, 0.13, 0.12, 0.13, 0xff5a2a, fx, fy + 0.05, hz); glow(hg, 0.09, 0.1, 0.09, 0xff9a2a, fx + s * 0.02, fy + 0.15, hz); glow(hg, 0.05, 0.08, 0.05, 0xffe066, fx + s * 0.04, fy + 0.24, hz); halo(hg, 0.6, 0xff6a2a, fx, fy + 0.12, hz + 0.1); });
+        [[0.18, 0.2, 0.05], [-0.22, 0.36, 0.04], [0.04, 0.52, 0.035]].forEach(([x, y, r]) => glow(hg, r, r, r, 0xffb03a, hx + x, top + y, hz));
+        halo(sg, 1.8, 0xff5a2a, 0, 0.8, back - 0.1);
+      },
+      shadow() { // a dark scarf with a long tail, two violet wisps beside the head
+        scarf(0x2a2040, 0xb36bff, true);
+        sides(s => { glow(hg, 0.1, 0.1, 0.1, 0xd6b0ff, hx + s * (hw + 0.16), hy + 0.1, hz + 0.15); halo(hg, 0.55, 0xb36bff, hx + s * (hw + 0.16), hy + 0.1, hz + 0.2); });
+        halo(sg, 1.8, 0x6a3aaa, 0, 0.8, back - 0.1);
+      },
+      golden() { // a floating halo over the head and a gold collar
+        orbit(10, 0xffd23f, 0.22, top + 0.16, 0.07, 0xffd23f);
+        scarf(0xffd23f, 0xff5a7a, false);
+        halo(sg, 1.9, 0xffc23d, 0, 0.8, back - 0.1);
+      },
+    };
+    if (KIT[CUR_SKIN]) KIT[CUR_SKIN]();
+  }
   return { legL, legR, torso, head, arm, crownY, outline: OUT };
 }
 // Performance: a block character is 100+ little meshes (each with an outline box). Inside every rig group (legs, torso, head, arms,
@@ -5278,7 +5327,7 @@ document.getElementById('play').addEventListener('click', () => startGame());
 document.getElementById('again').addEventListener('click', () => NET.role === 'host' ? netNewMatch() : NET.role === 'client' ? null : CG.midgame(() => { document.getElementById('endScreen').hidden = true; document.getElementById('startScreen').hidden = false; setupMatch(false); }));
 ['hudTL', 'hudTC', 'hudTR', 'hudBC', 'hudBR'].forEach(id => document.getElementById(id).hidden = true);
 
-window.__tob = { get units() { return units; }, get king() { return king; }, get NET() { return NET; }, get info() { return renderer.info.render; }, get scene() { return scene; } }; // debug hook
+window.__tob = { get units() { return units; }, get king() { return king; }, get NET() { return NET; }, get info() { return renderer.info.render; }, get scene() { return scene; }, portrait: heroPortrait }; // debug hook
 renderStart();
 setupMatch(false); // bots play behind the title screen
 requestAnimationFrame(frame);
