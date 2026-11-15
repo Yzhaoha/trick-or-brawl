@@ -95,7 +95,14 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .slot .lv { position: absolute; right: -5px; top: -5px; min-width: 17px; height: 17px; border-radius: 9px; background: var(--gold); color: #3a2200; font-size: 10px; font-weight: 900; display: grid; place-items: center; padding: 0 3px; }
 .slot .key { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); font-family: var(--display); font-size: 9px; background: #15101f; color: #fff; border-radius: 4px; padding: 0 4px; font-style: normal; line-height: 1.5; }
 .slot .q { font-size: 22px; color: rgba(255, 255, 255, .5); }
-.slot.cool::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; background: rgba(10, 6, 20, .58); }
+.slot.cool::after, .tb.cool::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; z-index: 1; pointer-events: none; background: conic-gradient(rgba(10, 6, 20, .66) calc(var(--cdp, 1) * 360deg), rgba(10, 6, 20, .18) 0); }
+.tb.cool::after { inset: -2px; }
+/* cooldown: a clock sweep that empties as the skill comes back, with the seconds left in the middle */
+.cdn { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; font: 400 20px var(--display); color: #fff; pointer-events: none; text-shadow: 0 2px 0 #1b0f30, 2px 0 0 #1b0f30, -2px 0 0 #1b0f30, 0 -2px 0 #1b0f30; }
+.cdn:empty { display: none; }
+.tb .cdn { font-size: 18px; }
+.slot.ready, .tb.ready { animation: cdReady .35s ease-out; }
+@keyframes cdReady { 0% { transform: scale(1); } 40% { transform: scale(1.18); filter: brightness(1.6); } 100% { transform: scale(1); } }
 .sep { width: 1px; height: 34px; background: rgba(255, 255, 255, .22); }
 
 /* name tags + floating numbers */
@@ -214,7 +221,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 #btns { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 44px); width: 170px; height: 170px; pointer-events: none; }
 .tb { position: absolute; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .3); background: rgba(28, 18, 50, .72); color: var(--ink); font-family: var(--display); font-size: 10px; pointer-events: auto; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; touch-action: none; }
 .tb svg { width: 24px; height: 24px; }
-.tb.cool { opacity: .45; }
+.tb.cool { opacity: .85; }
 #tbA { width: 68px; height: 68px; right: 6px; bottom: 6px; background: rgba(226, 58, 76, .8); border-color: rgba(255, 255, 255, .55); }
 #tbA svg { width: 30px; height: 30px; }
 #tbK { width: 54px; height: 54px; right: 95px; bottom: 13px; background: rgba(155, 92, 255, .7); }
@@ -4461,6 +4468,35 @@ function drawMini() {
     g.beginPath(); g.moveTo(x + player.fx * 9, y + player.fz * 9); g.lineTo(x + player.fx * 15, y + player.fz * 15); g.stroke();
   }
 }
+// per-frame cooldown display for the monster skill and the active/toss key: wait = whichever is longer, the cooldown or the stamina still missing
+const CDW = {};
+function cdWait(id) {
+  const p = player; if (!p || !p.alive) return 0;
+  const rate = p.sprint ? 0 : 0.4 * (p.hero === 'ghost' && p.form === 1 ? 2.5 : 1);
+  const stw = need => p.stamina >= need ? 0 : rate > 0 ? (need - p.stamina) / rate : 0;
+  if (id === 'hero') return p.hero === 'wolf' && p.sprint ? 0 : Math.max(p.phaseCd || 0, p.heroCd || 0, stw(p.hero === 'witch' ? 1.5 : 1));
+  const f = famOf(p); if (!f) return 0;
+  return Math.max((f === 'toss' ? p.tossCd : p.actCd) || 0, stw(tossCost(p)));
+}
+function cdTick() {
+  if (!player) return;
+  for (const id of ['hero', 'act']) {
+    const w = cdWait(id), c = CDW[id] || (CDW[id] = { tot: 0, prev: 0 });
+    if (w > c.prev + 0.05 || c.tot <= 0) c.tot = w;
+    const els = [document.querySelector(`#actbar .slot[data-id="${id}"]`), document.getElementById(id === 'hero' ? 'tbK' : 'tbQ')];
+    const done = c.prev > 0.15 && w <= 0;
+    c.prev = w; if (w <= 0) c.tot = 0;
+    for (const el of els) {
+      if (!el) continue;
+      let n = el.querySelector(':scope > .cdn'); if (!n) { n = document.createElement('b'); n.className = 'cdn'; el.appendChild(n); }
+      const txt = w > 0.1 ? (w >= 1 ? String(Math.ceil(w)) : w.toFixed(1)) : '';
+      if (n.textContent !== txt) n.textContent = txt;
+      el.style.setProperty('--cdp', w > 0 && c.tot > 0 ? (w / c.tot).toFixed(3) : '1');
+      if (w > 0) el.classList.add('cool');
+      if (done) { el.classList.remove('cool', 'ready'); void el.offsetWidth; el.classList.add('ready'); }
+    }
+  }
+}
 function updateHud(dt) {
   hudT -= dt; if (hudT > 0) return; hudT = 0.15;
   const s = Math.max(0, Math.ceil(timeLeft)), tm = document.getElementById('timer');
@@ -4476,7 +4512,7 @@ function updateHud(dt) {
   { const me = document.getElementById('meRow'), rank = sorted.indexOf(player); const lim = isTouch ? 3 : innerHeight < 600 ? 5 : 99; me.hidden = rank < lim; if (!me.hidden) me.innerHTML = rowHtml(player, rank, true); } // the list already shows everyone on desktop; phones show top 3 + you
   document.querySelectorAll('#skillbar .slot[data-id], #actbar .slot[data-id]').forEach(el => {
     const id = el.dataset.id; let cool;
-    if (id === 'hero') cool = player.stamina < 1 || player.phaseCd > 0 || player.heroCd > 0;
+    if (id === 'hero') cool = cdWait('hero') > 0 || player.stamina < 1 || player.phaseCd > 0 || player.heroCd > 0;
     else if (id === 'act') { const f = famOf(player); cool = !f || player.stamina < tossCost(player) || (f === 'toss' ? player.tossCd : player.actCd) > 0; }
     else if (id === 'item') cool = !player.item;
     if (isTouch) { const tb = { hero: 'tbK', act: 'tbQ', item: 'tbF' }[id]; if (tb) document.getElementById(tb).classList.toggle('cool', !!cool); }
@@ -4683,7 +4719,7 @@ function frame(now) {
     if (timeLeft <= 30 && !hurryShown) { hurryShown = true; banner(T('sunrise')); }
     if (timeLeft <= 0 && NET.role !== 'client') { countdownBeep(0); endGame(); }
     updateCountdown();
-    updateHud(dt);
+    updateHud(dt); cdTick();
     tutTick(realDt); respawnTick(realDt);
   }
   if (bannerT > 0) { bannerT -= dt; if (bannerT <= 0) document.getElementById('banner').hidden = true; }
