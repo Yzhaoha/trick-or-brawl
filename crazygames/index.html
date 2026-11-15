@@ -1137,7 +1137,7 @@ const CAM_DIST = 40;
 const camOff = new THREE.Vector3(0, Math.sin(CAM_PITCH) * CAM_DIST, Math.cos(CAM_PITCH) * CAM_DIST);
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;
-  const viewW = h > w ? 19 : 30; // two sizes smaller than v8: a monster is well under a tenth of the screen height
+  const viewW = window.__camW || (h > w ? 19 : 30); // (__camW: closer camera for recording store videos) two sizes smaller than v8: a monster is well under a tenth of the screen height
   const viewH = viewW * h / w * Math.sin(CAM_PITCH); // squeezing the frustum makes the ground read square and heights true
   camera.left = -viewW / 2; camera.right = viewW / 2; camera.top = viewH / 2; camera.bottom = -viewH / 2;
   camera.updateProjectionMatrix();
@@ -5442,7 +5442,7 @@ document.getElementById('play').addEventListener('click', () => startGame());
 document.getElementById('again').addEventListener('click', () => NET.role === 'host' ? netNewMatch() : NET.role === 'client' ? null : CG.midgame(() => { document.getElementById('endScreen').hidden = true; document.getElementById('startScreen').hidden = false; setupMatch(false); }));
 ['hudTL', 'hudTC', 'hudTR', 'hudBC', 'hudBR'].forEach(id => document.getElementById(id).hidden = true);
 
-window.__tob = { get units() { return units; }, get king() { return king; }, get NET() { return NET; }, get info() { return renderer.info.render; }, get scene() { return scene; }, portrait: heroPortrait }; // debug hook
+window.__tob = { get units() { return units; }, get king() { return king; }, get NET() { return NET; }, get info() { return renderer.info.render; }, get scene() { return scene; }, portrait: heroPortrait, makeMonster, THREE }; // debug hook
 renderStart();
 setupMatch(false); // bots play behind the title screen
 requestAnimationFrame(frame);
