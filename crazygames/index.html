@@ -1136,7 +1136,7 @@ const box = (w, h, d, mat, x = 0, y = 0, z = 0) => {
 // ======================= voxel look (preview: ?style=voxel) =======================
 // Models are built from little cubes on a grid. One merged geometry per part: hidden faces are dropped and every cube
 // gets a slight colour jitter, so big flat areas still read as blocks. Colours live in the vertices; materials stay white.
-const VOXEL = (() => { try { return new URLSearchParams(location.search).get('style') === 'voxel'; } catch (e) { return false; } })();
+const VOXEL = (() => { try { return new URLSearchParams(location.search).get('style') !== 'classic'; } catch (e) { return true; } })(); // block look is the default; ?style=classic brings back the old smooth look
 const VOX_FACES = [ // normal, 4 corners (counter-clockwise seen from outside)
   [[1, 0, 0], [[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]]], [[-1, 0, 0], [[0, 0, 1], [0, 1, 1], [0, 1, 0], [0, 0, 0]]],
   [[0, 1, 0], [[0, 1, 1], [1, 1, 1], [1, 1, 0], [0, 1, 0]]], [[0, -1, 0], [[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1]]],
@@ -2391,19 +2391,19 @@ const cornGeo = VOXEL ? new Vox(0.06).fill(-1, 1, -3, -2, -1, 1, 0xffb805).fill(
   for (let i = 0; i < pa.count; i++) { const y = pa.getY(i); const c = y > 0.035 ? [1, 1, 1] : y > -0.05 ? [1, 0.4, 0.05] : [1, 0.72, 0.02]; col.push(...c); }
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); return g;
 })();
-const popGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.08, 32); popGeo.rotateX(Math.PI / 2);
+const popGeo = VOXEL ? new THREE.BoxGeometry(0.54, 0.54, 0.08) : new THREE.CylinderGeometry(0.28, 0.28, 0.08, 32); if (!VOXEL) popGeo.rotateX(Math.PI / 2);
 const bodyMesh = new THREE.InstancedMesh(bonbonGeo, new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x4a3050 }), 1400);
 const stripeMesh = new THREE.InstancedMesh(bonbonGeo.clone().scale(1.04, 1.04, 1.04), new THREE.MeshLambertMaterial({ color: 0xffffff, map: stripeTex, transparent: true, alphaTest: 0.4, emissive: 0x444455 }), 1400);
-const swirlA = new THREE.CircleGeometry(0.27, 32); swirlA.translate(0, 0, 0.042);
-const swirlB = new THREE.CircleGeometry(0.27, 32); swirlB.rotateY(Math.PI); swirlB.translate(0, 0, -0.042);
+const swirlA = VOXEL ? new THREE.PlaneGeometry(0.5, 0.5) : new THREE.CircleGeometry(0.27, 32); swirlA.translate(0, 0, 0.042);
+const swirlB = VOXEL ? new THREE.PlaneGeometry(0.5, 0.5) : new THREE.CircleGeometry(0.27, 32); swirlB.rotateY(Math.PI); swirlB.translate(0, 0, -0.042);
 const swirlMat = new THREE.MeshLambertMaterial({ color: 0xffffff, map: swirlTex, transparent: true, alphaTest: 0.4, emissive: 0x444455 });
 const swirlMeshA = new THREE.InstancedMesh(swirlA, swirlMat, 120), swirlMeshB = new THREE.InstancedMesh(swirlB, swirlMat, 120);
 const endMesh = new THREE.InstancedMesh(twistGeo, new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x2a1840, side: THREE.DoubleSide }), 2800);
 const knotMesh = new THREE.InstancedMesh(knotGeo, new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x2a1840 }), 2800);
 const cornMesh = new THREE.InstancedMesh(cornGeo, new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x3a2010 }), 900);
 const bigMesh = new THREE.InstancedMesh(popGeo, new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x331122 }), 120);
-const ribbonMesh = new THREE.InstancedMesh(new THREE.TorusGeometry(0.29, 0.025, 6, 32), new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x333344 }), 120);
-const stickMesh = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.03, 0.03, 0.46, 8), M(0xf4ecff), 120);
+const ribbonMesh = new THREE.InstancedMesh(VOXEL ? new THREE.BoxGeometry(0.6, 0.6, 0.06).translate(0, 0, 0) : new THREE.TorusGeometry(0.29, 0.025, 6, 32), new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x333344 }), 120);
+const stickMesh = new THREE.InstancedMesh(VOXEL ? new THREE.BoxGeometry(0.07, 0.46, 0.07) : new THREE.CylinderGeometry(0.03, 0.03, 0.46, 8), M(0xf4ecff), 120);
 const blobGeo = new THREE.CircleGeometry(0.22, 14); blobGeo.rotateX(-Math.PI / 2);
 const blobMesh = new THREE.InstancedMesh(blobGeo, new THREE.MeshBasicMaterial({ color: 0x2a1a08, transparent: true, opacity: 0.45, depthWrite: false }), 2600);
 blobMesh.frustumCulled = false; blobMesh.count = 0; scene.add(blobMesh);
@@ -2447,6 +2447,18 @@ function scatter(x, z, total, n) {
 
 // ---------- buckets ----------
 function makeBucket() {
+  if (VOXEL) { // pumpkin candy basket in blocks: ridged body, carved face, dark rim, handle, candy heaped on top
+    const g = new THREE.Group(), O = M(0xff7a1a), R = M(0xe0600c), D = M(0x2a1405), L = M(0xffd23a, { emissive: 0x6a3a00 });
+    g.add(box(0.84, 0.56, 0.84, O, 0, 0.3, 0));
+    [-0.21, 0.21].forEach(x => { g.add(box(0.05, 0.5, 0.86, R, x, 0.3, 0)); g.add(box(0.86, 0.5, 0.05, R, 0, 0.3, x)); }); // ridges
+    g.add(box(0.9, 0.08, 0.9, M(0xc8500a), 0, 0.6, 0));                        // rim
+    g.add(box(0.7, 0.04, 0.7, D, 0, 0.63, 0));
+    [-0.17, 0.17].forEach(x => { g.add(box(0.14, 0.12, 0.03, D, x, 0.38, 0.425)); g.add(box(0.08, 0.06, 0.02, L, x, 0.36, 0.44)); }); // glowing eyes
+    [-0.2, -0.07, 0.07, 0.2].forEach((x, i) => g.add(box(0.12, i % 3 ? 0.08 : 0.12, 0.03, D, x, 0.18 + (i % 3 ? 0 : 0.02), 0.425))); // jagged grin
+    const hd = M(0x2a2036); g.add(box(0.06, 0.34, 0.06, hd, -0.38, 0.8, 0)); g.add(box(0.06, 0.34, 0.06, hd, 0.38, 0.8, 0)); g.add(box(0.82, 0.06, 0.06, hd, 0, 0.98, 0)); // handle
+    [[0xff5fa2, -0.18, 0.1], [0x5fd0ff, 0.16, -0.12], [0xffd23f, 0.02, 0.18], [0x7ee05a, -0.06, -0.2], [0xb36bff, 0.22, 0.14]].forEach(([c, x, z], i) => { const cd = box(0.16, 0.13, 0.16, M(c), x, 0.69 + (i % 2) * 0.04, z); cd.rotation.y = i * 0.7; g.add(cd); });
+    scene.add(g); return g;
+  }
   const g = new THREE.Group(), O = M(0xff7a1a), D = M(0x2a1405);
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.34, 0.62, 18), O); body.position.y = 0.31; body.castShadow = true; g.add(body);
   const rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.05, 6, 20), M(0xe06410)); rim.rotation.x = Math.PI / 2; rim.position.y = 0.62; g.add(rim);
@@ -2468,7 +2480,7 @@ function itemModel(type) {
   else if (type === 'broom') { const st = box(0.07, 0.07, 0.95, M(0x8a5a36)); g.add(st); g.add(box(0.34, 0.2, 0.32, M(0xe0b24a), 0, 0, -0.55)); }
   else if (type === 'magnet') { g.add(box(0.16, 0.5, 0.16, M(0xe8323f, { emissive: 0x400008 }), -0.2, 0, 0)); g.add(box(0.16, 0.5, 0.16, M(0xe8323f, { emissive: 0x400008 }), 0.2, 0, 0)); g.add(box(0.56, 0.16, 0.16, M(0xe8323f, { emissive: 0x400008 }), 0, -0.25, 0)); g.add(box(0.17, 0.12, 0.17, M(0xe6e6f0), -0.2, 0.27, 0)); g.add(box(0.17, 0.12, 0.17, M(0xe6e6f0), 0.2, 0.27, 0)); }
   else if (type === 'web') { const d = new THREE.Mesh(new THREE.CircleGeometry(0.34, 8), new THREE.MeshBasicMaterial({ color: 0xf4ecff, transparent: true, opacity: 0.55, side: THREE.DoubleSide })); g.add(d); for (let k = 0; k < 4; k++) { const l = box(0.7, 0.03, 0.03, M(0xffffff)); l.rotation.z = k * Math.PI / 4; g.add(l); } }
-  else if (type === 'bell') { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.3, 0.42, 14), M(0xffc23d, { emissive: 0x5a3800 })); g.add(b); g.add(box(0.1, 0.1, 0.1, M(0x7a4a00), 0, -0.26, 0)); g.add(box(0.06, 0.14, 0.06, M(0x7a4a00), 0, 0.27, 0)); }
+  else if (type === 'bell') { const bm = M(0xffc23d, { emissive: 0x5a3800 }); if (VOXEL) { g.add(box(0.56, 0.12, 0.56, bm, 0, -0.15, 0)); g.add(box(0.42, 0.16, 0.42, bm, 0, -0.01, 0)); g.add(box(0.3, 0.14, 0.3, bm, 0, 0.14, 0)); } else g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.3, 0.42, 14), bm)); g.add(box(0.1, 0.1, 0.1, M(0x7a4a00), 0, -0.26, 0)); g.add(box(0.06, 0.14, 0.06, M(0x7a4a00), 0, 0.27, 0)); }
   else { g.add(box(0.5, 0.4, 0.5, M(0xff7a1a, { emissive: 0x401500 }))); g.add(box(0.07, 0.18, 0.07, M(0x3c6b2a), 0, 0.28, 0)); g.add(box(0.07, 0.07, 0.04, M(0x1a0d05), -0.1, 0.04, 0.26)); g.add(box(0.07, 0.07, 0.04, M(0x1a0d05), 0.1, 0.04, 0.26)); }
   return g;
 }
@@ -2498,13 +2510,19 @@ const FIRES = [[0, 0], [-20, -2], [20, -2], [0, -27]].map(([x, z]) => {
   edge.rotation.x = -Math.PI / 2; edge.position.y = 0.04; g.add(edge);
   for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2; g.add(box(0.26, 0.18, 0.22, M(0x7a7266), Math.cos(a) * 0.62, 0.09, Math.sin(a) * 0.62)); }
   [0.6, -0.6].forEach(r => { const l = box(0.9, 0.14, 0.14, M(0x6b4228), 0, 0.1, 0); l.rotation.y = r; g.add(l); });
-  const flames = [[0, 0.62, 0xff7a1a, 0.32], [0.1, 0.48, 0xffb03a, 0.22], [-0.1, 0.42, 0xffe066, 0.16]].map(([dx, h, c, r]) => { const f = new THREE.Mesh(new THREE.ConeGeometry(r, h, 8), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.9 })); f.position.set(dx, h / 2 + 0.12, dx * 0.5); g.add(f); return f; });
+  const flames = (VOXEL ? [[0, 0.5, 0xff5a10, 0.36], [0.06, 0.62, 0xff9a2a, 0.24], [-0.05, 0.74, 0xffd23a, 0.14]] : [[0, 0.62, 0xff7a1a, 0.32], [0.1, 0.48, 0xffb03a, 0.22], [-0.1, 0.42, 0xffe066, 0.16]]).map(([dx, h, c, r]) => { const f = new THREE.Mesh(VOXEL ? new THREE.BoxGeometry(r * 1.3, h, r * 1.3) : new THREE.ConeGeometry(r, h, 8), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.9 })); f.position.set(dx, h / 2 + 0.12, dx * 0.5); g.add(f); return f; });
   // spit with a roast chicken
   [-0.55, 0.55].forEach(px => { g.add(box(0.06, 0.9, 0.06, M(0x4a3020), px, 0.45, 0)); });
   const spit = new THREE.Group(); spit.position.y = 0.92; g.add(spit);
   spit.add(box(1.3, 0.04, 0.04, M(0x8a8a8a), 0, 0, 0));
+  if (VOXEL) { // roast chicken in blocks
+    const mm = M(0xb8641e, { emissive: 0x3a1600 }), dm = M(0xa0561a, { emissive: 0x2a1000 }), bn = M(0xf4ecdc);
+    spit.add(box(0.5, 0.34, 0.4, mm)); spit.add(box(0.36, 0.1, 0.3, M(0xd88a3a, { emissive: 0x3a1600 }), 0, 0.2, 0));
+    [-1, 1].forEach(sd => { spit.add(box(0.12, 0.12, 0.22, dm, sd * 0.12, -0.08, 0.26)); spit.add(box(0.07, 0.07, 0.1, bn, sd * 0.12, -0.08, 0.41)); });
+  } else {
   const meat = new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 10), M(0xb8641e, { emissive: 0x3a1600 })); meat.scale.set(1.3, 0.9, 1); spit.add(meat);
   [-1, 1].forEach(sd => { const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.16, 4, 8), M(0xa0561a, { emissive: 0x2a1000 })); leg.position.set(sd * 0.1, -0.06, 0.2); leg.rotation.x = 1.2; spit.add(leg); const bone = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), M(0xf4ecdc)); bone.position.set(sd * 0.1, -0.12, 0.34); spit.add(bone); });
+  }
   return { x, z, g, flames, spit, warmDisc };
 });
 function updateFires(dt) {
@@ -2525,8 +2543,14 @@ const BOOSTS = Array.from({ length: 18 }, () => {
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.55, 24), new THREE.MeshBasicMaterial({ color: 0x5ff2ff, transparent: true, opacity: 0.7, depthWrite: false }));
   ring.rotation.x = -Math.PI / 2; ring.position.y = 0.04; g.add(ring);
   const top = new THREE.Group(); top.position.y = 0.55; g.add(top);
+  if (VOXEL) { // glowing gem with stepped bat wings
+    const gem = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.26, 0.26), new THREE.MeshBasicMaterial({ color: 0x5ff2ff })); gem.rotation.set(0.6, 0.7, 0); top.add(gem);
+    const wm = M(0x3a2557, { emissive: 0x1a0a33 });
+    [-1, 1].forEach(sd => { top.add(box(0.2, 0.18, 0.05, wm, sd * 0.24, 0.04, 0)); top.add(box(0.16, 0.12, 0.05, wm, sd * 0.4, 0.12, 0)); top.add(box(0.1, 0.08, 0.05, wm, sd * 0.52, 0.2, 0)); [0.2, 0.34].forEach(x => top.add(box(0.08, 0.06, 0.05, wm, sd * x, -0.09, 0))); });
+  } else {
   top.add(new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 10), new THREE.MeshBasicMaterial({ color: 0x5ff2ff })));
   [-1, 1].forEach(sd => { const w = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.42, 4), M(0x3a2557, { emissive: 0x1a0a33 })); w.scale.set(1, 1, 0.3); w.rotation.z = sd * 1.25; w.position.x = sd * 0.26; top.add(w); });
+  }
   g.visible = false; scene.add(g);
   return { x: 0, z: 0, has: false, respawn: 0, mesh: g, top };
 });
@@ -2701,7 +2725,7 @@ function onHit(u, t, fromSpin) {
   if (S.frost && t.alive) { if (!(t.slowT > 0)) proc(u, 'frost', t); t.slowT = 1 + 0.5 * S.frost; }
   if (S.meteor && t.alive && !fromSpin && ++u.metN >= 4) { // every 4th hit: a meteor falls on the target
     u.metN = 0; proc(u, 'meteor', t);
-    const m = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 8), new THREE.MeshBasicMaterial({ color: 0xff8a2a, transparent: true }));
+    const m = new THREE.Mesh(VOXEL ? new THREE.BoxGeometry(0.62, 0.62, 0.62) : new THREE.SphereGeometry(0.42, 12, 8), new THREE.MeshBasicMaterial({ color: 0xff8a2a, transparent: true })); if (VOXEL) m.rotation.set(0.6, 0.6, 0);
     m.position.set(t.x, 7.3, t.z); scene.add(m); fxMeshes.push({ m, t: 0.4, max: 0.4, kind: 'fall' });
     u.metQ.push({ x: t.x, z: t.z, t: 0.4 });
   }

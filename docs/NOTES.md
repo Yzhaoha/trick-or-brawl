@@ -10,8 +10,8 @@
 - CrazyGames: SDK v3 inits after the body exists; a midgame ad only between matches; muteAudio setting followed; Data module for saves; Esc reserved (P pauses).
 - Online play is kept (Poki netlib WebRTC).
 
-## Voxel / toy-block art (in progress)
-- Preview behind `?style=voxel` (default look unchanged). Test links: add `&v=<commit>` so phones skip the GitHub Pages cache.
+## Voxel / toy-block art (default look)
+- Block look is the default; `?style=classic` brings back the old smooth look. Props in blocks too: candy baskets, campfires and roast chicken, bell, bat-wing boosts, lollipops, meteor. Test links: add `&v=<commit>` so phones skip the GitHub Pages cache.
 - Approved direction: flat-colour solid blocks, a dark outline round every block (CHIBI_OUT backface box), camera-lit stepped matcap (voxMonMat, keeps the hit-flash emissive), and the face drawn on a canvas-texture plane (eyes with a highlight, brows, blush, mouth). The ground stays smooth.
 - Done: all five heroes (`buildVoxel` in src/index.html, helpers `tb()`, `glow()` and `decal()`).
 - To do: user sign-off on the four new heroes; then maybe campfires, pedestals and buckets; then switch the default look.
