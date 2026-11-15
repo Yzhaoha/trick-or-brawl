@@ -3104,28 +3104,58 @@ function extraPowers(u, dt) {
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // ======================= fx =======================
-// big crescent swoosh round the attacker (shows the reach); the third hit of a combo is a full gold spin
-const SLASH_TEX = (() => {
-  const mk = full => {
-    const n = 256, c = document.createElement('canvas'); c.width = c.height = n; const g = c.getContext('2d'), m = n / 2, R = n * 0.48;
-    const a0 = full ? -Math.PI : -1.25, a1 = full ? Math.PI : 1.25, steps = 48;
-    g.fillStyle = 'rgba(255,255,255,0.16)'; g.beginPath(); g.moveTo(m, m); g.arc(m, m, R, -a1, -a0); g.closePath(); g.fill(); // faint reach area
-    g.beginPath();
-    for (let i = 0; i <= steps; i++) { const a = a0 + (a1 - a0) * i / steps; g.lineTo(m + Math.cos(a) * R, m - Math.sin(a) * R); }
-    for (let i = steps; i >= 0; i--) { const q = i / steps, a = a0 + (a1 - a0) * q, t = (full ? 0.1 + 0.2 * q : Math.sin(q * Math.PI) * 0.36) * R; g.lineTo(m + Math.cos(a) * (R - t), m - Math.sin(a) * (R - t)); }
-    g.closePath(); g.fillStyle = 'rgba(255,255,255,0.95)'; g.fill();
-    g.lineWidth = n * 0.018; g.strokeStyle = '#ffffff'; g.beginPath(); g.arc(m, m, R - n * 0.006, -a1, -a0); g.stroke();
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
-  };
-  return { half: mk(false), full: mk(true) };
-})();
-const slashGeo = new THREE.PlaneGeometry(2, 2);
+// swing trail: a crescent that draws itself along the arc as the weapon swings (bright head, tapering tail, white rim,
+// thin speed streaks, a faint fan showing the reach) tinted with each hero's accent; the third hit of a combo is a full gold spin
+const SLASH_VS = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
+const SLASH_FS = `
+varying vec2 vUv;
+uniform float uProg, uFade, uArc, uDir; uniform vec3 uCore, uAcc;
+void main(){
+  vec2 p = vUv * 2.0 - 1.0; float r = length(p) / 0.9; float a = atan(p.y, p.x) * uDir; // r = 1 is the reach
+  float head = -uArc + 2.0 * uArc * uProg;
+  float d = head - a;                                   // how far behind the swing head
+  float tail = 2.0 * uArc * (0.8 - 0.65 * uFade);       // the tail shortens as it fades
+  float on = step(0.0, d) * step(d, tail) * step(-uArc, a);
+  float f = clamp(1.0 - d / max(tail, 0.001), 0.0, 1.0); // 1 at the head, 0 at the tail end
+  float thick = 0.1 + 0.42 * pow(f, 1.4);
+  float band = smoothstep(1.0 - thick - 0.04, 1.0 - thick + 0.06, r) * (1.0 - smoothstep(0.99, 1.02, r));
+  float rim = exp(-pow((r - 0.985) / 0.03, 2.0));        // bright cutting edge
+  float glow = exp(-pow((r - 1.02) / 0.07, 2.0)) * 0.55; // soft halo outside the edge
+  float inner = clamp((r - (1.0 - thick)) / max(thick, 0.001), 0.0, 1.0); // 0 inside edge of the band, 1 at the rim
+  float streak = smoothstep(0.7, 1.0, sin(r * 70.0 - f * 4.0)) * 0.18 * (1.0 - inner); // soft speed lines on the inner side
+  vec3 col = mix(uAcc, uCore, clamp(inner * inner + rim, 0.0, 1.0));
+  col = mix(col, vec3(1.0), rim * 0.8);
+  float alpha = on * (band * (0.35 + 0.65 * pow(f, 0.5)) * (1.0 - streak) + rim * f + glow * f);
+  float fan = step(-uArc, a) * step(a, head) * (1.0 - smoothstep(0.92, 0.99, r)) * 0.12; // faint fan: the reach
+  if (fan > alpha) { col = uAcc; alpha = fan; }
+  gl_FragColor = vec4(col, clamp(alpha, 0.0, 1.0) * (1.0 - uFade));
+}`;
+const HERO_ACC = { wolf: 0xffa64a, vamp: 0xff2a55, mummy: 0x6ff0ff, witch: 0xb36bff, ghost: 0xc9b8ff };
+const slashGeo = new THREE.PlaneGeometry(2, 2), SLASH_POOL = []; // swing materials are reused, so the shader is built once
 function spawnArc(u, range, col, full) {
-  const m = new THREE.Mesh(slashGeo, new THREE.MeshBasicMaterial({ map: full ? SLASH_TEX.full : SLASH_TEX.half, color: col, transparent: true, opacity: 0.95, depthWrite: false, depthTest: false }));
+  const arc = full ? Math.PI : 1.3, dir = u.combo === 2 ? -1 : 1, acc = new THREE.Color(full ? 0xffb020 : HERO_ACC[u.hero] || 0xffffff);
+  const mat = SLASH_POOL.pop() || new THREE.ShaderMaterial({ vertexShader: SLASH_VS, fragmentShader: SLASH_FS, transparent: true, depthWrite: false, depthTest: false,
+    uniforms: { uProg: { value: 0 }, uFade: { value: 0 }, uArc: { value: 0 }, uDir: { value: 1 }, uCore: { value: new THREE.Color() }, uAcc: { value: new THREE.Color() } } });
+  const U = mat.uniforms; U.uProg.value = 0; U.uFade.value = 0; U.uArc.value = arc; U.uDir.value = dir; U.uCore.value.set(col); U.uAcc.value.copy(acc);
+  const m = new THREE.Mesh(slashGeo, mat);
   m.rotation.x = -Math.PI / 2; const r0 = Math.atan2(-u.fz, u.fx); m.rotation.z = r0; // the plane is laid flat, which flips z: use -fz so the arc faces the attack
-  m.position.set(u.x, 0.35, u.z); m.scale.setScalar(range * 1.05); m.renderOrder = 5;
-  const dir = u.combo === 2 ? -1 : 1;
-  scene.add(m); fxMeshes.push({ m, t: full ? 0.3 : 0.2, max: full ? 0.3 : 0.2, kind: 'slash', r0, sweep: full ? 2.6 * dir : 0.7 * dir, s0: range * 1.05, shared: true });
+  m.position.set(u.x, 0.45, u.z); m.scale.setScalar(range * 1.12); m.renderOrder = 5;
+  const T = full ? 0.38 : 0.28;
+  scene.add(m); fxMeshes.push({ m, t: T, max: T, kind: 'slash', s0: range * 1.12, shared: true, pool: true, sparks: full ? 7 : 4, u, arc, dir, r0, range, acc: acc.getHex() });
+}
+function slashSparks(f, prog) { // little sparks thrown off the swing head
+  const ang = -f.arc + 2 * f.arc * prog, a = f.r0 + ang * f.dir, R = f.range * 1.0;
+  const x = f.u.x + Math.cos(a) * R, z = f.u.z - Math.sin(a) * R, tx = -Math.sin(a) * f.dir, tz = -Math.cos(a) * f.dir;
+  const m = new THREE.Mesh(burstGeo, new THREE.MeshBasicMaterial({ color: Math.random() < 0.5 ? 0xffffff : f.acc, transparent: true, depthTest: false }));
+  m.scale.setScalar(0.45 + Math.random() * 0.35); m.position.set(x, 0.5, z); m.renderOrder = 6; scene.add(m);
+  fxMeshes.push({ m, t: 0.3, max: 0.3, kind: 'part', vx: tx * 6 + Math.cos(a) * 2 + rnd(-1, 1), vy: rnd(2, 4.5), vz: tz * 6 - Math.sin(a) * 2 + rnd(-1, 1) });
+}
+// a quick bright cut line across whoever gets hit
+const CUT_TEX = (() => { const c = document.createElement('canvas'); c.width = 256; c.height = 32; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 256, 0); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.5, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(0, 16); g.quadraticCurveTo(128, -2, 256, 16); g.quadraticCurveTo(128, 34, 0, 16); g.fill(); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+function cutLine(x, y, z, col, ang, big) {
+  const m = new THREE.Mesh(powGeo, new THREE.MeshBasicMaterial({ map: CUT_TEX, color: col, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending }));
+  m.position.set(x, y, z); m.renderOrder = 7; scene.add(m);
+  fxMeshes.push({ m, t: 0.16, max: 0.16, kind: 'cut', rz: ang, s0: big ? 2.6 : 1.9, shared: true });
 }
 function spawnRing(x, z, r, col) {
   const m = new THREE.Mesh(new THREE.RingGeometry(r * 0.72, r, 40), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false }));
@@ -3203,6 +3233,7 @@ function impact(src, tgt, dmg, big) {
   m.position.set(x, y, z); scene.add(m); fxMeshes.push({ m, t: 0.13, max: 0.13, kind: 'flash', shared: true, s0: big ? 1.6 : 1.1 });
   burst(x, y, z, big ? 0xffc23d : 0xffffff, big ? 12 : 8);
   pow(x, y + 0.15, z, big ? 0xffd23a : 0xffffff, big ? 1.9 : 1.3);
+  cutLine(x, y + 0.1, z, big ? 0xffe066 : (src && HERO_ACC[src.hero]) || 0xffffff, (src && src.combo === 2 ? 0.5 : -0.5) + rnd(-0.25, 0.25), big);
   tgt.punch = 0.16;
   if (!mine) return;
   hitStop = Math.max(hitStop, big ? 0.11 : 0.06);
@@ -3957,12 +3988,17 @@ function updateWorld(dt) {
     else if (f.kind === 'flash') { const s = f.s0 * (1 + (1 - k) * 1.2); f.m.scale.set(s, s, s); f.m.material.opacity = k; }
     else if (f.kind === 'orb') { const q = 1 - k, tx = f.to.x, tz = f.to.z; f.m.position.set(f.sx + (tx - f.sx) * q, 0.9 + Math.sin(q * Math.PI) * f.h, f.sz + (tz - f.sz) * q); f.m.material.opacity = Math.min(1, k * 4); }
     else if (f.kind === 'fall') { f.m.position.y = 0.3 + 7 * k; }
-    else if (f.kind === 'slash') { const q = 1 - k; f.m.rotation.z = f.r0 - f.sweep * (q - 0.5); f.m.scale.setScalar(f.s0 * (0.88 + 0.16 * q)); f.m.material.opacity = Math.min(1, k * 2.2); }
+    else if (f.kind === 'slash') {
+      const q = 1 - k, x = Math.min(1, q / 0.42), prog = 1 - Math.pow(1 - x, 3), U = f.m.material.uniforms;
+      U.uProg.value = prog; U.uFade.value = q < 0.5 ? 0 : Math.pow((q - 0.5) / 0.5, 1.5); f.m.scale.setScalar(f.s0 * (0.94 + 0.08 * prog));
+      if (f.sparks > 0 && Math.random() < 0.6 && q < 0.6) { f.sparks--; slashSparks(f, prog); }
+    }
+    else if (f.kind === 'cut') { const q = 1 - k; f.m.quaternion.copy(camera.quaternion); f.m.rotateZ(f.rz); f.m.scale.set(f.s0 * (0.4 + 0.8 * Math.min(1, q * 3)), 0.28 * (1 - q * 0.7), 1); f.m.material.opacity = Math.min(1, k * 1.5); }
     else if (f.kind === 'pow') { const q = 1 - k; f.m.scale.setScalar(f.s0 * (0.6 + 0.6 * Math.min(1, q * 3))); f.m.material.opacity = Math.min(1, k * 2); f.m.quaternion.copy(camera.quaternion); f.m.rotateZ(f.rz); }
     else if (f.kind === 'pillar') { const q = 1 - k; f.m.scale.set(1 + q * 0.5, 0.6 + q * 0.8, 1 + q * 0.5); f.m.material.opacity = k * 0.75; }
     else if (f.kind === 'grow') { const s = 0.55 + (1 - k) * 0.6; f.m.scale.set(s, s, s); f.m.material.opacity = Math.min(1, k * 1.4); }
     else f.m.material.opacity = k * 0.6;
-    if (f.t <= 0) { scene.remove(f.m); if (f.m.geometry !== burstGeo && !f.shared) f.m.geometry.dispose(); f.m.material.dispose(); f.gone = true; }
+    if (f.t <= 0) { scene.remove(f.m); if (f.m.geometry !== burstGeo && !f.shared) f.m.geometry.dispose(); if (f.pool) SLASH_POOL.push(f.m.material); else f.m.material.dispose(); f.gone = true; }
   }
   fxMeshes = fxMeshes.filter(f => !f.gone);
 }
