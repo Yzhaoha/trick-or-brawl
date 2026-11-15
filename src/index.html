@@ -2556,7 +2556,7 @@ function spawnAt(u, first) {
   u.invuln = first ? 0 : 3; u.stun = 0; u.air = 0; u.leap = null; u.guardT = 0; u.spinT = 0; u.kickT = 0; u.rollT = 0; u.jumpReady = 0;
   u.bubbleT = 0; u.trappedT = 0; u.form = 0; u.hitAt = 0; u.empowerT = 0; u.getup = false;
   u.burstArmed = false; u.dashT = 0; u.dashN = 0; u.kickChain = 0; u.kickLand = false; u.pounceLeft = 0; u.sprint = false; removeAnchor(u);
-  u.vis.root.visible = true;
+  u.vis.root.visible = true; u.koAt = null; u.vis.body.rotation.set(0, 0, 0); u.vis.body.position.set(0, 0, 0);
   if (u.remote) { u.rx = undefined; u.rxHold = clock + 1.5; } // online: ignore a remote player's old position until their screen catches up
 }
 
@@ -3081,7 +3081,7 @@ function knockOut(u, by) {
     return;
   }
   SFX.play('ko', u); if (by === player) SFX.play('kill');
-  u.alive = false; u.hp = 0; u.vis.root.visible = false;
+  u.alive = false; u.hp = 0; u.koAt = clock; u.koDir = by ? Math.atan2(u.x - by.x, u.z - by.z) : null; // the body falls over, then vanishes in a puff (syncVisuals)
   u.respawn = 3 + u.level * 0.5;
   burst(u.x, 0.8, u.z, TEAM_COL[u.team], 14);
   const alive = units.filter(m => m !== u);
@@ -4153,7 +4153,23 @@ function syncVisuals(t) {
   const seeAll = !player;
   for (const u of units) {
     const V = u.vis;
-    if (!u.alive) { u.tag.style.display = 'none'; pfxEach(u, g => { g.visible = false; }); continue; }
+    if (!u.alive) {
+      u.tag.style.display = 'none'; pfxEach(u, g => { g.visible = false; });
+      if (u.koAt != null) { // knocked out: thrown back, falls flat, bounces once, flashes white, then poofs
+        const p = (t - u.koAt) / 0.75;
+        if (p >= 1 || p < 0) { u.koAt = null; V.root.visible = false; if (p >= 1) { burst(u.x, 0.4, u.z, 0xffffff, 10); spawnRing(u.x, u.z, 1.1, TEAM_COL[u.team]); } }
+        else {
+          if (u.koDir != null) V.yaw.rotation.y = u.koDir + Math.PI; // face the attacker, fall away from them
+          const f = Math.min(1, p / 0.35), e = 1 - Math.pow(1 - f, 3);
+          V.body.rotation.set(-1.45 * e, 0, Math.sin(p * 9) * 0.08 * (1 - p)); V.body.position.y = 0;
+          V.root.position.y = (p < 0.35 ? Math.sin(f * Math.PI) * 0.45 : Math.max(0, Math.sin((p - 0.35) / 0.25 * Math.PI)) * 0.12 * (p < 0.6 ? 1 : 0));
+          const sh = p > 0.6 ? 1 - (p - 0.6) / 0.4 * 0.7 : 1; V.root.scale.setScalar((u.visSc || 1) * sh);
+          V.legL.rotation.x = V.legR.rotation.x = 0.5 * e; V.arm.rotation.set(-2.2 * e, 0, 0);
+          V.flashMats.forEach(m => m.emissive.setHex(p > 0.6 && Math.sin(t * 40) > 0 ? 0xffffff : 0x000000));
+        }
+      }
+      continue;
+    }
     const visible = seeAll || canSee(player, u);
     V.root.visible = visible;
     const sc = scaleOf(u);
@@ -4187,6 +4203,17 @@ function syncVisuals(t) {
       V.legL.rotation.set(-0.45 - 0.15 * A, 0, -0.28); V.legR.rotation.set(-0.45 - 0.15 * A, 0, 0.28); V.legL.position.z = V.legR.position.z = 0; V.legL.position.y = V.legR.position.y = V.legL.userData.y0;
     } else if (u.hero !== 'ghost') { V.body.position.y = Math.abs(c1) * 0.045 * A; V.body.rotation.z = s1 * 0.07 * A; }
     if (!(u.swingT > 0) && !u.leap && !(u.kickT > 0)) V.arm.rotation.x += s1 * 0.45 * A;
+    { // body language on top of the walk: breathe when idle, lean into a run, twist the whole body into a swing, recoil when hit, wobble when dizzy
+      if (V.head.userData.y0 === undefined) V.head.userData.y0 = V.head.position.y;
+      const br = Math.sin(t * 2.6 + u.id * 1.7), idle = 1 - A;
+      V.head.position.y = V.head.userData.y0 + br * 0.022 * idle; V.head.rotation.set(0, 0, 0);
+      if (!(u.swingT > 0) && !u.leap) V.arm.rotation.z += br * 0.07 * idle;
+      if (!(u.rollT > 0) && !(u.air > 0)) V.body.rotation.x = 0.13 * A * (u.sprint || u.boostT > 0 ? 1.6 : 1);
+      if (u.swingT > 0) { const tw = u.combo === 3 ? 0 : (u.combo === 2 ? -1 : 1); V.body.rotation.y = tw * (0.55 - sw * 1.1); V.body.rotation.x += Math.sin(sw * Math.PI) * 0.18; }
+      else V.body.rotation.y = 0;
+      if (u.punch > 0) { const k = u.punch / 0.16; V.body.rotation.x -= 0.42 * k; V.head.rotation.x = -0.35 * k; }
+      if (u.stun > 0 && !(u.air > 0) && !(u.trappedT > 0)) { V.body.rotation.z = Math.sin(t * 13) * 0.13; V.head.rotation.z = Math.sin(t * 13 + 1) * 0.15; }
+    }
     if (u.kickT > 0 || u.kickVis > 0) V.legR.rotation.x = -1.4;
     V.lid.visible = u.guardT > 0;
     u.tag.classList.toggle('hexed', u.hexT > 0);
@@ -4824,7 +4851,7 @@ function netApplyWorld(m) {
 }
 function koFx(u, by) { // client: a knock-out the host reported
   SFX.play('ko', u); if (by === player) SFX.play('kill');
-  u.alive = false; u.hp = 0; u.vis.root.visible = false; u.item = null; u.leap = null;
+  u.alive = false; u.hp = 0; u.koAt = clock; u.koDir = by ? Math.atan2(u.x - by.x, u.z - by.z) : null; u.item = null; u.leap = null;
   burst(u.x, 0.8, u.z, TEAM_COL[u.team], 14);
   if (u.isPlayer) renderSkillbar();
   killBanner(by, u);
