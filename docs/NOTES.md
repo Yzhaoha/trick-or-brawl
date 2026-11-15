@@ -19,5 +19,5 @@
 ## Other to-dos
 - Poki profanity word list for online names; Poki static and animated thumbnails; new covers and video for the new look.
 - A one-off three.js "byteLength" render error was seen once in the CG build and never reproduced.
-- Known limit: if the host's tab goes to the background, the room freezes (no host migration).
+- Host migration: when the host leaves, the netlib server picks a new leader; that player's game becomes the host and the others re-attach to their own monsters (score kept). The old host's monster turns into a bot after 8 s. While a host's tab is hidden, a worker keeps the world ticking at 20 Hz.
 - Never submit to a portal without the user's explicit yes; portal forms are filled in the user's own browser on their Mac.

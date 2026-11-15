@@ -673,6 +673,15 @@ Object.assign(STR, {"fr":{"proto":"Solo · toi + 8 bots","pitch":"Trois gangs de
 // start-screen "more options" toggle (11 languages)
 (() => { const M = { en: 'More options', fr: 'Plus d’options', it: 'Altre opzioni', de: 'Mehr Optionen', es: 'Más opciones', tr: 'Diğer ayarlar', zh: '更多设置', ja: 'その他の設定', ko: '추가 설정', pt: 'Mais opções', ru: 'Ещё настройки' };
   for (const c in M) { STR[c] = STR[c] || {}; STR[c].more = M[c]; } })();
+// host-migration strings (11 languages)
+(() => { const M = {
+  en: ['Host left – switching host…', 'You are the new host', 'New host – game on!'], fr: ['L’hôte est parti – changement d’hôte…', 'Tu es le nouvel hôte', 'Nouvel hôte – on continue !'],
+  it: ['L’host è uscito – cambio host…', 'Ora sei tu l’host', 'Nuovo host – si continua!'], de: ['Host weg – neuer Host wird gesucht…', 'Du bist jetzt der Host', 'Neuer Host – weiter geht’s!'],
+  es: ['El anfitrión se fue – cambiando…', 'Ahora eres el anfitrión', 'Nuevo anfitrión – ¡seguimos!'], tr: ['Kurucu ayrıldı – yeni kurucu seçiliyor…', 'Artık kurucu sensin', 'Yeni kurucu – devam!'],
+  zh: ['房主掉线，正在换房主…', '你成为了新房主', '已换新房主，继续！'], ja: ['ホストが抜けました – 交代中…', 'あなたが新しいホストです', 'ホスト交代 – 続行！'],
+  ko: ['방장이 나갔습니다 – 방장 교체 중…', '이제 당신이 방장입니다', '새 방장 – 계속!'], pt: ['O anfitrião saiu – trocando…', 'Agora você é o anfitrião', 'Novo anfitrião – bora!'],
+  ru: ['Хост вышел – меняем хоста…', 'Теперь ты хост', 'Новый хост – играем дальше!'] };
+  for (const c in M) { STR[c] = STR[c] || {}; [STR[c].n_migrating, STR[c].n_newHost, STR[c].n_hostChanged] = M[c]; } })();
 // online-play strings (11 languages)
 (() => {
   const K = ['proto', 'n_online', 'n_title', 'n_sub', 'n_quick', 'n_create', 'n_join', 'n_code', 'n_name', 'n_back', 'n_connecting', 'n_joining', 'n_noRoom', 'n_full', 'n_fail', 'n_timeout', 'n_needCode', 'n_hostLeft', 'n_room', 'n_copied', 'n_leave', 'n_next', 'n_wait', 'n_waitJoin', 'n_joined', 'n_left', 'n_player', 'n_startNow'];
@@ -4748,8 +4757,19 @@ function tutTick(dt) {
     a.visible = true; a.position.set(player.x + Math.sin(ang) * r, 0.06, player.z + Math.cos(ang) * r); a.rotation.y = ang + Math.PI;
   } else a.visible = false;
 }
-function frame(now) {
-  requestAnimationFrame(frame);
+function frame(now) { requestAnimationFrame(frame); step(now); }
+// a hidden tab gets no animation frames: while hosting, a worker keeps the shared world ticking (20 per second, no drawing)
+const BG = { w: null, on: false };
+function bgTicker() {
+  const want = document.hidden && NET.role === 'host';
+  if (want === BG.on) return; BG.on = want;
+  try {
+    if (!BG.w) { BG.w = new Worker(URL.createObjectURL(new Blob(['let t=null;onmessage=e=>{clearInterval(t);t=e.data?setInterval(()=>postMessage(0),50):null}'], { type: 'text/javascript' }))); BG.w.onmessage = () => { if (document.hidden && NET.role === 'host') step(performance.now(), true); }; }
+    BG.w.postMessage(want ? 1 : 0);
+  } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) last = performance.now(); bgTicker(); });
+function step(now, bg) {
   let dt = Math.min(0.05, (now - last) / 1000); last = now;
   const realDt = dt;
   if (hitStop > 0) { hitStop -= realDt; if (NET.role !== 'host') dt *= 0.06; } // a host never slows the shared world // hit-stop: a short freeze on every hit you deal or take
@@ -4782,6 +4802,7 @@ function frame(now) {
   camera.position.set(camX + camOff.x + shx, camOff.y, camZ + camOff.z + shz);
   camera.lookAt(camX + shx, 0, camZ + shz);
   moon.position.set(camX + 7, 20, camZ - 3); moon.target.position.set(camX, 0, camZ);
+  if (bg) return;
   syncVisuals(clock);
   renderer.render(scene, camera);
   autoQuality(realDt);
@@ -5123,10 +5144,37 @@ async function initNet() {
   n.on('connected', peer => { if (NET.role === 'host') sendTo(peer.id, { t: 'hi' }); });
   n.on('disconnected', peer => {
     if (NET.role === 'host') { const P = NET.peers.get(peer.id); if (P) netUnseat(P); }
-    else if (NET.role === 'client' && peer.id === NET.hostId) netLeave(T('n_hostLeft'));
+    else if (NET.role === 'client' && peer.id === NET.hostId) netHostGone();
   });
+  n.on('leader', id => netLeader(id));
   NET.net = n;
   return n;
+}
+// ---- host migration: the netlib server picks a new leader when the host leaves; that player's game becomes the host and the others re-attach to their own monsters
+function netHostGone() {
+  NET.hostId = null;
+  if (!(running || over)) { netLeave(T('n_hostLeft')); return; }
+  if (!(NET.migT > 0)) { NET.migT = 10; banner(T('n_migrating')); }
+  if (NET.net && NET.net.currentLeader === NET.net.id) netPromote();
+}
+function netLeader(id) {
+  if (NET.role !== 'client' || !NET.net || !(running || over)) return;
+  if (id === NET.net.id) { netPromote(); return; }
+  if (id !== NET.hostId) { NET.hostId = null; if (!(NET.migT > 0)) { NET.migT = 10; banner(T('n_migrating')); } }
+}
+function netPromote() {
+  if (NET.role !== 'client') return;
+  NET.role = 'host'; NET.hostId = null; NET.migT = 0; NET.peers.clear(); NET.ev = []; NET.pending = null;
+  for (const id of NET.PK.keys()) if (typeof id === 'number' && id > PID) PID = id;
+  NET.PK.clear();
+  for (const p of pickups) { if (p.predT) { p.predT = 0; } if (p.field && !p.alive && !(p.respawn > 0)) p.respawn = 3; }
+  for (const u of units) { if (!u.isPlayer && u.human) u.orphan = true; if (!u.alive) u.respawn = Math.max(u.respawn || 0, 2); u.rx = undefined; }
+  if (player) player.name = NET.name;
+  NET.orphanT = 8; NET.restartT = 12;
+  netResetPs();
+  for (const id of NET.net.peers.keys()) sendTo(id, { t: 'hi' });
+  if (over) netOnEnd(); else if (!running) netNewMatch();
+  banner(T('n_newHost')); netReportRoom(); bgTicker();
 }
 function waitLobby() {
   return new Promise((res, rej) => { const to = setTimeout(() => rej(new Error(T('n_timeout'))), 15000); NET.net.on('lobby', code => { clearTimeout(to); res(code); }); });
@@ -5160,7 +5208,7 @@ async function netQuick() {
   await netHost(true);
   banner(T('n_noRoom'));
 }
-function netDrop() { try { if (NET.net) NET.net.close(); } catch (e) {} NET.net = null; NET.role = 'solo'; NET.hostId = null; NET.peers.clear(); NET.ev = []; NET.code = ''; NET.pending = null; NET.welcome = null; }
+function netDrop() { try { if (NET.net) NET.net.close(); } catch (e) {} NET.net = null; NET.role = 'solo'; NET.hostId = null; NET.peers.clear(); NET.ev = []; NET.code = ''; NET.pending = null; NET.welcome = null; NET.migT = 0; NET.orphanT = 0; bgTicker(); }
 function netReportRoom() {
   if (NET.role === 'solo' || !NET.code) return;
   const humans = NET.role === 'host' ? 1 + NET.peers.size : units.filter(isHuman).length;
@@ -5172,6 +5220,12 @@ function onNet(peer, m) {
       if (NET.peers.has(peer.id)) return;
       const nm = cleanName(m.name, NT('n_player', 10 + ((Math.random() * 89) | 0)));
       const P = { id: peer.id, name: nm, team: [0, 1, 2].includes(m.team) ? m.team : 0, hero: m.hero, skill: m.skill, skin: SKINS[m.skin] ? m.skin : 'classic', unl: Array.isArray(m.unl) ? m.unl.filter(id => SKILLS[id] && SKILLS[id].lock).slice(0, 20) : [], unit: null };
+      const ou = Number.isInteger(m.uid) && m.uid >= 0 ? units[m.uid] : null;
+      if (ou && ou.orphan && !ou.remote && !ou.isPlayer) { // after a host change: back onto the same monster, same score
+        ou.orphan = false; ou.remote = P.id; ou.unl = new Set(P.unl); P.name = ou.name; P.unit = ou; NET.peers.set(peer.id, P);
+        if (running) { netFlush(); netPickDiff(); netFlush(); netSendSetup(P); } else sendTo(peer.id, { t: 'wait' });
+        netReportRoom(); return;
+      }
       if (units.filter(u => !isHuman(u)).length === 0) { sendTo(peer.id, { t: 'full' }); return; }
       NET.peers.set(peer.id, P);
       if (running) {
@@ -5197,9 +5251,13 @@ function onNet(peer, m) {
   }
   if (NET.role !== 'client') return;
   if (m.t === 'hi') {
-    if (NET.hostId && NET.hostId !== peer.id) return;
-    NET.hostId = peer.id;
-    sendTo(peer.id, { t: 'H', name: NET.name, team: startTeam, hero: startHero, skill: startSkill, skin: PROG.skin, unl: PROG.unl });
+    const L = NET.net && NET.net.currentLeader;
+    if (NET.hostId && NET.hostId !== peer.id && L !== peer.id) return; // a hello from the server's current leader always wins (it may beat the old host's "disconnected" here)
+    if (NET.hostId === peer.id && NET.migT <= 0 && !NET.welcome) return; // repeat hello from the host we already have
+    const mig = (running || over) && !!player && NET.hostId !== peer.id;
+    NET.hostId = peer.id; NET.migT = 0;
+    sendTo(peer.id, { t: 'H', name: NET.name, team: startTeam, hero: startHero, skill: startSkill, skin: PROG.skin, unl: PROG.unl, uid: mig && player ? player.id : -1 });
+    if (mig) banner(T('n_hostChanged'));
     if (NET.welcome) { NET.welcome(); NET.welcome = null; }
     return;
   }
@@ -5225,8 +5283,11 @@ function netTick(dt) {
       const el = document.getElementById('endNet'); if (el) el.textContent = NT('n_next', Math.max(0, Math.ceil(NET.restartT)));
       if (NET.restartT <= 0) netNewMatch();
     }
+    if (NET.orphanT > 0 && NET.net && (NET.hiT = (NET.hiT || 0) - dt) <= 0) { NET.hiT = 1; for (const id of NET.net.peers.keys()) if (!NET.peers.has(id)) sendTo(id, { t: 'hi' }); } // keep saying hello until everyone has re-attached
+    if (NET.orphanT > 0 && (NET.orphanT -= dt) <= 0) for (const u of units) { if (u.orphan && !u.remote && units[u.id] === u) netUnseat({ id: null, unit: u, name: u.name }); u.orphan = false; } // nobody came back for it: a bot takes over
     if (NET.peers.size) netFlush(); else NET.ev = [];
   } else if (NET.role === 'client') {
+    if (NET.migT > 0 && (NET.migT -= dt) <= 0) { netLeave(T('n_hostLeft')); return; }
     if (NET.pending && !CG.adBusy) { const m = NET.pending; NET.pending = null; netApplySetup(m); }
     if (running && player) {
       NET.sendT -= dt;
