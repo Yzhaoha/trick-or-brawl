@@ -1237,25 +1237,38 @@ const OBST = [
 ].map(([x, z]) => [x * MAP_K, z * MAP_K]).concat([ // extra gravestones to fill the bigger arena
   [-4, -4], [4, 4], [-14, 0], [14, 0], [0, -20], [-22, -10], [22, -10], [-30, 4], [30, 4], [-8, 22], [8, 22], [-20, 30], [20, 30], [-32, -26], [32, -26], [0, 33], [-12, -32], [12, -32],
 ]).map(([x, z]) => ({ x, z, r: 0.75 }));
-const VOX_GRAVE = VOXEL ? (() => {
-  const V = new Vox(0.1, 3);
-  V.fill(-6, 6, 0, 0, -3, 4, 0x8a849e).fill(-5, 5, 1, 8, -2, 2, 0xb3adc8).fill(-4, 4, 9, 9, -2, 2, 0xb3adc8).fill(-3, 3, 10, 10, -2, 2, 0xb3adc8);
-  V.fill(0, 0, 4, 9, 2, 2, 0x6f6890).fill(-2, 2, 8, 8, 2, 2, 0x6f6890); // cross
-  V.fill(4, 6, 1, 1, 1, 4, 0x5d9a3c).set(5, 2, 2, 0x5d9a3c).set(-5, 1, 2, 0x5d9a3c).set(-4, 1, 3, 0x6fb048); // moss
-  V.set(-5, 6, 2, 0x9a94b0).set(-4, 5, 2, 0x9a94b0).set(3, 2, 2, 0x9a94b0); // cracks
-  return V.geo(0.08);
-})() : null;
-OBST.forEach(o => {
-  const g = new THREE.Group();
-  if (VOX_GRAVE) { const m = new THREE.Mesh(VOX_GRAVE, VOX_MAT); m.position.y = 0.05; m.castShadow = m.receiveShadow = true; g.add(m); g.position.set(o.x, 0, o.z); scene.add(g); return; }
-  g.add(box(1.3, 0.14, 0.7, M(0x8a849e), 0, 0.07, 0.05));
-  g.add(box(1.0, 0.8, 0.4, M(0xb3adc8), 0, 0.48, 0));
-  const arch = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.4, 18, 1, false, 0, Math.PI), M(0xb3adc8)); arch.rotation.set(Math.PI / 2, 0, Math.PI / 2); arch.position.y = 0.88; arch.castShadow = true; g.add(arch);
-  g.add(box(0.11, 0.46, 0.04, M(0x6f6890), 0, 0.82, 0.21));
-  g.add(box(0.34, 0.1, 0.04, M(0x6f6890), 0, 0.92, 0.21));
-  const moss = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 0), M(0x5d9a3c, { flatShading: true })); moss.position.set(0.45, 0.12, 0.2); moss.castShadow = true; g.add(moss);
-  g.position.set(o.x, 0, o.z); scene.add(g);
-});
+const propMaps = new Map();
+function propMap(name) {
+  if (!propMaps.has(name)) {
+    const map = new THREE.TextureLoader().load('vendor/painted/prop-' + name + '.webp');
+    map.colorSpace = THREE.SRGBColorSpace;
+    propMaps.set(name, map);
+  }
+  return propMaps.get(name);
+}
+function propSprite(name, size, parent, x = 0, y = 0, z = 0) {
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: propMap(name), alphaTest:.08}));
+  sprite.center.set(.5,0);
+  sprite.scale.setScalar(size);
+  sprite.position.set(x,y,z);
+  parent.add(sprite);
+  return sprite;
+}
+// A batch shares one texture and draw call. Each card is anchored at its ground contact.
+function propBatch(name, entries, size, turn = 0) {
+  if (!entries.length) return;
+  const geo = new THREE.PlaneGeometry(1,1).translate(0,.5,0);
+  const batch = new THREE.InstancedMesh(geo,new THREE.MeshBasicMaterial({map:propMap(name),alphaTest:.23}),entries.length);
+  const obj = new THREE.Object3D();
+  obj.rotation.x = -CAM_PITCH; obj.rotateZ(turn);
+  entries.forEach(([x,y,z,scale],i) => {
+    obj.position.set(x,0,z);
+    obj.scale.setScalar(size*(Array.isArray(scale)?scale[0]:scale || 1));
+    obj.updateMatrix(); batch.setMatrixAt(i,obj.matrix);
+  });
+  scene.add(batch);
+}
+propBatch('grave',OBST.map(o=>[o.x,0,o.z,1]),1.5);
 
 const MIST_TEX = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'), g = x.createRadialGradient(64, 64, 8, 64, 64, 64); g.addColorStop(0, 'rgba(255,255,255,.55)'); g.addColorStop(0.6, 'rgba(255,255,255,.35)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 128, 128); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
 // fog patches (hiding spots): low ground mist ring + a dead tree, so they read as zones without hiding the action
@@ -1264,15 +1277,7 @@ FOG.forEach(f => {
   const g = new THREE.Group();
   const disc = new THREE.Mesh(new THREE.CircleGeometry(f.r * 1.15, 28), new THREE.MeshBasicMaterial({ map: MIST_TEX, color: 0xf4efff, transparent: true, opacity: 0.75, depthWrite: false }));
   disc.rotation.x = -Math.PI / 2; disc.position.y = 0.04; g.add(disc);
-  for (let i = 0; i < 9; i++) {
-    const a = i / 9 * Math.PI * 2 + 0.3, rr = f.r * (0.78 + (i % 2) * 0.12);
-    const sz = 0.28 + (i % 3) * 0.08;
-    const puff = new THREE.Mesh(VOXEL ? new THREE.BoxGeometry(sz * 2, sz * 2, sz * 2) : new THREE.SphereGeometry(sz * 1.3, 10, 6), M(0xf4f0ff, { transparent: true, opacity: 0.55, depthWrite: false })); puff.scale.y = 0.45;
-    puff.position.set(Math.cos(a) * rr, 0.1, Math.sin(a) * rr); if (!VOXEL) puff.rotation.y = a; g.add(puff);
-  }
-  const trunk = box(0.16, 1.0, 0.16, M(0x4b3a2c), 0.9, 0.5, -0.9);
-  trunk.add(box(0.5, 0.08, 0.08, M(0x4b3a2c), 0.2, 0.28, 0)); trunk.add(box(0.08, 0.36, 0.08, M(0x4b3a2c), -0.12, 0.6, 0.0));
-  g.add(trunk);
+  propSprite('deadtree',1.5,g,.9,0,-.9);
   g.position.set(f.x, 0, f.z); scene.add(g);
   f.mesh = g;
 });
@@ -1312,6 +1317,7 @@ function instMesh(geo, mat, list, shadow = true) { // list: [x, y, z, scale (num
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
   const tex2 = tex.clone(); tex2.needsUpdate = true; tex2.repeat.set(260 / 9, 260 / 9);
   const meadowArt = new Image();
+  meadowArt.crossOrigin = 'anonymous';
   meadowArt.onload = () => {
     g.drawImage(meadowArt, 0, 0, N, N);
     tex.needsUpdate = tex2.needsUpdate = true;
@@ -1352,17 +1358,25 @@ function instMesh(geo, mat, list, shadow = true) { // list: [x, y, z, scale (num
     p.restore();
   });
   const ptex = new THREE.CanvasTexture(pc); ptex.colorSpace = THREE.SRGBColorSpace; ptex.anisotropy = 4;
+  const paving = new Image();
+  paving.crossOrigin = 'anonymous';
+  paving.onload = () => {
+    p.save(); p.globalCompositeOperation = 'source-atop'; p.globalAlpha = .48;
+    p.scale(.48,.48); p.fillStyle = p.createPattern(paving,'repeat');
+    p.fillRect(0,0,P/.48,P/.48); p.restore(); ptex.needsUpdate = true;
+  };
+  paving.src = 'vendor/painted/prop-road.webp';
   const path = new THREE.Mesh(new THREE.PlaneGeometry(S, S), new THREE.MeshLambertMaterial({ map: ptex, transparent: true, depthWrite: false }));
   path.rotation.x = -Math.PI / 2; path.position.y = 0.012; path.receiveShadow = true; path.renderOrder = -1; scene.add(path);
 
   // picket fence round the arena (collision stays the same invisible square)
-  const E = HALF + 1.1, posts = [], pick = [];
-  for (let i = -E; i <= E + 0.01; i += 1.3) { posts.push([i, 0.55, -E, 1], [i, 0.55, E, 1], [-E, 0.55, i, 1], [E, 0.55, i, 1]); }
-  for (let i = -E + 0.65; i < E; i += 0.43) { const h = 0.8 + ((i * 7.3) % 1 + 1) % 1 * 0.08; pick.push([i, h / 2, -E + 0.1, [1, h, 1]], [i, h / 2, E - 0.1, [1, h, 1]], [-E + 0.1, h / 2, i, [1, h, 1], Math.PI / 2], [E - 0.1, h / 2, i, [1, h, 1], Math.PI / 2]); }
-  instMesh(new THREE.BoxGeometry(0.26, 1.1, 0.26), M(0x7a4a2a), posts);
-  instMesh(new THREE.BoxGeometry(0.22, 1, 0.07), M(0xf3e6cf), pick);
-  const railM = M(0xa8703f);
-  [0.35, 0.72].forEach(y => { scene.add(box(2 * E, 0.12, 0.08, railM, 0, y, -E + 0.05)); scene.add(box(2 * E, 0.12, 0.08, railM, 0, y, E - 0.05)); scene.add(box(0.08, 0.12, 2 * E, railM, -E + 0.05, y, 0)); scene.add(box(0.08, 0.12, 2 * E, railM, E - 0.05, y, 0)); });
+  const E = HALF + 1.1, fence = [], sideFence = [];
+  for (let v=-E; v<=E; v+=1.9) {
+    fence.push([v,0,-E,1],[v,0,E,1]);
+    sideFence.push([-E,0,v,1],[E,0,v,1]);
+  }
+  propBatch('fence',fence,2.0);
+  propBatch('fence',sideFence,2.0,Math.PI/2);
 
   // autumn trees and pines outside the fence
   const trunks = [], crowns = [], tops = [], pines = [], pines2 = [];
@@ -1376,15 +1390,7 @@ function instMesh(geo, mat, list, shadow = true) { // list: [x, y, z, scale (num
       else { const col = AUT[(WRNG() * AUT.length) | 0]; trunks.push([x, 0.6 * sc, z, sc]); crowns.push([x, 1.9 * sc, z, sc * 1.35, ry, col]); tops.push([x + 0.3 * sc, 2.75 * sc, z - 0.2 * sc, sc * 0.85, ry + 1, col]); }
     }
   }
-  const leafM = VOXEL ? new THREE.MeshLambertMaterial({ vertexColors: true }) : new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
-  const leafTone = (x, y, z) => (x * 3 + y * 5 + z * 7) % 4 === 0 ? 0xd0d0d0 : 0xffffff; // a few darker leaf blocks
-  const vCrown = VOXEL ? voxBlob(new Vox(0.4, 21), 2, 2, 2, leafTone).geo(0.08) : null;
-  const vPine = VOXEL ? (() => { const V = new Vox(0.4, 23); [[-2, 2], [-1, 2], [0, 1], [1, 1], [2, 0]].forEach(([y, r]) => { for (let x = -r; x <= r; x++) for (let z = -r; z <= r; z++) if (!(r > 1 && Math.abs(x) === r && Math.abs(z) === r)) V.set(x, y, z, leafTone(x, y, z)); }); return V.geo(0.08); })() : null;
-  instMesh(VOXEL ? new THREE.BoxGeometry(0.36, 1.2, 0.36) : new THREE.CylinderGeometry(0.16, 0.26, 1.2, 6), M(0x6b4528), trunks);
-  instMesh(vCrown || new THREE.IcosahedronGeometry(1, 0), leafM, crowns);
-  instMesh(vCrown || new THREE.IcosahedronGeometry(1, 0), leafM, tops);
-  instMesh(vPine || new THREE.ConeGeometry(1.1, 2.0, 7), leafM, pines);
-  instMesh(vPine || new THREE.ConeGeometry(1.1, 1.8, 7), leafM, pines2);
+  propBatch('tree',trunks,3.15);
 
   // props inside: pumpkins and bushes hug the fence, lanterns line the paths (no colliders: they never block)
   const clear = (x, z, r) => Math.hypot(x, z) > 9 && BASES.every(b => Math.hypot(x - b[0], z - b[1]) > 5.5) && OBST.every(o => Math.hypot(x - o.x, z - o.z) > r) && FOG.every(f => Math.hypot(x - f.x, z - f.z) > f.r + 0.8);
@@ -1400,32 +1406,26 @@ function instMesh(geo, mat, list, shadow = true) { // list: [x, y, z, scale (num
     const x = (WRNG() * 2 - 1) * (HALF - 3), z = (WRNG() * 2 - 1) * (HALF - 3);
     if (!clear(x, z, 2)) continue; const s = 0.6 + WRNG() * 0.4; pumps.push([x, 0.3 * s, z, [s, s * 0.78, s], WRNG() * 6]); stems.push([x, 0.62 * s, z, s]);
   }
-  let pumpGeo = new THREE.SphereGeometry(0.42, 12, 8); { const pa = pumpGeo.attributes.position; for (let i = 0; i < pa.count; i++) { const x = pa.getX(i), z = pa.getZ(i), a = Math.atan2(z, x), f = 1 + 0.08 * Math.cos(a * 8); pa.setX(i, x * f); pa.setZ(i, z * f); } pumpGeo.computeVertexNormals(); }
-  if (VOXEL) pumpGeo = voxBlob(new Vox(0.12, 31), 3, 2, 3, (x, y, z) => (Math.abs(x) === 1 || Math.abs(z) === 1) ? 0xd6d6d6 : 0xffffff).geo(0.04);
-  const PUMP_M = c => VOXEL ? M(c, { vertexColors: true }) : M(c);
-  instMesh(pumpGeo, PUMP_M(0xff8a1e), pumps);
-  instMesh(VOXEL ? new THREE.BoxGeometry(0.1, 0.2, 0.1) : new THREE.CylinderGeometry(0.05, 0.07, 0.2, 5), M(0x4d7a2a), stems);
-  instMesh(VOXEL ? voxBlob(new Vox(0.24, 41), 2, 2, 2, leafTone).geo(0.08) : new THREE.IcosahedronGeometry(0.6, 1), leafM, bushes);
+  propBatch('pumpkin',pumps,1.05);
+  propBatch('shrub',bushes,1.15);
   const lampPost = [], lampHead = [];
   BASES.forEach(b => { for (const f of [0.42, 0.7]) for (const sgn of [-1, 1]) { const x = b[0] * f, z = b[1] * f, len = Math.hypot(b[0], b[1]), nx = -b[1] / len * 2.4 * sgn, nz = b[0] / len * 2.4 * sgn; lampPost.push([x + nx, 0.8, z + nz, 1]); lampHead.push([x + nx, 1.72, z + nz, 1]); } });
-  instMesh(VOXEL ? new THREE.BoxGeometry(0.16, 1.6, 0.16) : new THREE.CylinderGeometry(0.07, 0.1, 1.6, 6), M(0x3a2f45), lampPost);
-  instMesh(new THREE.BoxGeometry(0.34, 0.34, 0.34), new THREE.MeshLambertMaterial({ color: 0xffd36a, emissive: 0xffa526, emissiveIntensity: 0.9 }), lampHead, false);
+  propBatch('lantern',lampPost,1.8);
 
   // team base pads: coloured ring + two banners
   BASES.forEach((b, t) => {
+    propSprite( ['chest','basket','cauldron'][t],1.55,scene,b[0],0,b[1]-3.15);
     const pad = new THREE.Mesh(new THREE.RingGeometry(2.43, 2.55, 48), new THREE.MeshBasicMaterial({ color: TEAM_COL[t], transparent: true, opacity: 0.85, depthWrite: false }));
     pad.rotation.x = -Math.PI / 2; pad.position.set(b[0], 0.03, b[1]); scene.add(pad);
     for (const a of [-0.6, 0.6]) {
       const ang = Math.atan2(-b[1], -b[0]) + Math.PI + a, x = b[0] + Math.cos(ang) * 3.2, z = b[1] + Math.sin(ang) * 3.2;
-      scene.add(box(0.12, 2.6, 0.12, M(0x4a3626), x, 1.3, z));
-      scene.add(box(0.9, 0.62, 0.06, M(TEAM_COL[t]), x + 0.5, 2.2, z));
+      propSprite('banner',2.25,scene,x,0,z).material.color.setHex(TEAM_COL[t]).lerp(new THREE.Color(0xffffff),.62);
     }
   });
   // pumpkin patch in the centre (boss arena later)
   for (let i = 0; i < 9; i++) {
     const a = i / 9 * Math.PI * 2, r = 2.8 + (i % 2) * 0.6, s = 1.25;
-    const pm = new THREE.Mesh(pumpGeo, PUMP_M(0xff7a1a)); pm.scale.set(s, s * 0.8, s); pm.position.set(Math.cos(a) * r, 0.3 * s, Math.sin(a) * r); pm.castShadow = true; scene.add(pm);
-    scene.add(box(0.08, 0.18, 0.08, M(0x3c6b2a), Math.cos(a) * r, 0.62 * s, Math.sin(a) * r));
+    propSprite('pumpkin',s,scene,Math.cos(a)*r,0,Math.sin(a)*r);
   }
 })();
 
@@ -2366,14 +2366,16 @@ function mergeRig(root) {
   }
 }
 const paintedTextures = new Map();
-function paintedTexture(hero, pose) {
+function paintedTexture(hero, pose, flip = false) {
   const path = 'vendor/painted/' + hero + '-' + pose + '.webp';
-  if (!paintedTextures.has(path)) {
-    const texture = new THREE.TextureLoader().load(path);
+  const key = path + (flip ? '#left' : '');
+  if (!paintedTextures.has(key)) {
+    const texture = flip ? paintedTexture(hero,pose).clone() : new THREE.TextureLoader().load(path);
+    if (flip) { texture.repeat.x = -1; texture.offset.x = 1; }
     texture.colorSpace = THREE.SRGBColorSpace;
-    paintedTextures.set(path,texture);
+    paintedTextures.set(key,texture);
   }
-  return paintedTextures.get(path);
+  return paintedTextures.get(key);
 }
 function makeMonster(hero, team, target = scene, skin = 'classic') {
   const prevSkin = CUR_SKIN; CUR_SKIN = SKINS[skin] ? skin : 'classic';
@@ -2627,46 +2629,20 @@ function scatter(x, z, total, n) {
 
 // ---------- buckets ----------
 function makeBucket() {
-  if (VOXEL) { // pumpkin candy basket in blocks: ridged body, carved face, dark rim, handle, candy heaped on top
-    const g = new THREE.Group(), O = M(0xff7a1a), R = M(0xe0600c), D = M(0x2a1405), L = M(0xffd23a, { emissive: 0x6a3a00 });
-    g.add(box(0.84, 0.56, 0.84, O, 0, 0.3, 0));
-    [-0.21, 0.21].forEach(x => { g.add(box(0.05, 0.5, 0.86, R, x, 0.3, 0)); g.add(box(0.86, 0.5, 0.05, R, 0, 0.3, x)); }); // ridges
-    g.add(box(0.9, 0.08, 0.9, M(0xc8500a), 0, 0.6, 0));                        // rim
-    g.add(box(0.7, 0.04, 0.7, D, 0, 0.63, 0));
-    [-0.17, 0.17].forEach(x => { g.add(box(0.14, 0.12, 0.03, D, x, 0.38, 0.425)); g.add(box(0.08, 0.06, 0.02, L, x, 0.36, 0.44)); }); // glowing eyes
-    [-0.2, -0.07, 0.07, 0.2].forEach((x, i) => g.add(box(0.12, i % 3 ? 0.08 : 0.12, 0.03, D, x, 0.18 + (i % 3 ? 0 : 0.02), 0.425))); // jagged grin
-    const hd = M(0x2a2036); g.add(box(0.06, 0.34, 0.06, hd, -0.38, 0.8, 0)); g.add(box(0.06, 0.34, 0.06, hd, 0.38, 0.8, 0)); g.add(box(0.82, 0.06, 0.06, hd, 0, 0.98, 0)); // handle
-    [[0xff5fa2, -0.18, 0.1], [0x5fd0ff, 0.16, -0.12], [0xffd23f, 0.02, 0.18], [0x7ee05a, -0.06, -0.2], [0xb36bff, 0.22, 0.14]].forEach(([c, x, z], i) => { const cd = box(0.16, 0.13, 0.16, M(c), x, 0.69 + (i % 2) * 0.04, z); cd.rotation.y = i * 0.7; g.add(cd); });
-    mergeRig(g); scene.add(g); return g;
-  }
-  const g = new THREE.Group(), O = M(0xff7a1a), D = M(0x2a1405);
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.34, 0.62, 18), O); body.position.y = 0.31; body.castShadow = true; g.add(body);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.05, 6, 20), M(0xe06410)); rim.rotation.x = Math.PI / 2; rim.position.y = 0.62; g.add(rim);
-  const eye = new THREE.Shape(); eye.moveTo(-0.08, -0.05); eye.lineTo(0.08, -0.05); eye.lineTo(0, 0.08); eye.closePath();
-  const eg = new THREE.ShapeGeometry(eye);
-  for (const sx of [-0.15, 0.15]) { const e = new THREE.Mesh(eg, D); e.position.set(sx, 0.4, 0.405); e.rotation.x = -0.12; g.add(e); }
-  const grin = new THREE.Shape(); grin.moveTo(-0.2, 0.04); grin.quadraticCurveTo(0, -0.14, 0.2, 0.04); grin.quadraticCurveTo(0, -0.04, -0.2, 0.04);
-  const gm = new THREE.Mesh(new THREE.ShapeGeometry(grin), D); gm.position.set(0, 0.22, 0.385); gm.rotation.x = -0.12; g.add(gm);
-  const h = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.035, 5, 16, Math.PI), M(0x2a2036)); h.position.y = 0.62; g.add(h);
-  [0xff5fa2, 0x5fd0ff, 0xffd23f, 0x7ee05a].forEach((c, i) => { const cd = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), M(c)); cd.position.set(Math.cos(i * 1.7) * 0.18, 0.66, Math.sin(i * 1.7) * 0.18); g.add(cd); });
+  const g = new THREE.Group();
+  propSprite('basket',1.18,g);
   scene.add(g); return g;
 }
 
 // ---------- item pedestals ----------
 function itemModel(type) {
   const g = new THREE.Group();
-  if (type === 'apple') { g.add(box(0.42, 0.4, 0.42, M(0xe8323f, { emissive: 0x400008 }))); g.add(box(0.06, 0.34, 0.06, M(0x6b4228), 0, 0.3, 0)); g.add(box(0.18, 0.06, 0.1, M(0x5fd05a), 0.09, 0.26, 0)); }
-  else if (type === 'soda') { g.add(box(0.3, 0.52, 0.3, M(0x3fd0ff, { emissive: 0x0a3a50 }))); g.add(box(0.31, 0.12, 0.31, M(0xffffff), 0, 0.05, 0)); g.add(box(0.04, 0.22, 0.04, M(0xff5fa2), 0.06, 0.34, 0)); }
-  else if (type === 'broom') { const st = box(0.07, 0.07, 0.95, M(0x8a5a36)); g.add(st); g.add(box(0.34, 0.2, 0.32, M(0xe0b24a), 0, 0, -0.55)); }
-  else if (type === 'magnet') { g.add(box(0.16, 0.5, 0.16, M(0xe8323f, { emissive: 0x400008 }), -0.2, 0, 0)); g.add(box(0.16, 0.5, 0.16, M(0xe8323f, { emissive: 0x400008 }), 0.2, 0, 0)); g.add(box(0.56, 0.16, 0.16, M(0xe8323f, { emissive: 0x400008 }), 0, -0.25, 0)); g.add(box(0.17, 0.12, 0.17, M(0xe6e6f0), -0.2, 0.27, 0)); g.add(box(0.17, 0.12, 0.17, M(0xe6e6f0), 0.2, 0.27, 0)); }
-  else if (type === 'web') { const d = new THREE.Mesh(new THREE.CircleGeometry(0.34, 8), new THREE.MeshBasicMaterial({ color: 0xf4ecff, transparent: true, opacity: 0.55, side: THREE.DoubleSide })); g.add(d); for (let k = 0; k < 4; k++) { const l = box(0.7, 0.03, 0.03, M(0xffffff)); l.rotation.z = k * Math.PI / 4; g.add(l); } }
-  else if (type === 'bell') { const bm = M(0xffc23d, { emissive: 0x5a3800 }); if (VOXEL) { g.add(box(0.56, 0.12, 0.56, bm, 0, -0.15, 0)); g.add(box(0.42, 0.16, 0.42, bm, 0, -0.01, 0)); g.add(box(0.3, 0.14, 0.3, bm, 0, 0.14, 0)); } else g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.3, 0.42, 14), bm)); g.add(box(0.1, 0.1, 0.1, M(0x7a4a00), 0, -0.26, 0)); g.add(box(0.06, 0.14, 0.06, M(0x7a4a00), 0, 0.27, 0)); }
-  else { g.add(box(0.5, 0.4, 0.5, M(0xff7a1a, { emissive: 0x401500 }))); g.add(box(0.07, 0.18, 0.07, M(0x3c6b2a), 0, 0.28, 0)); g.add(box(0.07, 0.07, 0.04, M(0x1a0d05), -0.1, 0.04, 0.26)); g.add(box(0.07, 0.07, 0.04, M(0x1a0d05), 0.1, 0.04, 0.26)); }
+  propSprite(type,.8,g,0,-.35);
   return g;
 }
 const PEDS = [[-7, -12, 'apple'], [7, -12, 'broom'], [-12, 5, 'soda'], [12, 5, 'bomb'], [-5, 17, 'broom'], [5, 17, 'apple'], [2.5, -17.5, 'soda'], [-17.5, 1, 'broom'], [17.5, 1, 'bomb']].map(([x, z, t]) => [x * MAP_K, z * MAP_K, t]).concat([[-30, -30, 'soda'], [30, -30, 'apple'], [-30, 30, 'bomb'], [30, 30, 'broom']]).map(([x, z, type]) => {
   const g = new THREE.Group();
-  g.add(box(0.95, 0.22, 0.95, M(0x5a5080), 0, 0.11, 0)); g.add(box(0.75, 0.08, 0.75, M(0x7a70a6), 0, 0.26, 0));
+  propSprite('pedestal',1.12,g);
   const glow = new THREE.Mesh(new THREE.CircleGeometry(0.62, 20), new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 0.35, depthWrite: false }));
   glow.rotation.x = -Math.PI / 2; glow.position.y = 0.31; g.add(glow);
   const im = itemModel(type); im.position.y = 1.05; g.add(im); mergeRig(g);
@@ -2688,22 +2664,8 @@ const FIRES = [[0, 0], [-20, -2], [20, -2], [0, -27]].map(([x, z]) => {
   warmDisc.rotation.x = -Math.PI / 2; warmDisc.position.y = 0.03; g.add(warmDisc);
   const edge = new THREE.Mesh(new THREE.RingGeometry(FIRE_R - 0.12, FIRE_R, 40), new THREE.MeshBasicMaterial({ color: 0xffb04a, transparent: true, opacity: 0.55, depthWrite: false }));
   edge.rotation.x = -Math.PI / 2; edge.position.y = 0.04; g.add(edge);
-  for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2; g.add(box(0.26, 0.18, 0.22, M(0x7a7266), Math.cos(a) * 0.62, 0.09, Math.sin(a) * 0.62)); }
-  [0.6, -0.6].forEach(r => { const l = box(0.9, 0.14, 0.14, M(0x6b4228), 0, 0.1, 0); l.rotation.y = r; g.add(l); });
-  const flames = (VOXEL ? [[0, 0.5, 0xff5a10, 0.36], [0.06, 0.62, 0xff9a2a, 0.24], [-0.05, 0.74, 0xffd23a, 0.14]] : [[0, 0.62, 0xff7a1a, 0.32], [0.1, 0.48, 0xffb03a, 0.22], [-0.1, 0.42, 0xffe066, 0.16]]).map(([dx, h, c, r]) => { const f = new THREE.Mesh(VOXEL ? new THREE.BoxGeometry(r * 1.3, h, r * 1.3) : new THREE.ConeGeometry(r, h, 8), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.9 })); f.position.set(dx, h / 2 + 0.12, dx * 0.5); g.add(f); return f; });
-  // spit with a roast chicken
-  [-0.55, 0.55].forEach(px => { g.add(box(0.06, 0.9, 0.06, M(0x4a3020), px, 0.45, 0)); });
-  const spit = new THREE.Group(); spit.position.y = 0.92; g.add(spit);
-  spit.add(box(1.3, 0.04, 0.04, M(0x8a8a8a), 0, 0, 0));
-  if (VOXEL) { // roast chicken in blocks
-    const mm = M(0xb8641e, { emissive: 0x3a1600 }), dm = M(0xa0561a, { emissive: 0x2a1000 }), bn = M(0xf4ecdc);
-    spit.add(box(0.5, 0.34, 0.4, mm)); spit.add(box(0.36, 0.1, 0.3, M(0xd88a3a, { emissive: 0x3a1600 }), 0, 0.2, 0));
-    [-1, 1].forEach(sd => { spit.add(box(0.12, 0.12, 0.22, dm, sd * 0.12, -0.08, 0.26)); spit.add(box(0.07, 0.07, 0.1, bn, sd * 0.12, -0.08, 0.41)); });
-  } else {
-  const meat = new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 10), M(0xb8641e, { emissive: 0x3a1600 })); meat.scale.set(1.3, 0.9, 1); spit.add(meat);
-  [-1, 1].forEach(sd => { const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.16, 4, 8), M(0xa0561a, { emissive: 0x2a1000 })); leg.position.set(sd * 0.1, -0.06, 0.2); leg.rotation.x = 1.2; spit.add(leg); const bone = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), M(0xf4ecdc)); bone.position.set(sd * 0.1, -0.12, 0.34); spit.add(bone); });
-  }
-  mergeRig(g);
+  const spit = new THREE.Group(), flames = [];
+  propSprite('roast',1.6,g);
   return { x, z, g, flames, spit, warmDisc };
 });
 function updateFires(dt) {
@@ -2724,14 +2686,7 @@ const BOOSTS = Array.from({ length: 18 }, () => {
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.55, 24), new THREE.MeshBasicMaterial({ color: 0x5ff2ff, transparent: true, opacity: 0.7, depthWrite: false }));
   ring.rotation.x = -Math.PI / 2; ring.position.y = 0.04; g.add(ring);
   const top = new THREE.Group(); top.position.y = 0.55; g.add(top);
-  if (VOXEL) { // glowing gem with stepped bat wings
-    const gem = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.26, 0.26), new THREE.MeshBasicMaterial({ color: 0x5ff2ff })); gem.rotation.set(0.6, 0.7, 0); top.add(gem);
-    const wm = M(0x3a2557, { emissive: 0x1a0a33 });
-    [-1, 1].forEach(sd => { top.add(box(0.2, 0.18, 0.05, wm, sd * 0.24, 0.04, 0)); top.add(box(0.16, 0.12, 0.05, wm, sd * 0.4, 0.12, 0)); top.add(box(0.1, 0.08, 0.05, wm, sd * 0.52, 0.2, 0)); [0.2, 0.34].forEach(x => top.add(box(0.08, 0.06, 0.05, wm, sd * x, -0.09, 0))); });
-  } else {
-  top.add(new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 10), new THREE.MeshBasicMaterial({ color: 0x5ff2ff })));
-  [-1, 1].forEach(sd => { const w = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.42, 4), M(0x3a2557, { emissive: 0x1a0a33 })); w.scale.set(1, 1, 0.3); w.rotation.z = sd * 1.25; w.position.x = sd * 0.26; top.add(w); });
-  }
+  propSprite('wings',1.15,top,0,-.34);
   mergeRig(g); g.visible = false; scene.add(g);
   return { x: 0, z: 0, has: false, respawn: 0, mesh: g, top };
 });
@@ -3392,6 +3347,10 @@ void main(){
 const HERO_ACC = { wolf: 0xffa64a, vamp: 0xff2a55, mummy: 0x6ff0ff, witch: 0xb36bff, ghost: 0xc9b8ff };
 const slashGeo = new THREE.PlaneGeometry(2, 2), SLASH_POOL = []; // swing materials are reused, so the shader is built once
 function spawnArc(u, range, col, full) {
+  if (u.vis && u.vis.painted) {
+    u.paintSwing = {end:clock+.28, x:u.fx, z:u.fz, range};
+    return;
+  }
   const arc = full ? Math.PI : 1.3, dir = u.combo === 2 ? -1 : 1, acc = new THREE.Color(full ? 0xffb020 : HERO_ACC[u.hero] || 0xffffff);
   const mat = SLASH_POOL.pop() || new THREE.ShaderMaterial({ vertexShader: SLASH_VS, fragmentShader: SLASH_FS, transparent: true, depthWrite: false, depthTest: false,
     uniforms: { uProg: { value: 0 }, uFade: { value: 0 }, uArc: { value: 0 }, uDir: { value: 1 }, uCore: { value: new THREE.Color() }, uAcc: { value: new THREE.Color() } } });
@@ -4409,15 +4368,27 @@ function syncVisuals(t) {
     if (V.painted) {
       const activeCast = (u.paintCastEnd || 0) > clock;
       const walking = Math.hypot(u.mx,u.mz) > .1 && u.stun <= 0;
-      let pose = 'idle';
-      if (walking) pose = Math.floor(t * 8) % 2 ? 'step-a' : 'step-b';
-      if (activeCast || u.swingT > 0) pose = 'strike';
-      V.painted.material.map = paintedTexture(u.hero,pose);
-      if (Math.abs(u.fx) > .1) V.painted.scale.x = Math.sign(u.fx) * 2.25;
+      const swing = u.paintSwing && clock < u.paintSwing.end ? u.paintSwing : null;
+      const dx = swing ? swing.x : walking && !activeCast ? u.mx : u.fx;
+      const dz = swing ? swing.z : walking && !activeCast ? u.mz : u.fz;
+      const vertical = Math.abs(dz) > Math.abs(dx);
+      const step = walking && Math.floor(t*8)%2 ? 'b' : 'a';
+      let pose = vertical ? (dz < 0 ? 'back-' : 'front-') + step : walking ? 'step-' + step : 'idle';
+      if (!vertical && (activeCast || swing || u.swingT>0)) pose = 'strike';
+      V.painted.material.map = paintedTexture(u.hero,pose,!vertical && dx<0);
+      V.painted.scale.set(vertical ? 1.8 : 2.25,1.8,1);
       V.painted.material.opacity = u.hero === 'ghost' && u.form ? .55 : 1;
       V.painted.material.color.setHex(u.flash > 0 ? 0xffb5ca : 0xffffff);
-      V.cast.visible = activeCast;
-      if (activeCast) {
+      V.cast.visible = !!(activeCast || swing);
+      if (swing) {
+        const phase = 1-(swing.end-clock)/.28;
+        const dist = (.45 + .48*phase)*swing.range;
+        V.cast.position.set(dx*dist,.58,dz*dist);
+        V.cast.material.rotation = Math.atan2(-dz,dx);
+        V.cast.scale.setScalar(1.25+phase*.8);
+        V.cast.material.opacity = Math.min(1,(1-phase)*3);
+      } else if (activeCast) {
+        V.cast.material.rotation = 0;
         const life = Math.min(1,(u.paintCastEnd-clock)/.34);
         V.cast.position.set(u.fx*.85,1,u.fz*.85);
         V.cast.scale.setScalar(1.7-life*.45);
@@ -4504,30 +4475,22 @@ function syncVisuals(t) {
   }
   // candy instances: wrapped sweets (body + two twists) and big lollipops
   const dummy = syncVisuals.d || (syncVisuals.d = new THREE.Object3D());
-  dummy.scale.setScalar(1.32);
-  let ns = 0, nb = 0, nc = 0;
+  const sweetBatches = syncVisuals.sweets || (syncVisuals.sweets = ['candy','corn','pop'].map(name=>{
+    const batch = new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:propMap(name),alphaTest:.2}),2600);
+    batch.frustumCulled=false; scene.add(batch); return batch;
+  }));
+  for (const batch of sweetBatches) batch.count=0;
   for (const p of pickups) {
     if (!p.alive) continue;
-    const bob = Math.sin(t * 3 + p.ph) * 0.06;
-    const y = p.air > 0 ? 0.3 + Math.sin((p.air / 0.5) * Math.PI) * 0.9 : 0.18 + bob;
-    if (p.big && nb < 120) {
-      dummy.position.set(p.x, y + 0.46, p.z); dummy.rotation.set(-0.35, t * 2 + p.ph, 0, 'YXZ'); dummy.updateMatrix();
-      bigMesh.setMatrixAt(nb, dummy.matrix); bigMesh.setColorAt(nb, p.col); swirlMeshA.setMatrixAt(nb, dummy.matrix); swirlMeshB.setMatrixAt(nb, dummy.matrix); ribbonMesh.setMatrixAt(nb, dummy.matrix); ribbonMesh.setColorAt(nb, p.col);
-      dummy.translateY(-0.4); dummy.updateMatrix(); stickMesh.setMatrixAt(nb, dummy.matrix);
-      nb++;
-    } else if (p.corn && nc < 900) {
-      dummy.position.set(p.x, y + 0.02, p.z); dummy.rotation.set(0.25, p.ph + t * 0.8, 0, 'YXZ'); dummy.updateMatrix();
-      cornMesh.setMatrixAt(nc++, dummy.matrix);
-    } else if (ns < 1400) {
-      dummy.position.set(p.x, y, p.z); dummy.rotation.set(0, p.ph + t * 0.8, 0.3); dummy.updateMatrix();
-      bodyMesh.setMatrixAt(ns, dummy.matrix); bodyMesh.setColorAt(ns, p.col); stripeMesh.setMatrixAt(ns, dummy.matrix);
-      dummy.translateX(0.17); dummy.updateMatrix(); knotMesh.setMatrixAt(ns * 2, dummy.matrix); knotMesh.setColorAt(ns * 2, p.col);
-      dummy.translateX(0.02); dummy.updateMatrix(); endMesh.setMatrixAt(ns * 2, dummy.matrix); endMesh.setColorAt(ns * 2, p.col);
-      dummy.translateX(-0.38); dummy.updateMatrix(); knotMesh.setMatrixAt(ns * 2 + 1, dummy.matrix); knotMesh.setColorAt(ns * 2 + 1, p.col);
-      dummy.translateX(-0.02); dummy.rotateY(Math.PI); dummy.updateMatrix(); endMesh.setMatrixAt(ns * 2 + 1, dummy.matrix); endMesh.setColorAt(ns * 2 + 1, p.col);
-      ns++;
-    }
+    const batch = sweetBatches[p.big ? 2 : p.corn ? 1 : 0];
+    if (batch.count>=2600) continue;
+    const bob = p.air>0 ? .9*Math.sin(p.air/.5*Math.PI) : .05*Math.sin(t*3+p.ph);
+    dummy.position.set(p.x,(p.big?.59:.29)+bob,p.z);
+    dummy.quaternion.copy(camera.quaternion); dummy.rotateZ(.16*Math.sin(t+p.ph));
+    dummy.scale.setScalar(p.big?1.13:.59); dummy.updateMatrix();
+    batch.setMatrixAt(batch.count++,dummy.matrix);
   }
+  for (const batch of sweetBatches) batch.instanceMatrix.needsUpdate=true;
   { let nk = 0; const bd = syncVisuals.bd || (syncVisuals.bd = new THREE.Object3D());
     const boost = TUT.on && TUT.step === 1 ? 1.35 : 1, hc = syncVisuals.hc || (syncVisuals.hc = new THREE.Color());
     for (const p of pickups) {
@@ -4542,8 +4505,6 @@ function syncVisuals(t) {
       nk++;
     }
     blobMesh.count = haloMesh.count = sparkMesh.count = nk; blobMesh.instanceMatrix.needsUpdate = haloMesh.instanceMatrix.needsUpdate = sparkMesh.instanceMatrix.needsUpdate = true; if (haloMesh.instanceColor) haloMesh.instanceColor.needsUpdate = true; }
-  bodyMesh.count = ns; stripeMesh.count = ns; swirlMeshA.count = swirlMeshB.count = nb; endMesh.count = ns * 2; knotMesh.count = ns * 2; cornMesh.count = nc; bigMesh.count = nb; ribbonMesh.count = nb; stickMesh.count = nb;
-  [bodyMesh, stripeMesh, endMesh, knotMesh, cornMesh, bigMesh, swirlMeshA, swirlMeshB, ribbonMesh, stickMesh].forEach(m => { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; });
   // floating numbers
   for (const n of nums) {
     n.t -= 1 / 60; n.y += 0.025;
