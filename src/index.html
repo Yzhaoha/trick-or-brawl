@@ -1255,6 +1255,12 @@ function instMesh(geo, mat, list, shadow = true) { // list: [x, y, z, scale (num
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(S, S), new THREE.MeshLambertMaterial({ map: tex }));
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
   const tex2 = tex.clone(); tex2.needsUpdate = true; tex2.repeat.set(260 / 9, 260 / 9);
+  const meadowArt = new Image();
+  meadowArt.onload = () => {
+    g.drawImage(meadowArt, 0, 0, N, N);
+    tex.needsUpdate = tex2.needsUpdate = true;
+  };
+  meadowArt.src = 'vendor/painted/meadow.webp';
   const outer = new THREE.Mesh(new THREE.PlaneGeometry(260, 260), new THREE.MeshLambertMaterial({ map: tex2, color: 0x9cb08a }));
   outer.rotation.x = -Math.PI / 2; outer.position.y = -0.02; outer.receiveShadow = true; scene.add(outer);
 
@@ -2303,6 +2309,16 @@ function mergeRig(root) {
     for (const it of items) if (it.merged && it.c.parent) it.c.parent.remove(it.c);
   }
 }
+const paintedTextures = new Map();
+function paintedTexture(hero, pose) {
+  const path = 'vendor/painted/' + hero + '-' + pose + '.webp';
+  if (!paintedTextures.has(path)) {
+    const texture = new THREE.TextureLoader().load(path);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    paintedTextures.set(path,texture);
+  }
+  return paintedTextures.get(path);
+}
 function makeMonster(hero, team, target = scene, skin = 'classic') {
   const prevSkin = CUR_SKIN; CUR_SKIN = SKINS[skin] ? skin : 'classic';
   const root = new THREE.Group(), lean = new THREE.Group(), yaw = new THREE.Group();
@@ -2429,13 +2445,25 @@ function makeMonster(hero, team, target = scene, skin = 'classic') {
   trap.position.y = 0.75; trap.visible = false; lean.add(trap);
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.46, 0.6, 24), new THREE.MeshBasicMaterial({ color: tc, transparent: true, opacity: 0.85 }));
   ring.rotation.x = -Math.PI / 2; ring.position.y = 0.02; root.add(ring);
+  let painted = null, cast = null;
+  if (target === scene && VOXEL && skin === 'classic') {
+    for (const part of body.children) if (part !== crown && part !== lid) part.visible = false;
+    painted = new THREE.Sprite(new THREE.SpriteMaterial({map:paintedTexture(hero,'idle'),depthWrite:false}));
+    painted.center.set(.5,.03);
+    painted.scale.set(2.25,1.8,1);
+    root.add(painted);
+    cast = new THREE.Sprite(new THREE.SpriteMaterial({map:paintedTexture(hero,'cast'),depthWrite:false}));
+    cast.visible = false;
+    root.add(cast);
+  }
   target.add(root); CUR_SKIN = prevSkin;
-  return { root, lean, yaw, body, torso, head, arm, legL, legR, crown, lid, ring, flashMats, bubble, trap, outline };
+  return { root, lean, yaw, body, torso, head, arm, legL, legR, crown, lid, ring, flashMats, bubble, trap, outline, painted, cast };
 }
 // portraits for the start screen, drawn once per monster and team with a small second renderer
 let portraitR = null;
 const portraitCache = {};
 function heroPortrait(hero, team, skin = 'classic') {
+  if (VOXEL && skin === 'classic') return 'vendor/painted/' + hero + '-idle.webp';
   const key = STYLE + (VOXEL ? 'vox' : '') + hero + team + skin;
   if (portraitCache[key]) return portraitCache[key];
   try {
@@ -3504,6 +3532,7 @@ function pow(x, y, z, col, size) {
 }
 const pillarGeo = new THREE.CylinderGeometry(0.75, 0.75, 2.4, 20, 1, true);
 function skillFx(u, col, small) { // a monster skill fired: ring on the ground, a light pillar, a puff of chunks
+  u.paintCastEnd = clock + 0.34;
   spawnRing(u.x, u.z, small ? 1.2 : 1.9, col);
   burst(u.x, 0.8, u.z, col, small ? 6 : 12);
   if (small) return;
@@ -4320,6 +4349,24 @@ function syncVisuals(t) {
         }
       }
       continue;
+    }
+    if (V.painted) {
+      const activeCast = (u.paintCastEnd || 0) > clock;
+      const walking = Math.hypot(u.mx,u.mz) > .1 && u.stun <= 0;
+      let pose = 'idle';
+      if (walking) pose = Math.floor(t * 8) % 2 ? 'step-a' : 'step-b';
+      if (activeCast || u.swingT > 0) pose = 'strike';
+      V.painted.material.map = paintedTexture(u.hero,pose);
+      if (Math.abs(u.fx) > .1) V.painted.scale.x = Math.sign(u.fx) * 2.25;
+      V.painted.material.opacity = u.hero === 'ghost' && u.form ? .55 : 1;
+      V.painted.material.color.setHex(u.flash > 0 ? 0xffb5ca : 0xffffff);
+      V.cast.visible = activeCast;
+      if (activeCast) {
+        const life = Math.min(1,(u.paintCastEnd-clock)/.34);
+        V.cast.position.set(u.fx*.85,1,u.fz*.85);
+        V.cast.scale.setScalar(1.7-life*.45);
+        V.cast.material.opacity = Math.min(1,life*2);
+      }
     }
     const visible = seeAll || canSee(player, u);
     V.root.visible = visible;
