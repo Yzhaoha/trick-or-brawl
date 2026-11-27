@@ -526,6 +526,32 @@ body.touch .rkcard .rkgo { font-size: 0; } body.touch .rkcard .rkgo::after { con
 #tut .ms {display:none} #tut kbd {min-width:22px;height:24px;font-size:13px}
 #rows .row:nth-child(n+4) {display:none!important}
 #board {background:linear-gradient(140deg,#322847ef,#201c35eb);border-color:#594969}
+
+#tut, body.touch #tut {top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 62px);flex-direction:row;gap:0;width:max-content;max-width:94vw;align-items:center;border:2px solid #594969;border-radius:12px;background:#261c38f5;padding:3px 5px}
+#tut .tc, body.touch #tut .tc {border:0;box-shadow:none;background:none;padding:3px 7px}
+#tut em {white-space:nowrap}
+#tut b, body.touch #tut b {white-space:normal;font-size:14px;line-height:1.2}
+#tutK:empty,#tut .kp br {display:none}
+#tutSkip {flex:none;border-width:1px}
+@media (orientation:portrait) {body.touch #tut {bottom:calc(env(safe-area-inset-bottom,0px) + 165px)} body.touch #matchGoal {max-width:35vw}}
+#startScreen .toprow {order:1}
+#startScreen .sect,#startScreen #playRow,#startScreen .morebtn,#moreBox,#startScreen #keys {order:2}
+body.touch #pitch {display:block;font-size:13px;line-height:1.15;margin:0}
+@media (orientation:landscape) and (max-height:500px) {
+ body.touch #startScreen .toprow {order:3;justify-content:space-between}
+ body.touch #startScreen .panel {gap:4px}
+ #endScreen #endRank {order:1}
+ #endScreen #endList {order:2}
+}
+#resultScore {margin:0;color:#ffe9a7;font:800 clamp(15px,2.6vw,21px) var(--body)}
+#endScreen .panel {gap:9px}
+.tag.local-player .nm {color:#ffedab;text-shadow:0 1px 2px #23152d,0 0 3px #23152d}
+#hudTC #matchGoal {top:calc(100% + 5px);width:max-content;max-width:min(44vw,240px);line-height:1.15;padding:4px 9px}
+body:has(#endScreen:not([hidden])) #tags {visibility:hidden}
+@media (orientation:landscape) and (min-width:640px) {
+  body.touch #hudTC {left:30%}
+  body.touch #hudTC #matchGoal {max-width:21vw}
+}
 </style>
 
 
@@ -543,8 +569,7 @@ body.touch .rkcard .rkgo { font-size: 0; } body.touch .rkcard .rkgo::after { con
   <canvas id="mini" width="248" height="248"></canvas>
   <button type="button" id="roomChip" class="chip" hidden></button><div class="chip" id="kda"><span><i>K</i><b id="kK">0</b></span><span><i>D</i><b id="kD">0</b></span><span><i>A</i><b id="kA">0</b></span></div>
 </div>
-<div id="matchGoal" hidden><span id="goalText"></span><span class="growthTrack"><i id="growthFill"></i></span></div>
-<div class="hud" id="hudTC"><div class="chip" id="timer">5:00</div><button type="button" id="mute" class="chip" title="Music on / off (M)"></button></div>
+<div class="hud" id="hudTC"><div class="chip" id="timer">5:00</div><button type="button" id="mute" class="chip" title="Music on / off (M)"></button><div id="matchGoal" hidden><span id="goalText"></span><span class="growthTrack"><i id="growthFill"></i></span></div></div>
 <div id="count" hidden></div>
 <div class="hud" id="hudTR"><div class="chip" id="board"><h3 id="boardTitle">CANDY</h3><div id="rows"></div><div id="meRow"></div></div></div>
 <div class="hud" id="hudBC"><div id="skillbar"></div></div>
@@ -604,6 +629,7 @@ body.touch .rkcard .rkgo { font-size: 0; } body.touch .rkcard .rkgo::after { con
 <div class="overlay" id="endScreen" hidden>
   <div class="panel">
     <h1 id="endTitle"></h1>
+    <p id="resultScore"></p>
     <p class="sub" id="endSub"></p>
     <div id="endRank"></div>
     <p class="sub" id="endNet" hidden></p>
@@ -1190,8 +1216,11 @@ function propMap(name) {
   }
   return propMaps.get(name);
 }
+function sceneryTint(name) {
+  return name === 'pumpkin' ? 0xb49ca9 : name === 'lantern' ? 0xcab4be : 0xffffff;
+}
 function propSprite(name, size, parent, x = 0, y = 0, z = 0) {
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: propMap(name), alphaTest:.08}));
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: propMap(name), color:sceneryTint(name), alphaTest:.08}));
   sprite.center.set(.5,0);
   sprite.scale.setScalar(size);
   sprite.position.set(x,y,z);
@@ -1202,7 +1231,7 @@ function propSprite(name, size, parent, x = 0, y = 0, z = 0) {
 function propBatch(name, entries, size, turn = 0) {
   if (!entries.length) return;
   const geo = new THREE.PlaneGeometry(1,1).translate(0,.5,0);
-  const batch = new THREE.InstancedMesh(geo,new THREE.MeshBasicMaterial({map:propMap(name),alphaTest:.23}),entries.length);
+  const batch = new THREE.InstancedMesh(geo,new THREE.MeshBasicMaterial({map:propMap(name),color:sceneryTint(name),alphaTest:.23}),entries.length);
   const obj = new THREE.Object3D();
   obj.rotation.x = -CAM_PITCH; obj.rotateZ(turn);
   entries.forEach(([x,y,z,scale],i) => {
@@ -3527,7 +3556,7 @@ function killBanner(by, u) {
   el.innerHTML = `<span style="color:${relCol(by)}">${esc(nameOf(by))}</span><b class="st">${by.streak > 1 ? by.streak : svgIcon('kill')}</b><span style="color:${relCol(u)}">${esc(nameOf(u))}</span>`;
   el.hidden = false; kbT = 2.4;
 }
-let bannerT = 0;
+let bannerT = 0, introGoalUntil = 0;
 function banner(text) { const b = document.getElementById('banner'); b.textContent = text; b.hidden = false; bannerT = 2.2; }
 
 // ======================= player input =======================
@@ -3695,7 +3724,7 @@ if (isTouch) {
     el.addEventListener('pointerup', e => { if (e.pointerType !== 'touch') up(); });
   };
   // stop iOS from reading two fingers as a pinch/zoom gesture (that cancels the steering finger); menus and the gear/music buttons keep normal taps
-  const noGesture = e => { if (!running || paused || picking && e.target.closest && e.target.closest('#picker')) return; if (e.target.closest && e.target.closest('.overlay, select, #gear, #mute, #roomChip')) return; e.preventDefault(); };
+  const noGesture = e => { if (!running || paused || picking && e.target.closest && e.target.closest('#picker')) return; if (e.target.closest && e.target.closest('.overlay, select, #gear, #mute, #roomChip, #tutSkip')) return; e.preventDefault(); };
   document.addEventListener('touchstart', noGesture, { passive: false });
   document.addEventListener('touchmove', e => { if (running && !(e.target.closest && e.target.closest('.overlay'))) e.preventDefault(); }, { passive: false });
   document.addEventListener('gesturestart', e => e.preventDefault());
@@ -4012,6 +4041,7 @@ function updateUnit(u, dt) {
     if (!p.alive || p.air > 0) continue;
     const dd = (p.x - u.x) ** 2 + (p.z - u.z) ** 2;
     if (dd < pr * pr) {
+      u.lastCandyPull = clock;
       if (dd < 0.36 * scaleOf(u)) { collect(u, p); continue; }
       const l = Math.sqrt(dd); p.x += (u.x - p.x) / l * dt * 7; p.z += (u.z - p.z) / l * dt * 7;
       if (u.skills.sniffer && l > 0.55 * scaleOf(u) && Math.random() < dt * 8) burst(p.x, 0.35, p.z, 0xff8fd0, 1);
@@ -4219,7 +4249,7 @@ const bossAura = (() => {
 // ---------- visible effects for passive / on-hit powers ----------
 const PFX_KEYS = ['wispM', 'snifM', 'moonM', 'hexM', 'thornM', 'haloM', 'frostM'];
 const pfxEach = (u, f) => PFX_KEYS.forEach(k => { const v = u[k]; if (!v) return; (Array.isArray(v) ? v : [v]).forEach(f); });
-const SNIF_MAT = new THREE.MeshBasicMaterial({ color: 0xff8fd0, transparent: true, opacity: 0.6, depthWrite: false });
+const SNIF_MAT = new THREE.MeshBasicMaterial({ color: 0xff8fd0, transparent: true, opacity: 0.38, depthWrite: false });
 const MOON_MAT = new THREE.MeshBasicMaterial({ color: 0xffe066 });
 const MOON_GLOW = new THREE.MeshBasicMaterial({ color: 0xfff4b8, transparent: true, opacity: 0.45, depthWrite: false });
 const THORN_MAT = new THREE.MeshLambertMaterial({ color: 0xff8a1f });
@@ -4235,7 +4265,7 @@ function powerFx(u, t, sc, visible) {
       scene.add(g); u.snifM = g;
     }
     const pr = 0.55 * sc + 0.75 * u.skills.sniffer;
-    u.snifM.visible = visible; u.snifM.position.set(u.x, 0.05, u.z); u.snifM.rotation.y = t * 0.6;
+    u.snifM.visible = visible && u.lastCandyPull !== undefined && t - u.lastCandyPull < 0.35; u.snifM.position.set(u.x, 0.05, u.z); u.snifM.rotation.y = t * 0.6;
     u.snifM.scale.set(pr, 1, pr); u.snifM.children.forEach(d => d.scale.set(1 / pr * 1.4, 1 / pr * 1.4, 1));
   }
   // Full Moon Stamina: a little glowing crescent moon floats over your shoulder
@@ -4400,10 +4430,20 @@ function syncVisuals(t) {
     if (u === king && !fl && !blink) { const q = 0.5 + 0.5 * Math.sin(t * 6); V.flashMats.forEach(m => m.emissive.setRGB(0.32 + 0.22 * q, 0.0, 0.1 + 0.12 * q)); } // Big Boss: a pulsing crimson glow over the whole body
     // fog: own unit semi-visible inside
     const inFog = fogAt(u.x, u.z) >= 0;
+    if (u === player && !V.pointer) {
+      const shape = new THREE.Shape();
+      shape.moveTo(-0.21, -0.78); shape.lineTo(0, -0.53); shape.lineTo(0.21, -0.78); shape.closePath();
+      V.pointer = new THREE.Mesh(G('playerPointer', () => new THREE.ShapeGeometry(shape)),
+        new THREE.MeshBasicMaterial({color:0xffedab, side:THREE.DoubleSide, depthWrite:false}));
+      V.pointer.position.z = 0.015;
+      V.ring.add(V.pointer);
+    }
+    if (V.pointer) V.pointer.visible = u === player;
     V.ring.material.opacity = inFog && u.team === (player ? player.team : -1) ? 0.35 : 0.8;
     // tag
     if (visible) {
       const hh = (u.hero === 'witch' ? 2.0 : 1.75) * sc; const [sx, sy] = toScreen(u.x, hh * Math.cos(LEAN) + V.root.position.y, u.z - hh * Math.sin(LEAN));
+      u.tag.classList.toggle('local-player', u === player);
       u.tag.style.display = 'flex';
       u.tag.style.left = sx + 'px'; u.tag.style.top = sy + 'px';
       u.tagHp.style.width = Math.max(0, u.hp / u.maxHp * 100) + '%';
@@ -4551,7 +4591,7 @@ function updateHud(dt) {
   const lo = xpFor(player.level), hi = xpFor(player.level + 1);
   const goalText = document.getElementById('goalText');
   const gap = king && king !== player ? Math.max(0, Math.ceil(king.score - player.score + 1)) : 0;
-  goalText.textContent = T('lv') + ' ' + player.level + ' · ' + (TUT.on ? T(TUT.step === 0 ? (isTouch ? 'tu_drag' : 'tu_move') : TUT.step === 1 ? 'tu_eat' : 'tu_atk') : king === player ? T('youBoss') : T('boss') + ' · +' + gap);
+  goalText.textContent = clock < introGoalUntil ? T('goal') : T('lv') + ' ' + player.level + ' · ' + (TUT.on ? T(TUT.step === 0 ? (isTouch ? 'tu_drag' : 'tu_move') : TUT.step === 1 ? 'tu_eat' : 'tu_atk') : king === player ? T('youBoss') : T('boss') + ' · +' + gap);
   document.getElementById('growthFill').style.width = (player.level >= 30 ? 100 : Math.max(0, Math.min(100, (player.xp-lo)/(hi-lo)*100))) + '%';
   if (goal.dataset.level !== String(player.level)) {
     if (goal.dataset.level && player.level > Number(goal.dataset.level)) { goal.classList.remove('reward'); void goal.offsetWidth; goal.classList.add('reward'); }
@@ -4639,7 +4679,7 @@ function startGame(fromNet) {
   ['hudTL', 'hudTC', 'hudTR', 'hudBC'].forEach(id => document.getElementById(id).hidden = false);
   document.getElementById('hudBR').hidden = isTouch; // on phones the touch buttons sit in the same corner
   renderer.domElement.focus && renderer.domElement.focus();
-  if (!tutStart()) { banner(T('goal')); bannerT = 3.2; }
+  if (!tutStart()) { introGoalUntil = clock + 3.2; }
 }
 function endGame() {
   toggleSettings(false); tutStop(false); RS.shown = false; document.getElementById('respawn').hidden = true; document.getElementById('game').classList.remove('dead');
@@ -4656,6 +4696,10 @@ function endGame() {
   title.style.color = TEAM_CSS[win];
   document.getElementById('endSub').textContent = (player && player.team === win ? T('youWin') : T('youLose')) + (king ? ` ♛ ${king.isPlayer ? T('you') : king.name} · ${king.score}` : '');
   const sorted = [...units].sort((a, b) => b.score - a.score);
+  const place = sorted.indexOf(player);
+  document.getElementById('resultScore').textContent = place >= 0
+    ? T('you') + '  #' + (place + 1) + ' / ' + sorted.length + '   ·   ' + T('board') + '  ' + player.score : '';
+  for (const id of ['hudTL','hudTC','hudTR','hudBR','hudBC','matchGoal','banner']) document.getElementById(id).hidden = true;
   document.getElementById('endList').innerHTML = sorted.map((u, i) =>
     `<div class="row${u.isPlayer ? ' me' : ''}"><span class="rk">${i + 1}</span><span class="dot" style="background:${TEAM_CSS[u.team]}"></span><span class="nmc">${u === king ? '♛ ' : ''}${esc(u.isPlayer ? T('you') : u.name)} · Lv${u.level}</span><span>${u.score}</span></div>`).join('');
   renderRankResult(settleMatch());
@@ -4704,7 +4748,7 @@ function tutUI() {
   document.getElementById('tutSkip').textContent = T('tu_skip');
   el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
 }
-document.getElementById('tutSkip').addEventListener('click', e => { e.stopPropagation(); tutStop(true); banner(T('goal')); bannerT = 3.2; });
+document.getElementById('tutSkip').addEventListener('click', e => { e.stopPropagation(); tutStop(true); introGoalUntil = clock + 3.2; });
 function tutStart() {
   if (tutDone() || !player) return false;
   Object.assign(TUT, { on: true, step: 0, t: 0, x0: player.x, z0: player.z, s0: player.score, atk0: player.lastAtk || 0, hits: 0 });
@@ -4717,7 +4761,7 @@ function tutStop(done) {
 function tutNext() {
   SFX.play && SFX.play('candy');
   TUT.step++; TUT.t = 0;
-  if (TUT.step > 2) { tutStop(true); banner(T('goal')); bannerT = 3.2; return; }
+  if (TUT.step > 2) { tutStop(true); introGoalUntil = clock + 3.2; return; }
   if (TUT.step === 1) TUT.s0 = player.score;
   if (TUT.step === 2) TUT.atk0 = player.lastAtk || 0, TUT.hits = 0;
   tutUI();
@@ -4904,6 +4948,7 @@ function netPredictCandy(u, dt) { // client: eat candy right away on your own sc
     if (!p.alive || p.air > 0) continue;
     const dd = (p.x - u.x) ** 2 + (p.z - u.z) ** 2;
     if (dd < pr * pr) {
+      u.lastCandyPull = clock;
       if (dd < 0.36 * scaleOf(u)) { p.alive = false; p.predT = clock; u.candyAcc += p.v; SFX.play('candy'); continue; }
       const l = Math.sqrt(dd) || 1; p.x += (u.x - p.x) / l * dt * 7; p.z += (u.z - p.z) / l * dt * 7;
     }
